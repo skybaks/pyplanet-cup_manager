@@ -1,3 +1,0 @@
-"""
-cup_manager Models.
-"""
