@@ -6,8 +6,10 @@ from pyplanet.apps.config import AppConfig
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.setting import Setting
+from pyplanet.contrib.command import Command
 
 from .models import PlayerScore
+from .views import MatchHistoryView
 
 
 class CupManagerApp(AppConfig):
@@ -17,6 +19,8 @@ class CupManagerApp(AppConfig):
 	_match_start_time = 0
 	_match_map_name = ''
 	_setting_match_history_amount = None
+	_namespace = 'cup'
+
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -38,6 +42,11 @@ class CupManagerApp(AppConfig):
 		self.context.signals.listen(mp_signals.map.map_end, self._mp_signals_map_map_end)
 
 		await self.context.setting.register(self._setting_match_history_amount)
+
+		await self.instance.command_manager.register(
+			Command(command='matches', namespace=self._namespace, target=self._command_matches,
+				description='Display saved match history.')
+		)
 
 		await self._handle_map_update('OnStart')
 
@@ -161,4 +170,10 @@ class CupManagerApp(AppConfig):
 			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
 			map_times.pop(0)
 			self._logger.info('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
+
+
+	async def _command_matches(self, player, data, **kwargs):
+		self._logger.info("Called the command!")
+		view = MatchHistoryView(self, player)
+		await view.display(player=player.login)
 

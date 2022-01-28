@@ -41,5 +41,5 @@ class PlayerScore(TimedModel):
 	class Meta:
 		db_table = 'cup_manager_player_score'
 		indexes = (
-			(('login', 'map_start_time'), True),
+			(('login', 'map_start_time', 'mode_script'), True),
 		)
