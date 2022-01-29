@@ -8,16 +8,14 @@ from .models import PlayerScore
 class MatchHistoryView(ManualListView):
 	app = None
 
-	title = 'Cup Manager: Match History'
+	title = 'Match History'
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Browse'
 	
 	_player = None
-	_cache_matches = []
-	_cache_results = {}
-	_show_results_time = 0
 	_results_view_mode = False
 	_results_view_params = {}
+	_persist_matches_page = 0
 
 
 	def __init__(self, app, player):
@@ -25,6 +23,7 @@ class MatchHistoryView(ManualListView):
 		self.app = app
 		self.manager = app.context.ui
 		self._player = player
+		self._set_match_view_mode()
 
 
 	async def get_fields(self):
@@ -57,7 +56,7 @@ class MatchHistoryView(ManualListView):
 				},
 				{
 					'name': 'Score',
-					'index': 'score',
+					'index': 'score_str',
 					'sorting': True,
 					'searching': False,
 					'width': 20,
@@ -117,69 +116,44 @@ class MatchHistoryView(ManualListView):
 	async def get_data(self):
 		items = []
 		if self._results_view_mode:
-			if self._results_view_params['map_start_time'] not in self._cache_results:
-				map_scores = await PlayerScore.execute(PlayerScore.select(
-					PlayerScore.nickname,
-					PlayerScore.login,
-					PlayerScore.score,
-					PlayerScore.country
-				).where(PlayerScore.map_start_time == self._results_view_params['map_start_time']).order_by(PlayerScore.score.asc()))
-				self._cache_results[self._results_view_params['map_start_time']] = []
-				index = 1
-				for player_score in map_scores:
-					self._cache_results[self._results_view_params['map_start_time']].append({
-						'index': index,
-						'nickname': player_score.nickname,
-						'login': player_score.login,
-						'score': player_score.score,
-						'country': player_score.country,
-					})
-					index += 1
-			items = self._cache_results[self._results_view_params['map_start_time']]
-		else:
-			if not self._cache_matches:
-				map_history = await PlayerScore.execute(PlayerScore.select(
-					fn.Distinct(PlayerScore.map_start_time),
-					PlayerScore.map_name,
-					PlayerScore.mode_script
-				).order_by(PlayerScore.map_start_time.desc()))
-				self._cache_matches = []
-				for map in map_history:
-					self._cache_matches.append({
-						'map_name': map.map_name,
-						'map_start_time_str': datetime.datetime.fromtimestamp(map.map_start_time).strftime("%c"),
-						'map_start_time': map.map_start_time,
-						'mode_script': map.mode_script,
-					})
-			items = self._cache_matches
+			items = await self.app.get_data_scores(self._results_view_params['map_start_time'], self._results_view_params['mode_script'])
+
+		if not items:
+			self._results_view_mode = False
+			self._results_view_params = {}
+			self._persist_matches_page = 0
+			self._set_match_view_mode()
+			items = await self.app.get_data_matches()
 		return items
-
-
-	async def destroy(self):
-		await super().destroy()
-		self._cache_matches = []
-		self._cache_results = {}
-		self._show_results_time = 0
-
-
-	def destroy_sync(self):
-		super().destroy_sync()
-		self._cache_matches = []
-		self._cache_results = {}
-		self._show_results_time = 0
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):
 		self._results_view_params = {
 			'map_start_time': instance['map_start_time'],
 			'map_name': instance['map_name'],
+			'mode_script': instance['mode_script'],
 		}
 		self._results_view_mode = True
+		self._set_results_view_mode(instance['map_name'], instance['map_start_time'], instance['mode_script'])
 		await self.refresh(player=self._player)
 
 
 	async def _button_back(self, player, values, **kwargs):
 		self._results_view_params = {}
 		self._results_view_mode = False
+		self._set_match_view_mode()
 		await self.refresh(player=self._player)
+
+
+	def _set_match_view_mode(self):
+		if self._persist_matches_page != 0:
+			self.page = self._persist_matches_page
+			self._persist_matches_page = 0
+		self.title = 'Match History'
+
+
+	def _set_results_view_mode(self, map_name, map_start_time, mode_script):
+		self._persist_matches_page = self.page
+		self.page = 1
+		self.title = '$<' + map_name + '$> / ' + datetime.datetime.fromtimestamp(map_start_time).strftime("%c") + ' / ' + mode_script
 

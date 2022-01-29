@@ -7,6 +7,7 @@ from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
+from pyplanet.utils import times
 
 from .models import PlayerScore
 from .views import MatchHistoryView
@@ -20,6 +21,8 @@ class CupManagerApp(AppConfig):
 	_match_map_name = ''
 	_setting_match_history_amount = None
 	_namespace = 'cup'
+	_view_cache_matches = []
+	_view_cache_scores = {}
 
 
 	def __init__(self, *args, **kwargs):
@@ -145,6 +148,8 @@ class CupManagerApp(AppConfig):
 						mode_script=current_script,
 						map_name=self._match_map_name
 					).save()
+				await self._invalidate_view_cache_matches()
+				await self._invalidate_view_cache_scores(self._match_start_time)
 
 
 	async def _handle_map_update(self, section):
@@ -165,15 +170,78 @@ class CupManagerApp(AppConfig):
 		map_times = [time.map_start_time for time in map_time_rows_query]
 		map_times.sort()
 		match_limit = await self._setting_match_history_amount.get_value()
+		match_history_pruned = False
 		while len(map_times) > match_limit:
 			oldest_time = map_times[0]
 			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
+			await self._invalidate_view_cache_scores(oldest_time)
 			map_times.pop(0)
 			self._logger.info('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
+			match_history_pruned = True
+		if match_history_pruned:
+			await self._invalidate_view_cache_matches()
 
 
 	async def _command_matches(self, player, data, **kwargs):
-		self._logger.info("Called the command!")
+		self._logger.info("Called the command: _command_matches")
 		view = MatchHistoryView(self, player)
 		await view.display(player=player.login)
+
+
+	async def _invalidate_view_cache_matches(self):
+		self._logger.info("_invalidate_view_cache_matches")
+		self._view_cache_matches = []
+
+
+	async def _invalidate_view_cache_scores(self, map_start_time=0):
+		self._logger.info("_invalidate_view_cache_scores: " + str(map_start_time))
+		if map_start_time == 0:
+			self._view_cache_scores = {}
+		elif map_start_time in self._view_cache_scores:
+			self._view_cache_scores[map_start_time] = []
+
+
+	async def get_data_matches(self):
+		if not self._view_cache_matches:
+			map_history_query = await PlayerScore.execute(PlayerScore.select(
+				fn.Distinct(PlayerScore.map_start_time),
+				PlayerScore.map_name,
+				PlayerScore.mode_script
+			).order_by(PlayerScore.map_start_time.desc()))
+			for map in map_history_query:
+				self._view_cache_matches.append({
+					'map_name': map.map_name,
+					'map_start_time_str': datetime.datetime.fromtimestamp(map.map_start_time).strftime("%c"),
+					'map_start_time': map.map_start_time,
+					'mode_script': map.mode_script,
+				})
+		return self._view_cache_matches
+
+
+	async def get_data_scores(self, map_start_time, mode_script):
+		if map_start_time not in self._view_cache_scores or not self._view_cache_scores[map_start_time]:
+			order_by_arg = PlayerScore.score.desc()
+			score_is_time = False
+			if 'timeattack'in mode_script.lower():
+				order_by_arg = PlayerScore.score.asc()
+				score_is_time = True
+			map_scores_query = await PlayerScore.execute(PlayerScore.select(
+				PlayerScore.nickname,
+				PlayerScore.login,
+				PlayerScore.score,
+				PlayerScore.country
+			).where(PlayerScore.map_start_time == map_start_time).order_by(order_by_arg))
+			self._view_cache_scores[map_start_time] = []
+			index = 1
+			for player_score in map_scores_query:
+				self._view_cache_scores[map_start_time].append({
+					'index': index,
+					'nickname': player_score.nickname,
+					'login': player_score.login,
+					'score': player_score.score,
+					'score_str': times.format_time(player_score.score) if score_is_time else str(player_score.score),
+					'country': player_score.country,
+				})
+				index += 1
+		return self._view_cache_scores[map_start_time]
 
