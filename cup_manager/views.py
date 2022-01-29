@@ -1,9 +1,7 @@
-from peewee import *
 import datetime
 
 from pyplanet.views.generics.list import ManualListView
 
-from .models import PlayerScore
 
 class MatchHistoryView(ManualListView):
 	app = None
@@ -18,12 +16,19 @@ class MatchHistoryView(ManualListView):
 	_persist_matches_page = 0
 
 
-	def __init__(self, app, player):
+	def __init__(self, app, player, map_score_instance=None):
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
 		self._player = player
-		self._set_match_view_mode()
+		if map_score_instance:
+			self._set_results_view_mode(
+				map_score_instance['map_name'],
+				map_score_instance['map_start_time'],
+				map_score_instance['mode_script']
+			)
+		else:
+			self._set_match_view_mode()
 
 
 	async def get_fields(self):
@@ -128,24 +133,18 @@ class MatchHistoryView(ManualListView):
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):
-		self._results_view_params = {
-			'map_start_time': instance['map_start_time'],
-			'map_name': instance['map_name'],
-			'mode_script': instance['mode_script'],
-		}
-		self._results_view_mode = True
 		self._set_results_view_mode(instance['map_name'], instance['map_start_time'], instance['mode_script'])
 		await self.refresh(player=self._player)
 
 
 	async def _button_back(self, player, values, **kwargs):
-		self._results_view_params = {}
-		self._results_view_mode = False
 		self._set_match_view_mode()
 		await self.refresh(player=self._player)
 
 
 	def _set_match_view_mode(self):
+		self._results_view_params = {}
+		self._results_view_mode = False
 		if self._persist_matches_page != 0:
 			self.page = self._persist_matches_page
 			self._persist_matches_page = 0
@@ -153,6 +152,12 @@ class MatchHistoryView(ManualListView):
 
 
 	def _set_results_view_mode(self, map_name, map_start_time, mode_script):
+		self._results_view_params = {
+			'map_start_time': map_start_time,
+			'map_name': map_name,
+			'mode_script': mode_script,
+		}
+		self._results_view_mode = True
 		self._persist_matches_page = self.page
 		self.page = 1
 		self.title = '$<' + map_name + '$> / ' + datetime.datetime.fromtimestamp(map_start_time).strftime("%c") + ' / ' + mode_script

@@ -48,7 +48,9 @@ class CupManagerApp(AppConfig):
 
 		await self.instance.command_manager.register(
 			Command(command='matches', namespace=self._namespace, target=self._command_matches,
-				description='Display saved match history.')
+				description='Display saved match history.'),
+			Command(command='current', namespace=self._namespace, target=self._command_current,
+				description='Display scores of current map.')
 		)
 
 		await self._handle_map_update('OnStart')
@@ -185,6 +187,22 @@ class CupManagerApp(AppConfig):
 	async def _command_matches(self, player, data, **kwargs):
 		self._logger.info("Called the command: _command_matches")
 		view = MatchHistoryView(self, player)
+		await view.display(player=player.login)
+
+
+	async def _command_current(self, player, data, **kwargs):
+		self._logger.info("Called the command: _command_current")
+		match_data = await self.get_data_matches()
+		current_match = {}
+		for match in match_data:
+			if match['map_start_time'] == self._match_start_time:
+				current_match = match
+				break
+		else:
+			self._logger.info("Current match data not found.")
+			await self.instance.chat('$i$f00No scores found for current match.', player)
+			return
+		view = MatchHistoryView(self, player, current_match)
 		await view.display(player=player.login)
 
 

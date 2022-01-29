@@ -7,4 +7,4 @@ This goal of this plugin is to automate or simplify the actions needed to manage
 | Command | Description |
 | --- | --- |
 | `/cup matches` | Display current saved matches. Select a map from this display to view the scores. |
-
+| `/cup current` | Display the results of the current map. |
