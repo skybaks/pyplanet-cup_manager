@@ -235,6 +235,7 @@ class CupManagerApp(AppConfig):
 			).order_by(PlayerScore.map_start_time.desc()))
 			for map in map_history_query:
 				self._view_cache_matches.append({
+					'selected': None,
 					'map_name': map.map_name,
 					'map_start_time_str': datetime.datetime.fromtimestamp(map.map_start_time).strftime("%c"),
 					'map_start_time': map.map_start_time,
@@ -243,30 +244,43 @@ class CupManagerApp(AppConfig):
 		return self._view_cache_matches
 
 
-	async def get_data_scores(self, map_start_time: int, mode_script: str) -> list:
-		if map_start_time not in self._view_cache_scores or not self._view_cache_scores[map_start_time]:
-			order_by_arg = PlayerScore.score.desc()
-			score_is_time = False
-			if 'timeattack'in mode_script.lower():
-				order_by_arg = PlayerScore.score.asc()
-				score_is_time = True
-			map_scores_query = await PlayerScore.execute(PlayerScore.select(
-				PlayerScore.nickname,
-				PlayerScore.login,
-				PlayerScore.score,
-				PlayerScore.country
-			).where(PlayerScore.map_start_time == map_start_time).order_by(order_by_arg))
-			self._view_cache_scores[map_start_time] = []
-			index = 1
-			for player_score in map_scores_query:
-				self._view_cache_scores[map_start_time].append({
-					'index': index,
-					'nickname': player_score.nickname,
-					'login': player_score.login,
-					'score': player_score.score,
-					'score_str': times.format_time(player_score.score) if score_is_time else str(player_score.score),
-					'country': player_score.country,
-				})
-				index += 1
-		return self._view_cache_scores[map_start_time]
+	async def get_data_scores(self, map_start_time, mode_script: str) -> list:
+		lookup_matches = []
+		if isinstance(map_start_time, int):
+			if map_start_time in self._view_cache_scores and self._view_cache_scores[map_start_time]:
+				return self._view_cache_scores[map_start_time]
+			lookup_matches.append(map_start_time)
+		elif isinstance(map_start_time, list):
+			lookup_matches = map_start_time
+
+		order_by_arg = fn.SUM(PlayerScore.score).desc()
+		score_is_time = False
+		if 'timeattack'in mode_script.lower():
+			order_by_arg = fn.SUM(PlayerScore.score).asc()
+			score_is_time = True
+
+		map_scores_query = await PlayerScore.execute(PlayerScore.select(
+			PlayerScore.nickname,
+			PlayerScore.login,
+			fn.SUM(PlayerScore.score),
+			PlayerScore.country
+		).where(PlayerScore.map_start_time.in_(lookup_matches)).group_by(PlayerScore.login).order_by(order_by_arg))
+
+		index = 1
+		score_data = []
+		for player_score in map_scores_query:
+			score_data.append({
+				'index': index,
+				'nickname': player_score.nickname,
+				'login': player_score.login,
+				'score': player_score.score,
+				'score_str': times.format_time(int(player_score.score)) if score_is_time else str(player_score.score),
+				'country': player_score.country,
+			})
+			index += 1
+
+		if isinstance(map_start_time, int) and (map_start_time not in self._view_cache_scores or not self._view_cache_scores[map_start_time]):
+			self._view_cache_scores[map_start_time] = score_data
+
+		return score_data
 
