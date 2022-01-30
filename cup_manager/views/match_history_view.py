@@ -2,7 +2,7 @@ import datetime
 
 from pyplanet.views.generics.list import ManualListView
 
-from .app_types import ResultsViewParams
+from ..app_types import ResultsViewParams
 
 
 class MatchHistoryView(ManualListView):
