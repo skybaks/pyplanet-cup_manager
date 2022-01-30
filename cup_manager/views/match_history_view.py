@@ -12,7 +12,6 @@ class MatchHistoryView(ManualListView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Browse'
 	
-	_player = None
 	_results_view_mode = False
 	_results_view_params = None
 	_persist_matches_page = 0
@@ -20,11 +19,10 @@ class MatchHistoryView(ManualListView):
 	_selected_matches_mode = False
 
 
-	def __init__(self, app, player, map_score_instance: ResultsViewParams=None) -> None:
+	def __init__(self, app, map_score_instance: ResultsViewParams=None) -> None:
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
-		self._player = player
 		self._selected_matches = []
 		self._selected_matches_mode = False
 		if map_score_instance:
@@ -157,10 +155,15 @@ class MatchHistoryView(ManualListView):
 		return items
 
 
+	# TODO: Do I need to store state information in this dict to keep it from being global to all players?
+	#async def get_per_player_data(self, login) -> dict:
+	#	return dict()
+
+
 	async def _action_view_match(self, player, values, instance, **kwargs):
 		self._selected_matches_mode = False
 		self._set_results_view_mode(ResultsViewParams(instance['map_name'], instance['map_start_time'], instance['mode_script']))
-		await self.refresh(player=self._player)
+		await self.refresh(player=player)
 
 
 	async def _action_match_select(self, player, values, instance, **kwargs):
@@ -168,13 +171,13 @@ class MatchHistoryView(ManualListView):
 			self._selected_matches.remove(instance['map_start_time'])
 		else:
 			self._selected_matches.append(instance['map_start_time'])
-		await self.refresh(player=self._player)
+		await self.refresh(player=player)
 
 
 	async def _button_back(self, player, values, **kwargs):
 		self._selected_matches_mode = False
 		self._set_match_view_mode()
-		await self.refresh(player=self._player)
+		await self.refresh(player=player)
 
 
 	async def _button_calculate_results(self, player, values, **kwargs):
@@ -186,13 +189,13 @@ class MatchHistoryView(ManualListView):
 				mode_script = match['mode_script']
 				break
 		self._set_results_view_mode(ResultsViewParams('', -1, mode_script))
-		await self.refresh(player=self._player)
+		await self.refresh(player=player)
 
 
 	async def _button_clear_selection(self, player, values, **kwargs):
 		self._selected_matches_mode = False
 		self._selected_matches = []
-		await self.refresh(player=self._player)
+		await self.refresh(player=player)
 
 
 	def _set_match_view_mode(self):
@@ -212,5 +215,5 @@ class MatchHistoryView(ManualListView):
 		if self._selected_matches_mode:
 			self.title = 'Selected Matches Results'
 		else:
-			self.title = '$<' + self._results_view_params.map_name + '$> / ' + datetime.datetime.fromtimestamp(self._results_view_params.map_start_time).strftime("%c") + ' / ' + self._results_view_params.mode_script
+			self.title = '$<' + self._results_view_params.map_name + '$> / ' + datetime.datetime.fromtimestamp(self._results_view_params.map_start_time).strftime("%c")
 

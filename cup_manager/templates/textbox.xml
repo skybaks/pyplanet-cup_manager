@@ -1,0 +1,6 @@
+<frame pos="0 17" z-index="151">
+  <quad pos="0 62.5" size="200 90" z-index="-50" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+  <quad pos="0 61.5" size="198 11" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+  <label pos="-50 55" size="190 7" z-index="2" text="{{ title }}" textsize="1.5" textcolor="FFFFFFF" halign="left"/>
+</frame>
