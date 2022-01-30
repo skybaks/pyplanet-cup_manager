@@ -11,7 +11,7 @@ class MatchHistoryView(ManualListView):
 	title = 'Match History'
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Browse'
-	
+
 	_results_view_mode = False
 	_results_view_params = None
 	_persist_matches_page = 0
@@ -19,10 +19,11 @@ class MatchHistoryView(ManualListView):
 	_selected_matches_mode = False
 
 
-	def __init__(self, app, map_score_instance: ResultsViewParams=None) -> None:
+	def __init__(self, app, player, map_score_instance: ResultsViewParams=None) -> None:
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
+		self.player = player
 		self._selected_matches = []
 		self._selected_matches_mode = False
 		if map_score_instance:
@@ -153,11 +154,6 @@ class MatchHistoryView(ManualListView):
 			for item in items:
 				item['selected'] = '' if item['map_start_time'] in self._selected_matches else ''
 		return items
-
-
-	# TODO: Do I need to store state information in this dict to keep it from being global to all players?
-	#async def get_per_player_data(self, login) -> dict:
-	#	return dict()
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):

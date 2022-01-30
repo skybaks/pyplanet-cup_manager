@@ -11,7 +11,7 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import times
 
 from .models import PlayerScore
-from .views import MatchHistoryView
+from .views import MatchHistoryView, TextboxView
 from .app_types import ResultsViewParams, GenericPlayerScore
 
 
@@ -53,7 +53,9 @@ class CupManagerApp(AppConfig):
 			Command(command='matches', aliases=['m'], namespace=self._namespace, target=self._command_matches,
 				description='Display saved match history.'),
 			Command(command='current', aliases=['c'], namespace=self._namespace, target=self._command_current,
-				description='Display scores of current map.')
+				description='Display scores of current map.'),
+			Command(command='test', aliases=['t'], namespace=self._namespace, target=self._command_test,
+				description='Who knows what the heck this does...')
 		)
 
 		await self._handle_map_update('OnStart')
@@ -193,7 +195,7 @@ class CupManagerApp(AppConfig):
 
 	async def _command_matches(self, player, data, **kwargs):
 		self._logger.info("Called the command: _command_matches")
-		view = MatchHistoryView(self)
+		view = MatchHistoryView(self, player)
 		await view.display(player=player.login)
 
 
@@ -209,7 +211,13 @@ class CupManagerApp(AppConfig):
 			self._logger.info("Current match data not found.")
 			await self.instance.chat('$i$f00No scores found for current match.', player)
 			return
-		view = MatchHistoryView(self, current_match)
+		view = MatchHistoryView(self, player, current_match)
+		await view.display(player=player.login)
+
+
+	async def _command_test(self, player, data, **kwargs):
+		self._logger.info("Called the command: _command_current")
+		view = TextboxView(self, player)
 		await view.display(player=player.login)
 
 
