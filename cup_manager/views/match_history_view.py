@@ -2,6 +2,7 @@ import datetime
 
 from pyplanet.views.generics.list import ManualListView
 
+from .textbox_view import TextResultsView
 from ..app_types import ResultsViewParams
 
 
@@ -12,20 +13,18 @@ class MatchHistoryView(ManualListView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Browse'
 
-	_results_view_mode = False
-	_results_view_params = None
-	_persist_matches_page = 0
-	_selected_matches = []
-	_selected_matches_mode = False
-
 
 	def __init__(self, app, player, map_score_instance: ResultsViewParams=None) -> None:
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
 		self.player = player
+		self._results_view_mode = False
+		self._results_view_params = None
+		self._persist_matches_page = 0
 		self._selected_matches = []
 		self._selected_matches_mode = False
+		self._text_results_view = TextResultsView(app, player)
 		if map_score_instance:
 			self._set_results_view_mode(map_score_instance)
 		else:
@@ -125,6 +124,11 @@ class MatchHistoryView(ManualListView):
 				'width': 30,
 				'action': self._button_back,
 			})
+			buttons.append({
+				'title': 'Export',
+				'width': 30,
+				'action': self._button_export,
+			})
 		else:
 			if self._selected_matches:
 				buttons.append({
@@ -144,6 +148,7 @@ class MatchHistoryView(ManualListView):
 		items = []
 		if self._results_view_mode:
 			items = await self.app.get_data_scores(self._selected_matches if self._selected_matches_mode else self._results_view_params.map_start_time, self._results_view_params.mode_script)
+			await self._text_results_view.set_data(self.player, items)
 
 		if not items:
 			self._results_view_mode = False
@@ -174,6 +179,10 @@ class MatchHistoryView(ManualListView):
 		self._selected_matches_mode = False
 		self._set_match_view_mode()
 		await self.refresh(player=player)
+
+
+	async def _button_export(self, player, values, **kwargs):
+		await self._text_results_view.display(player=player.login)
 
 
 	async def _button_calculate_results(self, player, values, **kwargs):

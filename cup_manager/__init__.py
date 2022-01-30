@@ -11,14 +11,14 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import times
 
 from .models import PlayerScore
-from .views import MatchHistoryView, TextboxView
+from .views import MatchHistoryView
 from .app_types import ResultsViewParams, GenericPlayerScore
 
+logger = logging.getLogger(__name__)
 
 class CupManagerApp(AppConfig):
 	game_dependencies = ['trackmania_next', 'trackmania', 'shootmania']
 	app_dependencies = ['core.maniaplanet', 'core.trackmania', 'core.shootmania']
-	_logger = None
 	_match_start_time = 0
 	_match_map_name = ''
 	_setting_match_history_amount = None
@@ -29,7 +29,6 @@ class CupManagerApp(AppConfig):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self._logger = logging.getLogger(__name__)
 		self._setting_match_history_amount = Setting(
 			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
 			description='Set this number to the number of previous matches you want to save in the database.',
@@ -54,8 +53,6 @@ class CupManagerApp(AppConfig):
 				description='Display saved match history.'),
 			Command(command='current', aliases=['c'], namespace=self._namespace, target=self._command_current,
 				description='Display scores of current map.'),
-			Command(command='test', aliases=['t'], namespace=self._namespace, target=self._command_test,
-				description='Who knows what the heck this does...')
 		)
 
 		await self._handle_map_update('OnStart')
@@ -79,7 +76,7 @@ class CupManagerApp(AppConfig):
 
 	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
 		# TODO: Implement SM score handling
-		self._logger.info("called _sm_signals_scores w/ section: \"" + section + "\". Not yet implemented.")
+		logger.info("called _sm_signals_scores w/ section: \"" + section + "\". Not yet implemented.")
 
 
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
@@ -128,7 +125,7 @@ class CupManagerApp(AppConfig):
 						player_score['mappoints']
 					)
 		if new_score:
-			self._logger.info(new_score)
+			logger.info(new_score)
 			if self._match_start_time != 0:
 				rows = await PlayerScore.execute(
 					PlayerScore.select().where(
@@ -136,7 +133,7 @@ class CupManagerApp(AppConfig):
 					)
 				)
 				if len(rows) > 0:
-					self._logger.info("Entry exists, updating score")
+					logger.info("Entry exists, updating score")
 					await PlayerScore.execute(
 						PlayerScore.update(
 							score=new_score.score,
@@ -149,7 +146,7 @@ class CupManagerApp(AppConfig):
 						)
 					)
 				else:
-					self._logger.info("No entry exists, creating score")
+					logger.info("No entry exists, creating score")
 					await PlayerScore(
 						login=new_score.login,
 						nickname=new_score.nickname,
@@ -172,8 +169,8 @@ class CupManagerApp(AppConfig):
 			self._match_map_name = None
 			await self._prune_match_history()
 		else:
-			self._logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
-		self._logger.info(section)
+			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
+		logger.info(section)
 
 
 	async def _prune_match_history(self):
@@ -187,20 +184,20 @@ class CupManagerApp(AppConfig):
 			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
 			await self._invalidate_view_cache_scores(oldest_time)
 			map_times.pop(0)
-			self._logger.info('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
+			logger.info('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
 			match_history_pruned = True
 		if match_history_pruned:
 			await self._invalidate_view_cache_matches()
 
 
 	async def _command_matches(self, player, data, **kwargs):
-		self._logger.info("Called the command: _command_matches")
+		logger.info("Called the command: _command_matches")
 		view = MatchHistoryView(self, player)
 		await view.display(player=player.login)
 
 
 	async def _command_current(self, player, data, **kwargs):
-		self._logger.info("Called the command: _command_current")
+		logger.info("Called the command: _command_current")
 		match_data = await self.get_data_matches()
 		current_match = None
 		for match in match_data:
@@ -208,26 +205,20 @@ class CupManagerApp(AppConfig):
 				current_match = ResultsViewParams(match['map_name'], match['map_start_time'], match['mode_script'])
 				break
 		else:
-			self._logger.info("Current match data not found.")
+			logger.info("Current match data not found.")
 			await self.instance.chat('$i$f00No scores found for current match.', player)
 			return
 		view = MatchHistoryView(self, player, current_match)
 		await view.display(player=player.login)
 
 
-	async def _command_test(self, player, data, **kwargs):
-		self._logger.info("Called the command: _command_current")
-		view = TextboxView(self, player)
-		await view.display(player=player.login)
-
-
 	async def _invalidate_view_cache_matches(self):
-		self._logger.info("_invalidate_view_cache_matches")
+		logger.info("_invalidate_view_cache_matches")
 		self._view_cache_matches = []
 
 
 	async def _invalidate_view_cache_scores(self, map_start_time: int=0):
-		self._logger.info("_invalidate_view_cache_scores: " + str(map_start_time))
+		logger.info("_invalidate_view_cache_scores: " + str(map_start_time))
 		if map_start_time == 0:
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
