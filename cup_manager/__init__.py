@@ -5,12 +5,14 @@ from peewee import *
 from pyplanet.apps.config import AppConfig
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
+from pyplanet.apps.core.shootmania import callbacks as sm_signals
 from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 from pyplanet.utils import times
 
 from .models import PlayerScore
 from .views import MatchHistoryView
+from .app_types import ResultsViewParams, GenericPlayerScore
 
 
 class CupManagerApp(AppConfig):
@@ -43,6 +45,7 @@ class CupManagerApp(AppConfig):
 		self.context.signals.listen(tm_signals.scores, self._tm_signals_scores)
 		self.context.signals.listen(mp_signals.map.map_start, self._mp_signals_map_map_start)
 		self.context.signals.listen(mp_signals.map.map_end, self._mp_signals_map_map_end)
+		self.context.signals.listen(sm_signals.base.scores, self._sm_signals_scores)
 
 		await self.context.setting.register(self._setting_match_history_amount)
 
@@ -72,6 +75,11 @@ class CupManagerApp(AppConfig):
 		await self._handle_score_update(players)
 
 
+	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
+		# TODO: Implement SM score handling
+		self._logger.info("called _sm_signals_scores w/ section: \"" + section + "\". Not yet implemented.")
+
+
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
 		await self._handle_map_update('MapStart')
 
@@ -80,72 +88,71 @@ class CupManagerApp(AppConfig):
 		await self._handle_map_update('MapEnd')
 
 
-	async def _handle_score_update(self, player_scores):
+	async def _handle_score_update(self, player_scores: list):
 		current_script = (await self.instance.mode_manager.get_current_script())
 		current_script_lower = current_script.lower()
 		# If in timeattack, use best race time as score. In all other cases use points.
-		new_score = {}
+		new_score = None
 		if 'timeattack' in current_script_lower or 'trackmania/tm_timeattack_online' in current_script_lower:
 			for player_score in player_scores:
 				if 'best_race_time' in player_score and player_score['best_race_time'] != -1:
-					new_score = {
-						'login': player_score['player'].login,
-						'nickname': player_score['player'].nickname,
-						'country': player_score['player'].flow.zone.country,
-						'score': player_score['best_race_time']
-					}
+					new_score = GenericPlayerScore(
+						player_score['player'].login,
+						player_score['player'].nickname,
+						player_score['player'].flow.zone.country,
+						player_score['best_race_time']
+					)
 				elif 'bestracetime' in player_score and player_score['bestracetime'] != -1:
-					new_score = {
-						'login': player_score['login'],
-						'nickname': player_score['name'],
-						'country': None,	# TODO: Is this different? How and why?
-						'score': player_score['bestracetime']
-					}
+					new_score = GenericPlayerScore(
+						player_score['login'],
+						player_score['name'],
+						None,	# TODO: Is this different? How and why?
+						player_score['bestracetime']
+					)
 		else:
 			for player_score in player_scores:
 				if 'map_points' in player_score and player_score['map_points'] != -1:
-					new_score = {
-						'login': player_score['player'].login,
-						'nickname': player_score['player'].nickname,
-						'country': player_score['player'].flow.zone.country,
-						'score': player_score['map_points']
-					}
+					new_score = GenericPlayerScore(
+						player_score['player'].login,
+						player_score['player'].nickname,
+						player_score['player'].flow.zone.country,
+						player_score['map_points']
+					)
 				elif 'mappoints' in player_score and player_score['mappoints'] != -1:
-					new_score = {
-						'login': player_score['login'],
-						'nickname': player_score['name'],
-						'country': None,	# TODO: Is this different? How and why?
-						'score': player_score['mappoints']
-					}
+					new_score = GenericPlayerScore(
+						player_score['login'],
+						player_score['name'],
+						None,	# TODO: Is this different? How and why?
+						player_score['mappoints']
+					)
 		if new_score:
 			self._logger.info(new_score)
-			if self._match_start_time:
-				self._logger.info("Valid match start time exists")
+			if self._match_start_time != 0:
 				rows = await PlayerScore.execute(
 					PlayerScore.select().where(
-						PlayerScore.login == new_score['login'] and PlayerScore.map_start_time == self._match_start_time
+						PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
 					)
 				)
 				if len(rows) > 0:
 					self._logger.info("Entry exists, updating score")
 					await PlayerScore.execute(
 						PlayerScore.update(
-							score=new_score['score'],
-							nickname=new_score['nickname'],
-							country=new_score['country'],
+							score=new_score.score,
+							nickname=new_score.nickname,
+							country=new_score.country,
 							mode_script=current_script,
 							map_name=self._match_map_name
 						).where(
-							PlayerScore.login == new_score['login'] and PlayerScore.map_start_time == self._match_start_time
+							PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
 						)
 					)
 				else:
 					self._logger.info("No entry exists, creating score")
 					await PlayerScore(
-						login=new_score['login'],
-						nickname=new_score['nickname'],
-						country=new_score['country'],
-						score=new_score['score'],
+						login=new_score.login,
+						nickname=new_score.nickname,
+						country=new_score.country,
+						score=new_score.score,
 						map_start_time=self._match_start_time,
 						mode_script=current_script,
 						map_name=self._match_map_name
@@ -154,7 +161,7 @@ class CupManagerApp(AppConfig):
 				await self._invalidate_view_cache_scores(self._match_start_time)
 
 
-	async def _handle_map_update(self, section):
+	async def _handle_map_update(self, section: str):
 		if section == 'OnStart' or section == 'MapStart':
 			self._match_start_time = int(datetime.datetime.now().timestamp())
 			self._match_map_name = self.instance.map_manager.current_map.name
@@ -193,10 +200,10 @@ class CupManagerApp(AppConfig):
 	async def _command_current(self, player, data, **kwargs):
 		self._logger.info("Called the command: _command_current")
 		match_data = await self.get_data_matches()
-		current_match = {}
+		current_match = None
 		for match in match_data:
 			if match['map_start_time'] == self._match_start_time:
-				current_match = match
+				current_match = ResultsViewParams(match['map_name'], match['map_start_time'], match['mode_script'])
 				break
 		else:
 			self._logger.info("Current match data not found.")
@@ -211,7 +218,7 @@ class CupManagerApp(AppConfig):
 		self._view_cache_matches = []
 
 
-	async def _invalidate_view_cache_scores(self, map_start_time=0):
+	async def _invalidate_view_cache_scores(self, map_start_time: int=0):
 		self._logger.info("_invalidate_view_cache_scores: " + str(map_start_time))
 		if map_start_time == 0:
 			self._view_cache_scores = {}
@@ -219,7 +226,7 @@ class CupManagerApp(AppConfig):
 			self._view_cache_scores[map_start_time] = []
 
 
-	async def get_data_matches(self):
+	async def get_data_matches(self) -> list:
 		if not self._view_cache_matches:
 			map_history_query = await PlayerScore.execute(PlayerScore.select(
 				fn.Distinct(PlayerScore.map_start_time),
@@ -236,7 +243,7 @@ class CupManagerApp(AppConfig):
 		return self._view_cache_matches
 
 
-	async def get_data_scores(self, map_start_time, mode_script):
+	async def get_data_scores(self, map_start_time: int, mode_script: str) -> list:
 		if map_start_time not in self._view_cache_scores or not self._view_cache_scores[map_start_time]:
 			order_by_arg = PlayerScore.score.desc()
 			score_is_time = False

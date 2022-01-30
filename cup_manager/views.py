@@ -2,6 +2,8 @@ import datetime
 
 from pyplanet.views.generics.list import ManualListView
 
+from .app_types import ResultsViewParams
+
 
 class MatchHistoryView(ManualListView):
 	app = None
@@ -12,26 +14,22 @@ class MatchHistoryView(ManualListView):
 	
 	_player = None
 	_results_view_mode = False
-	_results_view_params = {}
+	_results_view_params = None
 	_persist_matches_page = 0
 
 
-	def __init__(self, app, player, map_score_instance=None):
+	def __init__(self, app, player, map_score_instance: ResultsViewParams=None) -> None:
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
 		self._player = player
 		if map_score_instance:
-			self._set_results_view_mode(
-				map_score_instance['map_name'],
-				map_score_instance['map_start_time'],
-				map_score_instance['mode_script']
-			)
+			self._set_results_view_mode(map_score_instance)
 		else:
 			self._set_match_view_mode()
 
 
-	async def get_fields(self):
+	async def get_fields(self) -> list:
 		fields = []
 		if self._results_view_mode:
 			fields = [
@@ -56,7 +54,7 @@ class MatchHistoryView(ManualListView):
 					'index': 'login',
 					'sorting': False,
 					'searching': True,
-					'width': 30,
+					'width': 40,
 					'type': 'label',
 				},
 				{
@@ -100,14 +98,14 @@ class MatchHistoryView(ManualListView):
 					'index': 'mode_script',
 					'sorting': True,
 					'searching': True,
-					'width': 30,
+					'width': 40,
 					'type': 'label'
 				},
 			]
 		return fields
 
 
-	async def get_buttons(self):
+	async def get_buttons(self) -> list:
 		buttons = []
 		if self._results_view_mode:
 			buttons.append({
@@ -118,14 +116,14 @@ class MatchHistoryView(ManualListView):
 		return buttons
 
 
-	async def get_data(self):
+	async def get_data(self) -> list:
 		items = []
 		if self._results_view_mode:
-			items = await self.app.get_data_scores(self._results_view_params['map_start_time'], self._results_view_params['mode_script'])
+			items = await self.app.get_data_scores(self._results_view_params.map_start_time, self._results_view_params.mode_script)
 
 		if not items:
 			self._results_view_mode = False
-			self._results_view_params = {}
+			self._results_view_params = None
 			self._persist_matches_page = 0
 			self._set_match_view_mode()
 			items = await self.app.get_data_matches()
@@ -133,7 +131,7 @@ class MatchHistoryView(ManualListView):
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):
-		self._set_results_view_mode(instance['map_name'], instance['map_start_time'], instance['mode_script'])
+		self._set_results_view_mode(ResultsViewParams(instance['map_name'], instance['map_start_time'], instance['mode_script']))
 		await self.refresh(player=self._player)
 
 
@@ -143,7 +141,7 @@ class MatchHistoryView(ManualListView):
 
 
 	def _set_match_view_mode(self):
-		self._results_view_params = {}
+		self._results_view_params = None
 		self._results_view_mode = False
 		if self._persist_matches_page != 0:
 			self.page = self._persist_matches_page
@@ -151,14 +149,10 @@ class MatchHistoryView(ManualListView):
 		self.title = 'Match History'
 
 
-	def _set_results_view_mode(self, map_name, map_start_time, mode_script):
-		self._results_view_params = {
-			'map_start_time': map_start_time,
-			'map_name': map_name,
-			'mode_script': mode_script,
-		}
+	def _set_results_view_mode(self, results_view_params: ResultsViewParams):
+		self._results_view_params = results_view_params
 		self._results_view_mode = True
 		self._persist_matches_page = self.page
 		self.page = 1
-		self.title = '$<' + map_name + '$> / ' + datetime.datetime.fromtimestamp(map_start_time).strftime("%c") + ' / ' + mode_script
+		self.title = '$<' + self._results_view_params.map_name + '$> / ' + datetime.datetime.fromtimestamp(self._results_view_params.map_start_time).strftime("%c") + ' / ' + self._results_view_params.mode_script
 
