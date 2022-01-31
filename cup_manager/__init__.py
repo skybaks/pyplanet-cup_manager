@@ -11,7 +11,7 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import times
 
 from .models import PlayerScore
-from .views import MatchHistoryView
+from .views import MatchHistoryView, TextResultsView
 from .app_types import ResultsViewParams, GenericPlayerScore
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,8 @@ class CupManagerApp(AppConfig):
 			Command(command='current', aliases=['c'], namespace=self._namespace, target=self._command_current,
 				description='Display scores of current map.'),
 		)
+
+		MatchHistoryView.add_button(self._button_export, 'Export', 30)
 
 		await self._handle_map_update('OnStart')
 
@@ -224,6 +226,16 @@ class CupManagerApp(AppConfig):
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
 			self._view_cache_scores[map_start_time] = []
+
+
+	async def _button_export(self, player, values, **kwargs):
+		logger.info(f"Called _button_export {player.login}")
+		view = TextResultsView(self, player)
+		await view.set_data(player, kwargs['view'].data['objects'])
+		await view.display(player_logins=[player.login])
+		result = await view.wait_for_response()
+		logger.info(f"Destroy TextResultsView {player.login}")
+		await view.destroy()
 
 
 	async def get_data_matches(self) -> list:

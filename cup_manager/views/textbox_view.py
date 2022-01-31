@@ -1,4 +1,4 @@
-from asyncio import iscoroutinefunction
+from asyncio import iscoroutinefunction, Future
 import re
 import logging
 from enum import Enum
@@ -84,6 +84,7 @@ class TextResultsView(TextboxView):
 	def __init__(self, app, player):
 		super().__init__(app, player)
 		self._instance_data = []
+		self._response_future = Future()
 
 
 	async def set_data(self, player, input_data: list) -> None:
@@ -123,11 +124,24 @@ class TextResultsView(TextboxView):
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
 				for item in self._instance_data:
-					text += f"{item['index']},{item['score']},{style.style_strip(item['nickname'], style.STRIP_ALL)},{item['login']}\n"
+					text += f"\"{item['index']}\",\"{item['score']}\",\"{style.style_strip(item['nickname'], style.STRIP_ALL)}\",\"{item['login']}\"\n"
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
 		return text
+
+
+	async def close(self, player, *args, **kwargs):
+		if self.player_data and player.login in self.player_data:
+			del self.player_data[player.login]
+		await self.hide(player_logins=[player.login])
+
+		self._response_future.set_result(None)
+		self._response_future.done()
+
+
+	async def wait_for_response(self):
+		return await self._response_future
 
 
 	async def _action_set_markdown(self, player, *args, **kwargs):

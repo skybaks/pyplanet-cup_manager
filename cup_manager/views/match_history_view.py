@@ -3,7 +3,6 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
-from .textbox_view import TextResultsView
 from ..app_types import ResultsViewParams
 
 logger = logging.getLogger(__name__)
@@ -15,6 +14,7 @@ class MatchHistoryView(ManualListView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Browse'
 
+	custom_results_view_buttons = []
 
 	def __init__(self, app, player, map_score_instance: ResultsViewParams=None) -> None:
 		super().__init__(self)
@@ -26,7 +26,6 @@ class MatchHistoryView(ManualListView):
 		self._persist_matches_page = 0
 		self._selected_matches = []
 		self._selected_matches_mode = False
-		self._text_results_view = TextResultsView(app, player)
 		if map_score_instance:
 			self._set_results_view_mode(map_score_instance)
 		else:
@@ -40,7 +39,7 @@ class MatchHistoryView(ManualListView):
 				{
 					'name': '#',
 					'index': 'index',
-					'sorting': True,
+					'sorting': False,
 					'searching': False,
 					'width': 10,
 					'type': 'label',
@@ -57,14 +56,14 @@ class MatchHistoryView(ManualListView):
 					'name': 'Login',
 					'index': 'login',
 					'sorting': False,
-					'searching': True,
+					'searching': False,
 					'width': 50,
 					'type': 'label',
 				},
 				{
 					'name': 'Score',
 					'index': 'score_str',
-					'sorting': True,
+					'sorting': False,
 					'searching': False,
 					'width': 20,
 					'type': 'label',
@@ -72,8 +71,8 @@ class MatchHistoryView(ManualListView):
 				{
 					'name': 'Country',
 					'index': 'country',
-					'sorting': True,
-					'searching': True,
+					'sorting': False,
+					'searching': False,
 					'width': 30,
 					'type': 'label',
 				},
@@ -126,11 +125,8 @@ class MatchHistoryView(ManualListView):
 				'width': 30,
 				'action': self._button_back,
 			})
-			buttons.append({
-				'title': 'Export',
-				'width': 30,
-				'action': self._button_export,
-			})
+			if self.custom_results_view_buttons:
+				buttons += self.custom_results_view_buttons
 		else:
 			if self._selected_matches:
 				buttons.append({
@@ -150,7 +146,6 @@ class MatchHistoryView(ManualListView):
 		items = []
 		if self._results_view_mode:
 			items = await self.app.get_data_scores(self._selected_matches if self._selected_matches_mode else self._results_view_params.map_start_time, self._results_view_params.mode_script)
-			await self._text_results_view.set_data(self.player, items)
 
 		if not items:
 			self._results_view_mode = False
@@ -165,6 +160,25 @@ class MatchHistoryView(ManualListView):
 
 	async def close(self, player, *args, **kwargs):
 		return await super().close(player, *args, **kwargs)
+
+
+	@classmethod
+	def add_button(cls, target, name, width):
+		cls.custom_results_view_buttons.append({
+			'action': target,
+			'title': name,
+			'width': width,
+		})
+
+
+	@classmethod
+	def remove_button(cls, target):
+		for index, button in enumerate(cls.custom_results_view_buttons):
+			if button['action'] == target:
+				del cls.custom_results_view_buttons[index]
+				break
+		else:
+			logger.error(f"Error in remove_button. target not found in custom_results_view_buttons: {str(target)}")
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):
@@ -187,10 +201,6 @@ class MatchHistoryView(ManualListView):
 		self._selected_matches_mode = False
 		self._set_match_view_mode()
 		await self.refresh(player=player)
-
-
-	async def _button_export(self, player, values, **kwargs):
-		await self._text_results_view.display(player=player.login)
 
 
 	async def _button_calculate_results(self, player, values, **kwargs):
