@@ -91,73 +91,74 @@ class CupManagerApp(AppConfig):
 		current_script = (await self.instance.mode_manager.get_current_script())
 		current_script_lower = current_script.lower()
 		# If in timeattack, use best race time as score. In all other cases use points.
-		new_score = None
+		new_scores = []
 		if 'timeattack' in current_script_lower or 'trackmania/tm_timeattack_online' in current_script_lower:
 			for player_score in player_scores:
 				if 'best_race_time' in player_score and player_score['best_race_time'] != -1:
-					new_score = GenericPlayerScore(
+					new_scores.append(GenericPlayerScore(
 						player_score['player'].login,
 						player_score['player'].nickname,
 						player_score['player'].flow.zone.country,
 						player_score['best_race_time']
-					)
+					))
 				elif 'bestracetime' in player_score and player_score['bestracetime'] != -1:
-					new_score = GenericPlayerScore(
+					new_scores.append(GenericPlayerScore(
 						player_score['login'],
 						player_score['name'],
 						None,	# TODO: Is this different? How and why?
 						player_score['bestracetime']
-					)
+					))
 		else:
 			for player_score in player_scores:
 				if 'map_points' in player_score and player_score['map_points'] != -1:
-					new_score = GenericPlayerScore(
+					new_scores.append(GenericPlayerScore(
 						player_score['player'].login,
 						player_score['player'].nickname,
 						player_score['player'].flow.zone.country,
 						player_score['map_points']
-					)
+					))
 				elif 'mappoints' in player_score and player_score['mappoints'] != -1:
-					new_score = GenericPlayerScore(
+					new_scores.append(GenericPlayerScore(
 						player_score['login'],
 						player_score['name'],
 						None,	# TODO: Is this different? How and why?
 						player_score['mappoints']
-					)
-		if new_score:
-			logger.info(new_score)
-			if self._match_start_time != 0:
-				rows = await PlayerScore.execute(
-					PlayerScore.select().where(
-						PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
-					)
-				)
-				if len(rows) > 0:
-					logger.info("Entry exists, updating score")
-					await PlayerScore.execute(
-						PlayerScore.update(
-							score=new_score.score,
-							nickname=new_score.nickname,
-							country=new_score.country,
-							mode_script=current_script,
-							map_name=self._match_map_name
-						).where(
+					))
+		if new_scores:
+			for new_score in new_scores:
+				logger.info(new_score)
+				if self._match_start_time != 0:
+					rows = await PlayerScore.execute(
+						PlayerScore.select().where(
 							PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
 						)
 					)
-				else:
-					logger.info("No entry exists, creating score")
-					await PlayerScore(
-						login=new_score.login,
-						nickname=new_score.nickname,
-						country=new_score.country,
-						score=new_score.score,
-						map_start_time=self._match_start_time,
-						mode_script=current_script,
-						map_name=self._match_map_name
-					).save()
-				await self._invalidate_view_cache_matches()
-				await self._invalidate_view_cache_scores(self._match_start_time)
+					if len(rows) > 0:
+						logger.info("Entry exists, updating score")
+						await PlayerScore.execute(
+							PlayerScore.update(
+								score=new_score.score,
+								nickname=new_score.nickname,
+								country=new_score.country,
+								mode_script=current_script,
+								map_name=self._match_map_name
+							).where(
+								PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
+							)
+						)
+					else:
+						logger.info("No entry exists, creating score")
+						await PlayerScore(
+							login=new_score.login,
+							nickname=new_score.nickname,
+							country=new_score.country,
+							score=new_score.score,
+							map_start_time=self._match_start_time,
+							mode_script=current_script,
+							map_name=self._match_map_name
+						).save()
+					await self._invalidate_view_cache_matches()
+					await self._invalidate_view_cache_scores(self._match_start_time)
 
 
 	async def _handle_map_update(self, section: str):
