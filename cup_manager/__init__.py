@@ -263,7 +263,13 @@ class CupManagerApp(AppConfig):
 			PlayerScore.login,
 			fn.SUM(PlayerScore.score),
 			PlayerScore.country
-		).where(PlayerScore.map_start_time.in_(lookup_matches)).group_by(PlayerScore.login).order_by(order_by_arg))
+		).where(
+			PlayerScore.map_start_time.in_(lookup_matches)
+		).group_by(
+			PlayerScore.nickname,
+			PlayerScore.login,
+			PlayerScore.country
+		).order_by(order_by_arg))
 
 		index = 1
 		score_data = []
