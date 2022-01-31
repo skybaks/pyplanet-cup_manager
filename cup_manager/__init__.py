@@ -32,7 +32,7 @@ class CupManagerApp(AppConfig):
 		self._setting_match_history_amount = Setting(
 			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
 			description='Set this number to the number of previous matches you want to save in the database.',
-			default=20
+			default=100
 		)
 
 
@@ -253,28 +253,30 @@ class CupManagerApp(AppConfig):
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
 
-		order_by_arg = fn.SUM(PlayerScore.score).desc()
-		score_is_time = False
-		if 'timeattack'in mode_script.lower():
-			order_by_arg = fn.SUM(PlayerScore.score).asc()
-			score_is_time = True
-
 		map_scores_query = await PlayerScore.execute(PlayerScore.select(
 			PlayerScore.nickname,
 			PlayerScore.login,
-			fn.SUM(PlayerScore.score),
+			PlayerScore.score,
 			PlayerScore.country
 		).where(
 			PlayerScore.map_start_time.in_(lookup_matches)
-		).group_by(
-			PlayerScore.nickname,
-			PlayerScore.login,
-			PlayerScore.country
-		).order_by(order_by_arg))
+		))
+
+		score_by_login = {}
+		for player_score in map_scores_query:
+			if player_score.login not in score_by_login:
+				score_by_login[player_score.login] = { 'score': 0, 'nickname': player_score.nickname, 'country': player_score.country }
+			score_by_login[player_score.login]['score'] += player_score.score
+		scores = []
+		for login, score_data in score_by_login.items():
+			scores.append(GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score']))
+
+		score_is_time = True if 'timeattack'in mode_script.lower() else False
+		scores = sorted(scores, key=lambda x: x.score, reverse=not score_is_time)
 
 		index = 1
 		score_data = []
-		for player_score in map_scores_query:
+		for player_score in scores:
 			score_data.append({
 				'index': index,
 				'nickname': player_score.nickname,
