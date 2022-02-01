@@ -77,8 +77,10 @@ class CupManagerApp(AppConfig):
 
 
 	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
-		# TODO: Implement SM score handling
-		logger.info("called _sm_signals_scores w/ section: \"" + section + "\". Not yet implemented.")
+		if section == 'PreEndRound':
+			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
+			return
+		await self._handle_score_update(players)
 
 
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
@@ -100,14 +102,14 @@ class CupManagerApp(AppConfig):
 					new_scores.append(GenericPlayerScore(
 						player_score['player'].login,
 						player_score['player'].nickname,
-						player_score['player'].flow.zone.country,
+						player_score['player'].flow.zone.country,	# TODO: This throws an exception for bots
 						player_score['best_race_time']
 					))
 				elif 'bestracetime' in player_score and player_score['bestracetime'] != -1:
 					new_scores.append(GenericPlayerScore(
 						player_score['login'],
 						player_score['name'],
-						None,	# TODO: Is this different? How and why?
+						'None',	# TODO: Is this different? How and why?
 						player_score['bestracetime']
 					))
 		else:
@@ -116,14 +118,14 @@ class CupManagerApp(AppConfig):
 					new_scores.append(GenericPlayerScore(
 						player_score['player'].login,
 						player_score['player'].nickname,
-						player_score['player'].flow.zone.country,
+						player_score['player'].flow.zone.country,	# TODO: This throws an exception for bots
 						player_score['map_points']
 					))
 				elif 'mappoints' in player_score and player_score['mappoints'] != -1:
 					new_scores.append(GenericPlayerScore(
 						player_score['login'],
 						player_score['name'],
-						None,	# TODO: Is this different? How and why?
+						'None',	# TODO: Is this different? How and why?
 						player_score['mappoints']
 					))
 		if new_scores:
