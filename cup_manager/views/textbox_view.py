@@ -84,7 +84,7 @@ class TextResultsView(TextboxView):
 
 	title = 'Export Results'
 	icon_style = 'Icons128x128_1'
-	icon_substyle = 'Save'
+	icon_substyle = 'NewTrack'
 	_export_format = ExportFormat.MARKDOWN
 
 
