@@ -13,6 +13,8 @@ class TextboxView(TemplateView):
 	template_name = 'cup_manager/textbox.xml'
 
 	title = 'Textbox'
+	icon_style = None
+	icon_substyle = None
 
 	def __init__(self, app, player):
 		super().__init__(self)
@@ -36,6 +38,8 @@ class TextboxView(TemplateView):
 			right -= button['width'] + 1.5
 
 		context['title'] = self.title
+		context['icon_style'] = self.icon_style
+		context['icon_substyle'] = self.icon_substyle
 		context['text_body'] = await self.get_text_data()
 		context['buttons'] = buttons
 		return context
@@ -79,6 +83,8 @@ class TextResultsView(TextboxView):
 		CSV = 2
 
 	title = 'Export Results'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'Save'
 	_export_format = ExportFormat.MARKDOWN
 
 
@@ -92,13 +98,15 @@ class TextResultsView(TextboxView):
 		buttons = [
 			{
 				'title': 'Markdown',
-				'width': 20,
-				'action': self._action_set_markdown
+				'width': 25,
+				'action': self._action_set_markdown,
+				'selected': self._export_format == self.ExportFormat.MARKDOWN,
 			},
 			{
 				'title': 'CSV',
-				'width': 20,
-				'action': self._action_set_csv
+				'width': 25,
+				'action': self._action_set_csv,
+				'selected': self._export_format == self.ExportFormat.CSV,
 			}
 		]
 		return buttons

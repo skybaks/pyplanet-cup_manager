@@ -12,7 +12,7 @@ class MatchHistoryView(ManualListView):
 
 	title = 'Match History'
 	icon_style = 'Icons128x128_1'
-	icon_substyle = 'Browse'
+	icon_substyle = None
 
 	custom_results_view_buttons = []
 
@@ -222,6 +222,7 @@ class MatchHistoryView(ManualListView):
 
 
 	def _set_match_view_mode(self):
+		self.icon_substyle = 'Statistics'
 		self._results_view_params = None
 		self._results_view_mode = False
 		if self._persist_matches_page != 0:
@@ -231,6 +232,7 @@ class MatchHistoryView(ManualListView):
 
 
 	def _set_results_view_mode(self, results_view_params: ResultsViewParams):
+		self.icon_substyle = 'Rankings'
 		self._results_view_params = results_view_params
 		self._results_view_mode = True
 		self._persist_matches_page = self.page
