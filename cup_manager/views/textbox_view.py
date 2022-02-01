@@ -22,6 +22,7 @@ class TextboxView(TemplateView):
 		self.id = 'cup_manager__textbox_textboxview'
 
 		self.subscribe('textbox_button_close', self.close)
+		self.subscribe('textbox_copy_success', self.copy_success)
 
 
 	async def get_context_data(self):
@@ -58,8 +59,8 @@ class TextboxView(TemplateView):
 				action_method(player, values, view=self)
 
 
-	async def close(self, player, *args, **kwargs):
-		await self.hide(player_logins=[player.login])
+	async def copy_success(self, player, *args, **kwargs):
+		await self.app.instance.chat(f'Copied to clipboard', player=player)
 
 
 	async def get_buttons(self) -> list:
@@ -81,14 +82,10 @@ class TextResultsView(TextboxView):
 	_export_format = ExportFormat.MARKDOWN
 
 
-	def __init__(self, app, player):
+	def __init__(self, app, player, input_data):
 		super().__init__(app, player)
-		self._instance_data = []
-		self._response_future = Future()
-
-
-	async def set_data(self, player, input_data: list) -> None:
 		self._instance_data = input_data
+		self._response_future = Future()
 
 
 	async def get_buttons(self) -> list:
@@ -112,11 +109,11 @@ class TextResultsView(TextboxView):
 		if self._instance_data:
 			if self._export_format == self.ExportFormat.MARKDOWN:
 				indexes = [str(item['index']) for item in self._instance_data]
-				scores = [str(item['score']) for item in self._instance_data]
+				scores = [str(item['score_str']) for item in self._instance_data]
 				nicknames = [style.style_strip(item['nickname'], style.STRIP_ALL) for item in self._instance_data]
 
 				index_justify = min(4, len(max(indexes, key=len)))
-				score_justify = min(5, len(max(scores, key=len)))
+				score_justify = min(15, len(max(scores, key=len)))
 
 				text += "```\n"
 				for index, nickname, score in zip(indexes, nicknames, scores):
@@ -124,7 +121,7 @@ class TextResultsView(TextboxView):
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
 				for item in self._instance_data:
-					text += f"\"{item['index']}\",\"{item['score']}\",\"{style.style_strip(item['nickname'], style.STRIP_ALL)}\",\"{item['login']}\"\n"
+					text += f"\"{item['index']}\",\"{item['score_str']}\",\"{style.style_strip(item['nickname'], style.STRIP_ALL)}\",\"{item['login']}\",\"{item['country']}\"\n"
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
@@ -134,6 +131,8 @@ class TextResultsView(TextboxView):
 	async def close(self, player, *args, **kwargs):
 		if self.player_data and player.login in self.player_data:
 			del self.player_data[player.login]
+		if self._instance_data:
+			del self._instance_data
 		await self.hide(player_logins=[player.login])
 
 		self._response_future.set_result(None)
