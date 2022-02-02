@@ -134,7 +134,7 @@ class CupManagerApp(AppConfig):
 				if self._match_start_time != 0:
 					rows = await PlayerScore.execute(
 						PlayerScore.select().where(
-							PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
+							(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
 						)
 					)
 					if len(rows) > 0:
@@ -147,20 +147,22 @@ class CupManagerApp(AppConfig):
 								mode_script=current_script,
 								map_name=self._match_map_name
 							).where(
-								PlayerScore.login == new_score.login and PlayerScore.map_start_time == self._match_start_time
+								(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
 							)
 						)
 					else:
 						logger.info("No entry exists, creating score")
-						await PlayerScore(
-							login=new_score.login,
-							nickname=new_score.nickname,
-							country=new_score.country,
-							score=new_score.score,
-							map_start_time=self._match_start_time,
-							mode_script=current_script,
-							map_name=self._match_map_name
-						).save()
+						await PlayerScore.execute(
+							PlayerScore.insert(
+								login=new_score.login,
+								nickname=new_score.nickname,
+								country=new_score.country,
+								score=new_score.score,
+								map_start_time=self._match_start_time,
+								mode_script=current_script,
+								map_name=self._match_map_name
+							)
+						)
 					await self._invalidate_view_cache_matches()
 					await self._invalidate_view_cache_scores(self._match_start_time)
 
@@ -233,7 +235,7 @@ class CupManagerApp(AppConfig):
 	async def _button_export(self, player, values, **kwargs):
 		logger.info(f"Called _button_export {player.login}")
 		view = TextResultsView(self, player, kwargs['view'].data['objects'])
-		await view.display(player_logins=[player.login])
+		await view.display(player=player)
 		result = await view.wait_for_response()
 		logger.info(f"Destroy TextResultsView {player.login}")
 		await view.destroy()

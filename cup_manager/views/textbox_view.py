@@ -5,6 +5,7 @@ from enum import Enum
 
 from pyplanet.utils import style
 from pyplanet.views.template import TemplateView
+from pyplanet.apps.core.maniaplanet.models.player import Player
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,32 @@ class TextboxView(TemplateView):
 		return ''
 
 
+	async def refresh(self, player, *args, **kwargs):
+		await self.display(player=player)
+
+
+	async def display(self, player=None):
+		login = player.login if isinstance(player, Player) else player
+		if not player:
+			raise Exception('No player/login given to display textbox to')
+
+		player = player if isinstance(player, Player) else await self.manager.player_manager.get_player(login=login, lock=False)
+		other_list = player.attributes.get('cup_manager.views.textbox_displayed', None)
+		if other_list and isinstance(other_list, list):
+			other_manialink = self.manager.instance.ui_manager.get_manialink_by_id(other_list)
+			if isinstance(other_manialink, TextboxView):
+				await other_manialink.close(player)
+			player.attributes.set('cup_manager.views.textbox_displayed', self.id)
+		return await super().display(player_logins=[login])
+
+
+	async def close(self, player, *args, **kwargs):
+		if self.player_data and player.login in self.player_data:
+			del self.player_data[player.login]
+		await self.hide(player_logins=[player.login])
+		player.attributes.set('cup_manager.views.textbox_displayed', None)
+
+
 class TextResultsView(TextboxView):
 
 	class ExportFormat(Enum):
@@ -137,11 +164,9 @@ class TextResultsView(TextboxView):
 
 
 	async def close(self, player, *args, **kwargs):
-		if self.player_data and player.login in self.player_data:
-			del self.player_data[player.login]
+		await super().close(player, *args, **kwargs)
 		if self._instance_data:
 			del self._instance_data
-		await self.hide(player_logins=[player.login])
 
 		self._response_future.set_result(None)
 		self._response_future.done()
@@ -155,12 +180,12 @@ class TextResultsView(TextboxView):
 		logger.info("called _action_set_markdown")
 		if self._export_format != self.ExportFormat.MARKDOWN:
 			self._export_format = self.ExportFormat.MARKDOWN
-			await self.display(player=[self.player.login])
+			await self.refresh(player=player)
 
 
 	async def _action_set_csv(self, player, *args, **kwargs):
 		logger.info("called _action_set_csv")
 		if self._export_format != self.ExportFormat.CSV:
 			self._export_format = self.ExportFormat.CSV
-			await self.display(player=[self.player.login])
+			await self.refresh(player=player)
 
