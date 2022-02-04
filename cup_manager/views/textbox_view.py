@@ -1,4 +1,4 @@
-from asyncio import iscoroutinefunction, Future
+from asyncio import iscoroutinefunction
 import re
 import logging
 from enum import Enum
@@ -22,7 +22,6 @@ class TextboxView(TemplateView):
 		self.app = app
 		self.manager = app.context.ui
 		self.player = player
-		self.id = 'cup_manager__textbox_textboxview'
 
 		self.subscribe('textbox_button_close', self.close)
 		self.subscribe('textbox_copy_success', self.copy_success)
@@ -87,12 +86,12 @@ class TextboxView(TemplateView):
 			raise Exception('No player/login given to display textbox to')
 
 		player = player if isinstance(player, Player) else await self.manager.player_manager.get_player(login=login, lock=False)
-		other_list = player.attributes.get('cup_manager.views.textbox_displayed', None)
-		if other_list and isinstance(other_list, list):
-			other_manialink = self.manager.instance.ui_manager.get_manialink_by_id(other_list)
+		other_view = player.attributes.get('cup_manager.views.textbox_displayed', None)
+		if other_view and isinstance(other_view, str):
+			other_manialink = self.manager.instance.ui_manager.get_manialink_by_id(other_view)
 			if isinstance(other_manialink, TextboxView):
 				await other_manialink.close(player)
-			player.attributes.set('cup_manager.views.textbox_displayed', self.id)
+		player.attributes.set('cup_manager.views.textbox_displayed', self.id)
 		return await super().display(player_logins=[login])
 
 
@@ -118,7 +117,6 @@ class TextResultsView(TextboxView):
 	def __init__(self, app, player, input_data):
 		super().__init__(app, player)
 		self._instance_data = input_data
-		self._response_future = Future()
 
 
 	async def get_buttons(self) -> list:
@@ -165,15 +163,6 @@ class TextResultsView(TextboxView):
 
 	async def close(self, player, *args, **kwargs):
 		await super().close(player, *args, **kwargs)
-		if self._instance_data:
-			del self._instance_data
-
-		self._response_future.set_result(None)
-		self._response_future.done()
-
-
-	async def wait_for_response(self):
-		return await self._response_future
 
 
 	async def _action_set_markdown(self, player, *args, **kwargs):

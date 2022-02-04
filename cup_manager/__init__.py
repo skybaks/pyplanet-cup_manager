@@ -236,9 +236,6 @@ class CupManagerApp(AppConfig):
 		logger.info(f"Called _button_export {player.login}")
 		view = TextResultsView(self, player, kwargs['view'].data['objects'])
 		await view.display(player=player)
-		result = await view.wait_for_response()
-		logger.info(f"Destroy TextResultsView {player.login}")
-		await view.destroy()
 
 
 	async def get_data_matches(self) -> list:
