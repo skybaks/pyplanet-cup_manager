@@ -179,14 +179,14 @@ class TextResultsView(TextboxView):
 
 
 	async def _action_set_markdown(self, player, *args, **kwargs):
-		logger.info("called _action_set_markdown")
+		logger.debug("called _action_set_markdown")
 		if self._export_format != self.ExportFormat.MARKDOWN:
 			self._export_format = self.ExportFormat.MARKDOWN
 			await self.refresh(player=player)
 
 
 	async def _action_set_csv(self, player, *args, **kwargs):
-		logger.info("called _action_set_csv")
+		logger.debug("called _action_set_csv")
 		if self._export_format != self.ExportFormat.CSV:
 			self._export_format = self.ExportFormat.CSV
 			await self.refresh(player=player)

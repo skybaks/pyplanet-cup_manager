@@ -198,14 +198,14 @@ class MatchHistoryView(ManualListView):
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):
-		logger.info("called _action_view_match")
+		logger.debug("called _action_view_match")
 		self._selected_matches_mode = False
 		self._set_results_view_mode(ResultsViewParams(instance['map_name'], instance['map_start_time'], instance['mode_script']))
 		await self.refresh(player=player)
 
 
 	async def _action_match_select(self, player, values, instance, **kwargs):
-		logger.info("called _action_match_select")
+		logger.debug("called _action_match_select")
 		if instance['map_start_time'] in self._selected_matches:
 			self._selected_matches.remove(instance['map_start_time'])
 		else:

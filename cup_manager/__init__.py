@@ -173,7 +173,7 @@ class CupManagerApp(AppConfig):
 			await self._prune_match_history()
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
-		logger.info(section)
+		logger.debug(section)
 
 
 	async def _prune_match_history(self):
@@ -187,14 +187,14 @@ class CupManagerApp(AppConfig):
 			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
 			await self._invalidate_view_cache_scores(oldest_time)
 			map_times.pop(0)
-			logger.info('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
+			logger.debug('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
 			match_history_pruned = True
 		if match_history_pruned:
 			await self._invalidate_view_cache_matches()
 
 
 	async def _command_matches(self, player, data, **kwargs):
-		logger.info("Called the command: _command_matches")
+		logger.debug("Called the command: _command_matches")
 		if await self.get_data_matches():
 			view = MatchHistoryView(self, player)
 			await view.display(player=player.login)
@@ -203,7 +203,7 @@ class CupManagerApp(AppConfig):
 
 
 	async def _command_current(self, player, data, **kwargs):
-		logger.info("Called the command: _command_current")
+		logger.debug("Called the command: _command_current")
 		match_data = await self.get_data_matches()
 		current_match = None
 		for match in match_data:
@@ -211,7 +211,7 @@ class CupManagerApp(AppConfig):
 				current_match = ResultsViewParams(match['map_name'], match['map_start_time'], match['mode_script'])
 				break
 		else:
-			logger.info("Current match data not found.")
+			logger.error("Current match data not found.")
 			await self.instance.chat('$i$f00No scores found for current match.', player)
 			return
 		view = MatchHistoryView(self, player, current_match)
@@ -219,12 +219,12 @@ class CupManagerApp(AppConfig):
 
 
 	async def _invalidate_view_cache_matches(self):
-		logger.info("_invalidate_view_cache_matches")
+		logger.debug("_invalidate_view_cache_matches")
 		self._view_cache_matches = []
 
 
 	async def _invalidate_view_cache_scores(self, map_start_time: int=0):
-		logger.info("_invalidate_view_cache_scores: " + str(map_start_time))
+		logger.debug("_invalidate_view_cache_scores: " + str(map_start_time))
 		if map_start_time == 0:
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
@@ -232,7 +232,7 @@ class CupManagerApp(AppConfig):
 
 
 	async def _button_export(self, player, values, **kwargs):
-		logger.info(f"Called _button_export {player.login}")
+		logger.debug(f"Called _button_export {player.login}")
 		view = TextResultsView(self, player, kwargs['view'].data['objects'], kwargs['view'].results_view_show_score2)
 		await view.display(player=player)
 
