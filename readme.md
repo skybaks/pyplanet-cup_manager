@@ -12,14 +12,14 @@ This goal of this plugin is to automate or simplify the actions needed to manage
 Supported games and modes:
 
 **TM Maniaplanet**
-* Timeattack
-* Rounds
-* Laps - *Planned, In Work*
+* Timeattack - *Implemented, needs testing*
+* Rounds - *Implemented, undergoing testing*
+* Laps - *Implemented, needs testing*
 
 **TM 2020**
-* Timeattack
-* Rounds
-* Laps - *Planned, In Work*
+* Timeattack - *Implemented, needs testing*
+* Rounds - *Implemented, needs testing*
+* Laps - *Implemented, needs testing*
 
 **Shootmania**
-* Melee
+* Melee - *Implemented, needs testing*
