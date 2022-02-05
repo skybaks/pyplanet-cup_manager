@@ -51,8 +51,6 @@ class CupManagerApp(AppConfig):
 		await self.instance.command_manager.register(
 			Command(command='matches', aliases=['m'], namespace=self._namespace, target=self._command_matches,
 				description='Display saved match history.'),
-			Command(command='current', aliases=['c'], namespace=self._namespace, target=self._command_current,
-				description='Display scores of current map.'),
 		)
 
 		MatchHistoryView.add_button(self._button_export, 'Export', 30)
@@ -61,7 +59,10 @@ class CupManagerApp(AppConfig):
 
 		scores = None
 		try:
-			scores = await self.instance.gbx('Trackmania.GetScores')
+			if self.instance.game.game == 'sm':
+				scores = await self.instance.gbx('Shootmania.GetScores')
+			else:
+				scores = await self.instance.gbx('Trackmania.GetScores')
 		except:
 			pass
 

@@ -7,4 +7,19 @@ This goal of this plugin is to automate or simplify the actions needed to manage
 | Command | Shorthand | Description |
 | --- | --- | --- |
 | `/cup matches` | `/cup m` | Display current saved matches. Select a map name from this display to view the scores or use the checkbox to select multiple maps and view the combined score across them. |
-| `/cup current` | `/cup c` | Display the results of the current map. |
+
+
+Supported games and modes:
+
+**TM Maniaplanet**
+* Timeattack
+* Rounds
+* Laps - *Planned, In Work*
+
+**TM 2020**
+* Timeattack
+* Rounds
+* Laps - *Planned, In Work*
+
+**Shootmania**
+* Melee
