@@ -154,9 +154,9 @@ class TextResultsView(TextboxView):
 				text += "```\n"
 				for index, nickname, score, score2 in zip(indexes, nicknames, scores, score2s):
 					text += str(index.rjust(index_justify)) + '  '
-					text += str(score.rjust(score_justify)) + '  '
 					if self._show_score2:
 						text += str(score2.rjust(score2_justify)) + '  '
+					text += str(score.rjust(score_justify)) + '  '
 					text += str(nickname) + '\n'
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
