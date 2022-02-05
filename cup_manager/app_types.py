@@ -19,13 +19,15 @@ class GenericPlayerScore:
 	nickname = ''
 	country = ''
 	score = 0
+	score2 = 0
 
-	def __init__(self, login, nickname, country, score) -> None:
+	def __init__(self, login, nickname, country, score, score2=0) -> None:
 		self.login = login
 		self.nickname = nickname
 		self.country = country
 		self.score = score
+		self.score2 = score2
 
 	def __repr__(self) -> str:
-		return f"<GenericPlayerScore login:{self.login} nickname:{self.nickname} country:{self.country} score:{self.score}>"
+		return f"<GenericPlayerScore login:{self.login} nickname:{self.nickname} country:{self.country} score:{self.score} score2:{self.score2}>"
 

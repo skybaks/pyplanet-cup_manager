@@ -94,40 +94,33 @@ class CupManagerApp(AppConfig):
 	async def _handle_score_update(self, player_scores: list):
 		current_script = (await self.instance.mode_manager.get_current_script())
 		current_script_lower = current_script.lower()
-		# If in timeattack, use best race time as score. In all other cases use points.
 		new_scores = []
-		if 'timeattack' in current_script_lower or 'trackmania/tm_timeattack_online' in current_script_lower:
-			for player_score in player_scores:
-				if 'best_race_time' in player_score and player_score['best_race_time'] != -1:
-					new_scores.append(GenericPlayerScore(
-						player_score['player'].login,
-						player_score['player'].nickname,
-						player_score['player'].flow.zone.country,	# TODO: This throws an exception for bots
-						player_score['best_race_time']
-					))
-				elif 'bestracetime' in player_score and player_score['bestracetime'] != -1:
-					new_scores.append(GenericPlayerScore(
-						player_score['login'],
-						player_score['name'],
-						'None',	# TODO: Is this different? How and why?
-						player_score['bestracetime']
-					))
-		else:
-			for player_score in player_scores:
-				if 'map_points' in player_score and player_score['map_points'] != -1:
-					new_scores.append(GenericPlayerScore(
-						player_score['player'].login,
-						player_score['player'].nickname,
-						player_score['player'].flow.zone.country,	# TODO: This throws an exception for bots
-						player_score['map_points']
-					))
-				elif 'mappoints' in player_score and player_score['mappoints'] != -1:
-					new_scores.append(GenericPlayerScore(
-						player_score['login'],
-						player_score['name'],
-						'None',	# TODO: Is this different? How and why?
-						player_score['mappoints']
-					))
+		for player_score in player_scores:
+			try:
+				new_score_login = player_score['login'] if 'login' in player_score else player_score['player'].login
+				new_score_nick = player_score['name'] if 'name' in player_score else player_score['player'].nickname
+				new_score_country = player_score['player'].flow.zone.country if 'player' in player_score else None
+
+				if 'timeattack' in current_script_lower:
+					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
+					if new_score_score != -1:
+						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score))
+
+				elif 'laps' in current_script_lower:
+					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
+					new_score_score2 = len(player_score['best_race_checkpoints']) if 'best_race_checkpoints' in player_score else len(player_score['bestracecheckpoints'])
+					if new_score_score != -1:
+						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, new_score_score2))
+
+				else:
+					new_score_score = player_score['map_points'] if 'map_points' in player_score else player_score['mappoints']
+					if new_score_score != -1:
+						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score))
+
+			except Exception as e:
+				logger.error(f"Exception while recording scores for following player_score object: {str(player_score)}")
+				logger.error(str(e))
+
 		if new_scores:
 			for new_score in new_scores:
 				logger.info(new_score)
