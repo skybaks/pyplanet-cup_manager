@@ -136,6 +136,7 @@ class CupManagerApp(AppConfig):
 						await PlayerScore.execute(
 							PlayerScore.update(
 								score=new_score.score,
+								score2=new_score.score2,
 								nickname=new_score.nickname,
 								country=new_score.country,
 								mode_script=current_script,
@@ -152,6 +153,7 @@ class CupManagerApp(AppConfig):
 								nickname=new_score.nickname,
 								country=new_score.country,
 								score=new_score.score,
+								score2=new_score.score2,
 								map_start_time=self._match_start_time,
 								mode_script=current_script,
 								map_name=self._match_map_name
@@ -193,8 +195,11 @@ class CupManagerApp(AppConfig):
 
 	async def _command_matches(self, player, data, **kwargs):
 		logger.info("Called the command: _command_matches")
-		view = MatchHistoryView(self, player)
-		await view.display(player=player.login)
+		if await self.get_data_matches():
+			view = MatchHistoryView(self, player)
+			await view.display(player=player.login)
+		else:
+			await self.instance.chat('$i$f00No matches found.', player)
 
 
 	async def _command_current(self, player, data, **kwargs):
@@ -228,7 +233,7 @@ class CupManagerApp(AppConfig):
 
 	async def _button_export(self, player, values, **kwargs):
 		logger.info(f"Called _button_export {player.login}")
-		view = TextResultsView(self, player, kwargs['view'].data['objects'])
+		view = TextResultsView(self, player, kwargs['view'].data['objects'], kwargs['view'].results_view_show_score2)
 		await view.display(player=player)
 
 
@@ -263,6 +268,7 @@ class CupManagerApp(AppConfig):
 			PlayerScore.nickname,
 			PlayerScore.login,
 			PlayerScore.score,
+			PlayerScore.score2,
 			PlayerScore.country
 		).where(
 			PlayerScore.map_start_time.in_(lookup_matches)
@@ -271,14 +277,15 @@ class CupManagerApp(AppConfig):
 		score_by_login = {}
 		for player_score in map_scores_query:
 			if player_score.login not in score_by_login:
-				score_by_login[player_score.login] = { 'score': 0, 'nickname': player_score.nickname, 'country': player_score.country }
+				score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country }
 			score_by_login[player_score.login]['score'] += player_score.score
+			score_by_login[player_score.login]['score2'] += player_score.score2
 		scores = []
 		for login, score_data in score_by_login.items():
-			scores.append(GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score']))
+			scores.append(GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score'], score_data['score2']))
 
-		score_is_time = True if 'timeattack'in mode_script.lower() else False
-		scores = sorted(scores, key=lambda x: x.score, reverse=not score_is_time)
+		score_is_time = True if 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower() else False
+		scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=not score_is_time)
 
 		index = 1
 		score_data = []
@@ -289,6 +296,8 @@ class CupManagerApp(AppConfig):
 				'login': player_score.login,
 				'score': player_score.score,
 				'score_str': times.format_time(int(player_score.score)) if score_is_time else str(player_score.score),
+				'score2': player_score.score2,
+				'score2_str': str(player_score.score2),
 				'country': player_score.country,
 			})
 			index += 1

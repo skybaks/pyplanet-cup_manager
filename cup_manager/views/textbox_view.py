@@ -114,9 +114,10 @@ class TextResultsView(TextboxView):
 	_export_format = ExportFormat.MARKDOWN
 
 
-	def __init__(self, app, player, input_data):
+	def __init__(self, app, player, input_data, show_score2=False):
 		super().__init__(app, player)
 		self._instance_data = input_data
+		self._show_score2 = show_score2
 
 
 	async def get_buttons(self) -> list:
@@ -143,18 +144,30 @@ class TextResultsView(TextboxView):
 			if self._export_format == self.ExportFormat.MARKDOWN:
 				indexes = [str(item['index']) for item in self._instance_data]
 				scores = [str(item['score_str']) for item in self._instance_data]
+				score2s = [str(item['score2_str']) for item in self._instance_data]
 				nicknames = [style.style_strip(item['nickname'], style.STRIP_ALL) for item in self._instance_data]
 
 				index_justify = min(4, len(max(indexes, key=len)))
 				score_justify = min(15, len(max(scores, key=len)))
+				score2_justify = min(15, len(max(score2s, key=len)))
 
 				text += "```\n"
-				for index, nickname, score in zip(indexes, nicknames, scores):
-					text += f"{index.rjust(index_justify)}  {score.rjust(score_justify)}  {nickname}\n"
+				for index, nickname, score, score2 in zip(indexes, nicknames, scores, score2s):
+					text += str(index.rjust(index_justify)) + '  '
+					text += str(score.rjust(score_justify)) + '  '
+					if self._show_score2:
+						text += str(score2.rjust(score2_justify)) + '  '
+					text += str(nickname) + '\n'
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
 				for item in self._instance_data:
-					text += f"\"{item['index']}\",\"{item['score_str']}\",\"{style.style_strip(item['nickname'], style.STRIP_ALL)}\",\"{item['login']}\",\"{item['country']}\"\n"
+					text += str(item['index']) + ','
+					text += str(item['score_str']) + ','
+					if self._show_score2:
+						text += str(item['score2_str']) + ','
+					text += style.style_strip(item['nickname'], style.STRIP_ALL) + ','
+					text += str(item['login']) + ','
+					text += str(item['country']) + '\n'
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)

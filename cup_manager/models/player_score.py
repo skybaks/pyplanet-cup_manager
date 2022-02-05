@@ -23,6 +23,11 @@ class PlayerScore(TimedModel):
 	Score value for the player
 	"""
 
+	score2 = IntegerField(null=False)
+	"""
+	Additional score value for the player
+	"""
+
 	map_start_time = IntegerField(null=False, index=True)
 	"""
 	Server start time for a map. Identifies what match a score belongs to

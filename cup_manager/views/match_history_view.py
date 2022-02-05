@@ -21,6 +21,7 @@ class MatchHistoryView(ManualListView):
 		self.app = app
 		self.manager = app.context.ui
 		self.player = player
+		self.results_view_show_score2 = False
 		self._results_view_mode = False
 		self._results_view_params = None
 		self._persist_matches_page = 0
@@ -68,6 +69,21 @@ class MatchHistoryView(ManualListView):
 					'width': 20,
 					'type': 'label',
 				},
+			]
+
+			if self.results_view_show_score2:
+				fields.append(
+					{
+						'name': 'Score2',
+						'index': 'score2_str',
+						'sorting': False,
+						'searching': False,
+						'width': 20,
+						'type': 'label',
+					}
+				)
+
+			fields.append(
 				{
 					'name': 'Country',
 					'index': 'country',
@@ -76,7 +92,7 @@ class MatchHistoryView(ManualListView):
 					'width': 30,
 					'type': 'label',
 				},
-			]
+			)
 		else:
 			fields =[
 				{
@@ -233,6 +249,7 @@ class MatchHistoryView(ManualListView):
 
 	def _set_results_view_mode(self, results_view_params: ResultsViewParams):
 		self.icon_substyle = 'Rankings'
+		self.results_view_show_score2 = 'laps' in results_view_params.mode_script.lower()
 		self._results_view_params = results_view_params
 		self._results_view_mode = True
 		self._persist_matches_page = self.page
