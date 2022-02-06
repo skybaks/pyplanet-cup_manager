@@ -161,13 +161,13 @@ class TextResultsView(TextboxView):
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
 				for item in self._instance_data:
-					text += str(item['index']) + ','
-					text += str(item['score_str']) + ','
+					text += '"' + str(item['index']) + '",'
+					text += '"' + str(item['score_str']) + '",'
 					if self._show_score2:
-						text += str(item['score2_str']) + ','
-					text += style.style_strip(item['nickname'], style.STRIP_ALL) + ','
-					text += str(item['login']) + ','
-					text += str(item['country']) + '\n'
+						text += '"' + str(item['score2_str']) + '",'
+					text += '"' + style.style_strip(item['nickname'], style.STRIP_ALL) + '",'
+					text += '"' + str(item['login']) + '",'
+					text += '"' + str(item['country']) + '"\n'
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
