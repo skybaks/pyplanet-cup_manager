@@ -20,6 +20,7 @@ Commands for admins:
 ## Preset Setup types
 
 * rounds180 / smurfscup / sc
+* rounds240
 * rounds480 / mxlc
 * laps50 / hec
 * timeattack / ta

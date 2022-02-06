@@ -37,7 +37,7 @@ class SetupCupManager:
 						'S_FinishTimeout': 10,
 						'S_PointsLimit': 180,
 						'S_WarmUpNb': 1,
-						'S_WarmUpDuration': 600,
+						'S_WarmUpDuration': 60,
 					},
 				},
 			})
