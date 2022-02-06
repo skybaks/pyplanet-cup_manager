@@ -71,7 +71,7 @@ class SetupCupManager:
 						'S_FinishTimeout': 10,
 						'S_PointsLimit': 480,
 						'S_WarmUpNb': 1,
-						'S_WarmUpDuration': 600,
+						'S_WarmUpDuration': 900,
 						'S_PointsRepartition': ','.join(smurfs_repartition),
 						'S_TurboFinishTime': True,
 					},
