@@ -163,12 +163,13 @@ class ResultsCupManager:
 		if section == 'OnStart' or section == 'MapStart':
 			self._match_start_time = int(datetime.datetime.now().timestamp())
 			self._match_map_name = self.instance.map_manager.current_map.name
+
 		elif section == 'MapEnd':
 			ended_map_start_time = self._match_start_time
 			ended_map_map_name = self._match_map_name
 			self._match_start_time = 0
 			self._match_map_name = None
-			
+
 			await self._prune_match_history()
 			match_data = await self.get_data_matches()
 			for match in match_data:
@@ -178,6 +179,7 @@ class ResultsCupManager:
 					break
 			else:
 				await self.instance.chat(f'$i$fffNo records saved from map $<{ended_map_map_name}$>.')
+
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
 		logger.debug(section)
@@ -219,7 +221,7 @@ class ResultsCupManager:
 		if map_start_time == 0:
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
-			self._view_cache_scores[map_start_time] = []
+			del self._view_cache_scores[map_start_time]
 
 
 	async def _button_export(self, player, values, **kwargs):

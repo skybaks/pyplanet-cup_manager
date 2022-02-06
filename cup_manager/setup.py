@@ -38,13 +38,13 @@ class SetupCupManager:
 						'S_PointsLimit': 180,
 						'S_WarmUpNb': 1,
 						'S_WarmUpDuration': 60,
+						'S_PointsRepartition': ','.join(smurfs_repartition),
+						'S_TurboFinishTime': True,
 					},
 				},
 			})
 			if self.instance.game.game == 'tm':
 				presets['rounds180'].update({'commands': [ [ 'Trackmania.SetPointsRepartition' ] + smurfs_repartition, ]})
-			elif self.instance.game.game == 'tmnext':
-				presets['rounds180']['settings'].update({'S_PointsRepartition': ','.join(smurfs_repartition)})
 
 			presets.update({
 				'rounds240': {
@@ -55,30 +55,30 @@ class SetupCupManager:
 						'S_PointsLimit': 240,
 						'S_WarmUpNb': 1,
 						'S_WarmUpDuration': 600,
+						'S_PointsRepartition': ','.join(smurfs_repartition),
+						'S_TurboFinishTime': True,
 					},
 				},
 			})
 			if self.instance.game.game == 'tm':
 				presets['rounds240'].update({'commands': [ [ 'Trackmania.SetPointsRepartition' ] + smurfs_repartition, ]})
-			elif self.instance.game.game == 'tmnext':
-				presets['rounds240']['settings'].update({'S_PointsRepartition': ','.join(smurfs_repartition)})
 
 			presets.update({
 				'rounds480': {
-					'aliases': [ 'mxlc' ],
+					'aliases': [ 'mxlc', 'nac' ],
 					'script': 'Trackmania/TM_Rounds_Online.Script.txt' if self.instance.game.game == 'tmnext' else 'Rounds.Script.txt',
 					'settings': {
 						'S_FinishTimeout': 10,
 						'S_PointsLimit': 480,
 						'S_WarmUpNb': 1,
 						'S_WarmUpDuration': 600,
+						'S_PointsRepartition': ','.join(smurfs_repartition),
+						'S_TurboFinishTime': True,
 					},
 				},
 			})
 			if self.instance.game.game == 'tm':
 				presets['rounds480'].update({'commands': [ [ 'Trackmania.SetPointsRepartition' ] + smurfs_repartition, ]})
-			elif self.instance.game.game == 'tmnext':
-				presets['rounds480']['settings'].update({'S_PointsRepartition': ','.join(smurfs_repartition)})
 
 			presets.update({
 				'laps50': {
