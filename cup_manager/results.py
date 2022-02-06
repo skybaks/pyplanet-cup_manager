@@ -45,6 +45,8 @@ class ResultsCupManager:
 		await self.instance.command_manager.register(
 			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
 				description='Display saved match history.'),
+			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
+				admin=True, description='Display saved match history.'),
 		)
 
 		MatchHistoryView.add_button(self._button_export, 'Export', 30)
