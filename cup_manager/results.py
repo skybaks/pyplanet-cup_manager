@@ -164,9 +164,20 @@ class ResultsCupManager:
 			self._match_start_time = int(datetime.datetime.now().timestamp())
 			self._match_map_name = self.instance.map_manager.current_map.name
 		elif section == 'MapEnd':
+			ended_map_start_time = self._match_start_time
+			ended_map_map_name = self._match_map_name
 			self._match_start_time = 0
 			self._match_map_name = None
+			
 			await self._prune_match_history()
+			match_data = await self.get_data_matches()
+			for match in match_data:
+				if match['map_start_time'] == ended_map_start_time:
+					score_data = await self.get_data_scores(match['map_start_time'], match['mode_script'])
+					await self.instance.chat(f'$i$fffSaved {str(len(score_data))} record(s) from map $<{ended_map_map_name}$>.')
+					break
+			else:
+				await self.instance.chat(f'$i$fffNo records saved from map $<{ended_map_map_name}$>.')
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
 		logger.debug(section)
@@ -196,22 +207,6 @@ class ResultsCupManager:
 			await view.display(player=player.login)
 		else:
 			await self.instance.chat('$i$f00No matches found.', player)
-
-
-	async def _command_current(self, player, data, **kwargs):
-		logger.debug("Called the command: _command_current")
-		match_data = await self.get_data_matches()
-		current_match = None
-		for match in match_data:
-			if match['map_start_time'] == self._match_start_time:
-				current_match = ResultsViewParams(match['map_name'], match['map_start_time'], match['mode_script'])
-				break
-		else:
-			logger.error("Current match data not found.")
-			await self.instance.chat('$i$f00No scores found for current match.', player)
-			return
-		view = MatchHistoryView(self, player, current_match)
-		await view.display(player=player.login)
 
 
 	async def _invalidate_view_cache_matches(self):
