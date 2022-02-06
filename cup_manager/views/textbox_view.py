@@ -64,7 +64,7 @@ class TextboxView(TemplateView):
 
 
 	async def copy_success(self, player, *args, **kwargs):
-		await self.app.instance.chat(f'Copied to clipboard', player=player)
+		await self.app.instance.chat(f'Copied to clipboard', player)
 
 
 	async def get_buttons(self) -> list:
