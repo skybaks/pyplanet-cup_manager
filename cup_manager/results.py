@@ -224,10 +224,12 @@ class ResultsCupManager:
 			del self._view_cache_scores[map_start_time]
 
 
-	async def _button_export(self, player, values, **kwargs):
+	async def _button_export(self, player, values, view, **kwargs):
 		logger.debug(f"Called _button_export {player.login}")
-		view = TextResultsView(self, player, kwargs['view'].data['objects'], kwargs['view'].results_view_show_score2)
-		await view.display(player=player)
+		if view.scores_query:
+			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
+			text_view = TextResultsView(self, player, scores_data, view.results_view_show_score2)
+			await text_view.display(player=player)
 
 
 	async def get_data_matches(self) -> list:

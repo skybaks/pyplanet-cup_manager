@@ -22,8 +22,9 @@ class MatchHistoryView(ManualListView):
 		self.manager = app.context.ui
 		self.player = player
 		self.results_view_show_score2 = False
+		self.scores_query = None
+		self.results_view_params = None
 		self._results_view_mode = False
-		self._results_view_params = None
 		self._persist_matches_page = 0
 		self._selected_matches = []
 		self._selected_matches_mode = False
@@ -161,11 +162,13 @@ class MatchHistoryView(ManualListView):
 	async def get_data(self) -> list:
 		items = []
 		if self._results_view_mode:
-			items = await self.app.get_data_scores(self._selected_matches if self._selected_matches_mode else self._results_view_params.map_start_time, self._results_view_params.mode_script)
+			self.scores_query = self._selected_matches if self._selected_matches_mode else self.results_view_params.map_start_time
+			items = await self.app.get_data_scores(self.scores_query, self.results_view_params.mode_script)
 
 		if not items:
+			self.scores_query = None
+			self.results_view_params = None
 			self._results_view_mode = False
-			self._results_view_params = None
 			self._persist_matches_page = 0
 			self._set_match_view_mode()
 			items = await self.app.get_data_matches()
@@ -239,7 +242,7 @@ class MatchHistoryView(ManualListView):
 
 	def _set_match_view_mode(self):
 		self.icon_substyle = 'Statistics'
-		self._results_view_params = None
+		self.results_view_params = None
 		self._results_view_mode = False
 		if self._persist_matches_page != 0:
 			self.page = self._persist_matches_page
@@ -250,12 +253,12 @@ class MatchHistoryView(ManualListView):
 	def _set_results_view_mode(self, results_view_params: ResultsViewParams):
 		self.icon_substyle = 'Rankings'
 		self.results_view_show_score2 = 'laps' in results_view_params.mode_script.lower()
-		self._results_view_params = results_view_params
+		self.results_view_params = results_view_params
 		self._results_view_mode = True
 		self._persist_matches_page = self.page
 		self.page = 1
 		if self._selected_matches_mode:
 			self.title = 'Selected Matches Results'
 		else:
-			self.title = '$<' + self._results_view_params.map_name + '$> / ' + datetime.datetime.fromtimestamp(self._results_view_params.map_start_time).strftime("%c")
+			self.title = '$<' + self.results_view_params.map_name + '$> / ' + datetime.datetime.fromtimestamp(self.results_view_params.map_start_time).strftime("%c")
 
