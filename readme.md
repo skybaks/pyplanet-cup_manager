@@ -19,11 +19,15 @@ Commands for admins:
 
 ## Preset Setup types
 
+The following default presets are defined:
+
 * rounds180 / smurfscup / sc
 * rounds240
 * rounds480 / mxlc
 * laps50 / hec
 * timeattack / ta
+
+If you would like to define your own presets, copy the **local.py** file from the settings folder in this repository into your settings folder for pyplanet. Then modify or update it according to your needs.
 
 
 ## Supported games and modes
