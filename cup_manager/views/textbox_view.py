@@ -6,6 +6,7 @@ from enum import Enum
 from pyplanet.utils import style
 from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
+from pyplanet.apps.core.maniaplanet.models.map import Map
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,7 @@ class TextResultsView(TextboxView):
 	class ExportFormat(Enum):
 		MARKDOWN = 1
 		CSV = 2
+		DISCORD = 3
 
 	title = 'Export Results'
 	icon_style = 'Icons128x128_1'
@@ -133,7 +135,13 @@ class TextResultsView(TextboxView):
 				'width': 25,
 				'action': self._action_set_csv,
 				'selected': self._export_format == self.ExportFormat.CSV,
-			}
+			},
+			{
+				'title': 'Discord',
+				'width': 25,
+				'action': self._action_set_discord,
+				'selected': self._export_format == self.ExportFormat.DISCORD,
+			},
 		]
 		return buttons
 
@@ -168,6 +176,8 @@ class TextResultsView(TextboxView):
 					text += '"' + style.style_strip(item['nickname'], style.STRIP_ALL) + '",'
 					text += '"' + str(item['login']) + '",'
 					text += '"' + str(item['country']) + '"\n'
+			elif self._export_format == self.ExportFormat.DISCORD:
+				text = "TODO: Implement this format (:"
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
@@ -189,5 +199,12 @@ class TextResultsView(TextboxView):
 		logger.debug("called _action_set_csv")
 		if self._export_format != self.ExportFormat.CSV:
 			self._export_format = self.ExportFormat.CSV
+			await self.refresh(player=player)
+
+
+	async def _action_set_discord(self, player, *args, **kwargs):
+		logger.debug("called _action_set_discord")
+		if self._export_format != self.ExportFormat.DISCORD:
+			self._export_format = self.ExportFormat.DISCORD
 			await self.refresh(player=player)
 

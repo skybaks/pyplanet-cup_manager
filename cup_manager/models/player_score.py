@@ -3,6 +3,11 @@ from pyplanet.core.db import TimedModel
 
 
 class PlayerScore(TimedModel):
+	map_start_time = IntegerField(null=False, index=True)
+	"""
+	Server start time for a map. Identifies what match a score belongs to
+	"""
+
 	login = CharField(null=False, max_length=150, index=True)
 	"""
 	Player login who the score belongs to
@@ -28,23 +33,13 @@ class PlayerScore(TimedModel):
 	Additional score value for the player
 	"""
 
-	map_start_time = IntegerField(null=False, index=True)
+	team = IntegerField(null=False, index=True)
 	"""
-	Server start time for a map. Identifies what match a score belongs to
-	"""
-
-	mode_script = CharField(null=True, max_length=150, index=True)
-	"""
-	Name of the mode script this score was recorded in
-	"""
-
-	map_name = CharField(null=True, max_length=150)
-	"""
-	Name of the map this score was recorded on
+	Team number for the player
 	"""
 
 	class Meta:
-		db_table = 'cup_manager_player_score'
+		db_table = 'cup_manager_playerscore_v2'
 		indexes = (
-			(('login', 'map_start_time', 'mode_script'), True),
+			(('login', 'team', 'map_start_time'), True),
 		)
