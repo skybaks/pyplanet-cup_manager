@@ -108,24 +108,31 @@ class TextboxView(TemplateView):
 class TextResultsView(TextboxView):
 
 	class ExportFormat(Enum):
-		MARKDOWN = 1
-		CSV = 2
-		DISCORD = 3
+		DISCORD = 1
+		MARKDOWN = 2
+		CSV = 3
 
 	title = 'Export Results'
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'NewTrack'
-	_export_format = ExportFormat.MARKDOWN
+	_export_format = ExportFormat.DISCORD
 
 
-	def __init__(self, app, player, input_data, show_score2=False):
+	def __init__(self, app, player, input_data, match_data, show_score2=False):
 		super().__init__(app, player)
 		self._instance_data = input_data
+		self._instance_match_data = match_data
 		self._show_score2 = show_score2
 
 
 	async def get_buttons(self) -> list:
 		buttons = [
+			{
+				'title': 'Discord',
+				'width': 25,
+				'action': self._action_set_discord,
+				'selected': self._export_format == self.ExportFormat.DISCORD,
+			},
 			{
 				'title': 'Markdown',
 				'width': 25,
@@ -137,12 +144,6 @@ class TextResultsView(TextboxView):
 				'width': 25,
 				'action': self._action_set_csv,
 				'selected': self._export_format == self.ExportFormat.CSV,
-			},
-			{
-				'title': 'Discord',
-				'width': 25,
-				'action': self._action_set_discord,
-				'selected': self._export_format == self.ExportFormat.DISCORD,
 			},
 		]
 		return buttons
@@ -166,7 +167,7 @@ class TextResultsView(TextboxView):
 				if self._export_format == self.ExportFormat.DISCORD:
 					text += f'**$(var.cup_name)** - $(var.cup_edition) - {str(len(self._instance_data))} Players\n'
 
-					sorted_match_info_list = sorted(self._instance_data[0]['match_info'], key=lambda x: x["map_start_time"])
+					sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x["map_start_time"])
 					for match_info in sorted_match_info_list:
 						mx_id = match_info["mx_id"]
 						mx_base_url = ''
@@ -180,13 +181,13 @@ class TextResultsView(TextboxView):
 							text += f' <{mx_base_url}/s/tr/{mx_id}>'
 						text += '\n'
 
-					if len(nicknames) >= 1:
+					if len(self._instance_data) >= 1:
 						text += f':first_place: {country_codes.get_discord_flag(countries[0])} {nicknames[0]}\n'
-					if len(nicknames) >= 2:
+					if len(self._instance_data) >= 2:
 						text += f':second_place: {country_codes.get_discord_flag(countries[1])} {nicknames[1]}\n'
-					if len(nicknames) >= 3:
+					if len(self._instance_data) >= 3:
 						text += f':third_place: {country_codes.get_discord_flag(countries[2])} {nicknames[2]}\n'
-					if len(nicknames) >= 4:
+					if len(self._instance_data) >= 4:
 						text += f':four: {country_codes.get_discord_flag(countries[3])} {nicknames[3]}\n'
 					text += '\n'
 					text += 'Full results:\n'

@@ -254,7 +254,14 @@ class ResultsCupManager:
 		logger.debug(f"Called _button_export {player.login}")
 		if view.scores_query:
 			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
-			text_view = TextResultsView(self, player, scores_data, view.results_view_show_score2)
+
+			match_info = []
+			all_match_data = await self.get_data_matches()
+			for match_data_info in all_match_data:
+				if (isinstance(view.scores_query, int) and match_data_info['map_start_time'] == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info['map_start_time'] in view.scores_query):
+					match_info.append(match_data_info)
+
+			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2)
 			await text_view.display(player=player)
 
 
@@ -288,14 +295,6 @@ class ResultsCupManager:
 			lookup_matches.append(map_start_time)
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
-
-		match_info = []
-		match_data = await self.get_data_matches()
-		for match_time in lookup_matches:
-			for match_data_info in match_data:
-				if match_data_info['map_start_time'] == match_time:
-					match_info.append(match_data_info)
-					break
 
 		map_scores_query = await PlayerScore.execute(PlayerScore.select(
 			PlayerScore.login,
@@ -334,7 +333,6 @@ class ResultsCupManager:
 				'score_str': times.format_time(int(player_score.score)) if score_is_time else str(player_score.score),
 				'score2': player_score.score2,
 				'score2_str': str(player_score.score2),
-				'match_info': match_info,
 			})
 			index += 1
 
