@@ -8,6 +8,8 @@ from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
 from pyplanet.apps.core.maniaplanet.models.map import Map
 
+from ..utils import country_codes
+
 logger = logging.getLogger(__name__)
 
 class TextboxView(TemplateView):
@@ -155,13 +157,14 @@ class TextResultsView(TextboxView):
 				scores = [str(item['score_str']) for item in self._instance_data]
 				score2s = [str(item['score2_str']) for item in self._instance_data]
 				nicknames = [style.style_strip(item['nickname'], style.STRIP_ALL) for item in self._instance_data]
+				countries = [str(item['country']) for item in self._instance_data]
 
 				index_justify = min(4, len(max(indexes, key=len)))
 				score_justify = min(15, len(max(scores, key=len)))
 				score2_justify = min(15, len(max(score2s, key=len)))
 
 				if self._export_format == self.ExportFormat.DISCORD:
-					text += f'$(var.cup_title) - {str(len(self._instance_data))} Players\n'
+					text += f'**$(var.cup_name)** - $(var.cup_edition) - {str(len(self._instance_data))} Players\n'
 
 					sorted_match_info_list = sorted(self._instance_data[0]['match_info'], key=lambda x: x["map_start_time"])
 					for match_info in sorted_match_info_list:
@@ -177,15 +180,14 @@ class TextResultsView(TextboxView):
 							text += f' <{mx_base_url}/s/tr/{mx_id}>'
 						text += '\n'
 
-					# TODO: Country flags
 					if len(nicknames) >= 1:
-						text += f':first_place: {nicknames[0]}\n'
+						text += f':first_place: {country_codes.get_discord_flag(countries[0])} {nicknames[0]}\n'
 					if len(nicknames) >= 2:
-						text += f':second_place: {nicknames[1]}\n'
+						text += f':second_place: {country_codes.get_discord_flag(countries[1])} {nicknames[1]}\n'
 					if len(nicknames) >= 3:
-						text += f':third_place: {nicknames[2]}\n'
+						text += f':third_place: {country_codes.get_discord_flag(countries[2])} {nicknames[2]}\n'
 					if len(nicknames) >= 4:
-						text += f':four: {nicknames[3]}\n'
+						text += f':four: {country_codes.get_discord_flag(countries[3])} {nicknames[3]}\n'
 					text += '\n'
 					text += 'Full results:\n'
 					text += '\n'
