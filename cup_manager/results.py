@@ -289,6 +289,14 @@ class ResultsCupManager:
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
 
+		match_info = []
+		match_data = await self.get_data_matches()
+		for match_time in lookup_matches:
+			for match_data_info in match_data:
+				if match_data_info['map_start_time'] == match_time:
+					match_info.append(match_data_info)
+					break
+
 		map_scores_query = await PlayerScore.execute(PlayerScore.select(
 			PlayerScore.login,
 			PlayerScore.nickname,
@@ -319,13 +327,14 @@ class ResultsCupManager:
 		for player_score in scores:
 			score_data.append({
 				'index': index,
-				'nickname': player_score.nickname,
 				'login': player_score.login,
+				'nickname': player_score.nickname,
+				'country': player_score.country,
 				'score': player_score.score,
 				'score_str': times.format_time(int(player_score.score)) if score_is_time else str(player_score.score),
 				'score2': player_score.score2,
 				'score2_str': str(player_score.score2),
-				'country': player_score.country,
+				'match_info': match_info,
 			})
 			index += 1
 

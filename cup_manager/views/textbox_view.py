@@ -149,7 +149,8 @@ class TextResultsView(TextboxView):
 	async def get_text_data(self) -> str:
 		text = ''
 		if self._instance_data:
-			if self._export_format == self.ExportFormat.MARKDOWN:
+			if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
+
 				indexes = [str(item['index']) for item in self._instance_data]
 				scores = [str(item['score_str']) for item in self._instance_data]
 				score2s = [str(item['score2_str']) for item in self._instance_data]
@@ -158,6 +159,36 @@ class TextResultsView(TextboxView):
 				index_justify = min(4, len(max(indexes, key=len)))
 				score_justify = min(15, len(max(scores, key=len)))
 				score2_justify = min(15, len(max(score2s, key=len)))
+
+				if self._export_format == self.ExportFormat.DISCORD:
+					text += f'$(var.cup_title) - {str(len(self._instance_data))} Players\n'
+
+					sorted_match_info_list = sorted(self._instance_data[0]['match_info'], key=lambda x: x["map_start_time"])
+					for match_info in sorted_match_info_list:
+						mx_id = match_info["mx_id"]
+						mx_base_url = ''
+						if 'mx' in self.app.instance.apps.apps:
+							try:
+								mx_base_url = self.app.instance.apps.apps['mx'].api.base_url()
+							except:
+								logger.error(f'Error determining (T)MX base url')
+						text += f'*{match_info["mode_script"]}* on {style.style_strip(match_info["map_name"])}'
+						if mx_id and mx_base_url:
+							text += f' <{mx_base_url}/s/tr/{mx_id}>'
+						text += '\n'
+
+					# TODO: Country flags
+					if len(nicknames) >= 1:
+						text += f':first_place: {nicknames[0]}\n'
+					if len(nicknames) >= 2:
+						text += f':second_place: {nicknames[1]}\n'
+					if len(nicknames) >= 3:
+						text += f':third_place: {nicknames[2]}\n'
+					if len(nicknames) >= 4:
+						text += f':four: {nicknames[3]}\n'
+					text += '\n'
+					text += 'Full results:\n'
+					text += '\n'
 
 				text += "```\n"
 				for index, nickname, score, score2 in zip(indexes, nicknames, scores, score2s):
@@ -176,8 +207,6 @@ class TextResultsView(TextboxView):
 					text += '"' + style.style_strip(item['nickname'], style.STRIP_ALL) + '",'
 					text += '"' + str(item['login']) + '",'
 					text += '"' + str(item['country']) + '"\n'
-			elif self._export_format == self.ExportFormat.DISCORD:
-				text = "TODO: Implement this format (:"
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
