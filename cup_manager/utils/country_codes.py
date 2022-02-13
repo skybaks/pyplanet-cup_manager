@@ -2,6 +2,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+"""
+Source of Country name list: https://prod.trackmania.core.nadeo.online/zones/
+Postprocessed to find all entries which were children of children of "World".
+Then associated with a 2 letter code manually using an online list.
+"""
 CountryCodes = {
 	"Afghanistan": "AF",
 	"Albania": "AL",

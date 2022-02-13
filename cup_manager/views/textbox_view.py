@@ -4,8 +4,6 @@ import logging
 from enum import Enum
 
 from pyplanet.utils import style
-from pyplanet.apps.core.maniaplanet.models.player import Player
-from pyplanet.apps.core.maniaplanet.models.map import Map
 
 from ..utils import country_codes
 from .single_instance_view import SingleInstanceView
