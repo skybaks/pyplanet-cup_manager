@@ -4,15 +4,15 @@ import logging
 from enum import Enum
 
 from pyplanet.utils import style
-from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
 from pyplanet.apps.core.maniaplanet.models.map import Map
 
 from ..utils import country_codes
+from .single_instance_view import SingleInstanceView
 
 logger = logging.getLogger(__name__)
 
-class TextboxView(TemplateView):
+class TextboxView(SingleInstanceView):
 
 	template_name = 'cup_manager/textbox.xml'
 
@@ -21,9 +21,7 @@ class TextboxView(TemplateView):
 	icon_substyle = None
 
 	def __init__(self, app, player):
-		super().__init__(self)
-		self.app = app
-		self.manager = app.context.ui
+		super().__init__(app, 'cup_manager.views.textbox_displayed')
 		self.player = player
 
 		self.subscribe('textbox_button_close', self.close)
@@ -77,32 +75,6 @@ class TextboxView(TemplateView):
 
 	async def get_text_data(self) -> str:
 		return ''
-
-
-	async def refresh(self, player, *args, **kwargs):
-		await self.display(player=player)
-
-
-	async def display(self, player=None):
-		login = player.login if isinstance(player, Player) else player
-		if not player:
-			raise Exception('No player/login given to display textbox to')
-
-		player = player if isinstance(player, Player) else await self.manager.player_manager.get_player(login=login, lock=False)
-		other_view = player.attributes.get('cup_manager.views.textbox_displayed', None)
-		if other_view and isinstance(other_view, str):
-			other_manialink = self.manager.instance.ui_manager.get_manialink_by_id(other_view)
-			if isinstance(other_manialink, TextboxView):
-				await other_manialink.close(player)
-		player.attributes.set('cup_manager.views.textbox_displayed', self.id)
-		return await super().display(player_logins=[login])
-
-
-	async def close(self, player, *args, **kwargs):
-		if self.player_data and player.login in self.player_data:
-			del self.player_data[player.login]
-		await self.hide(player_logins=[player.login])
-		player.attributes.set('cup_manager.views.textbox_displayed', None)
 
 
 class TextResultsView(TextboxView):
