@@ -4,12 +4,15 @@ import logging
 from pyplanet.conf import settings
 from pyplanet.contrib.command import Command
 
+from .views import PresetsView
+
 logger = logging.getLogger(__name__)
 
 class SetupCupManager:
 	def __init__(self, app) -> None:
 		self.app = app
 		self.instance = app.instance
+		self.context = app.context
 
 
 	async def on_start(self) -> None:
@@ -17,7 +20,7 @@ class SetupCupManager:
 
 		await self.instance.command_manager.register(
 			Command(command='setup', aliases=['s'], namespace=self.app.namespace, target=self._command_setup,
-				admin=True, perms='cup:setup_cup', description='Setup match settings based on some common presets.').add_param('preset'),
+				admin=True, perms='cup:setup_cup', description='Setup match settings based on some common presets.').add_param('preset', required=False),
 		)
 
 
@@ -107,28 +110,32 @@ class SetupCupManager:
 
 
 	async def _command_setup(self, player, data, **kwargs) -> None:
-		cmd_preset = data.preset.lower()
-		presets = await self.get_presets()
-		selected_preset = None
-		for preset_key, preset_data in presets.items():
-			if cmd_preset == preset_key or cmd_preset in preset_data['aliases']:
-				selected_preset = preset_key
-				break
+		if data.preset:
+			cmd_preset = data.preset.lower()
+			presets = await self.get_presets()
+			selected_preset = None
+			for preset_key, preset_data in presets.items():
+				if cmd_preset == preset_key or cmd_preset in preset_data['aliases']:
+					selected_preset = preset_key
+					break
 
-		if selected_preset in presets:
-			preset_data = presets[selected_preset]
+			if selected_preset in presets:
+				preset_data = presets[selected_preset]
 
-			if 'script' in preset_data and self.instance.game.game in preset_data['script']:
-				await self.instance.mode_manager.set_next_script(preset_data['script'][self.instance.game.game])
+				if 'script' in preset_data and self.instance.game.game in preset_data['script']:
+					await self.instance.mode_manager.set_next_script(preset_data['script'][self.instance.game.game])
 
-			if 'settings' in preset_data:
-				await self.instance.mode_manager.update_next_settings(preset_data['settings'])
+				if 'settings' in preset_data:
+					await self.instance.mode_manager.update_next_settings(preset_data['settings'])
 
-			if 'commands' in preset_data:
-				for command in preset_data['commands']:
-					await self.instance.gbx.script(*command, encode_json=False, response_id=False)
+				if 'commands' in preset_data:
+					for command in preset_data['commands']:
+						await self.instance.gbx.script(*command, encode_json=False, response_id=False)
 
-			await self.app.instance.chat(f"$i$fffSet next script settings to preset '{selected_preset}'", player)
+				await self.app.instance.chat(f"$i$fffSet next script settings to preset '{selected_preset}'", player)
+			else:
+				await self.app.instance.chat(f"$i$f00Unknown preset name '{data.preset}'.\nAvailable presets are: {', '.join(presets.keys())}", player)
 		else:
-			await self.app.instance.chat(f"$i$f00Unknown preset name '{data.preset}'.\nAvailable presets are: {', '.join(presets.keys())}", player)
+			view = PresetsView(self)
+			await view.display(player=player)
 
