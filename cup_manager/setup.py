@@ -1,8 +1,10 @@
-from argparse import Namespace
 import logging
 
 from pyplanet.conf import settings
 from pyplanet.contrib.command import Command
+from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
+from pyplanet.apps.core.trackmania import callbacks as tm_signals
+
 
 from .views import PresetsView
 
@@ -16,6 +18,9 @@ class SetupCupManager:
 
 
 	async def on_start(self) -> None:
+		self.context.signals.listen(mp_signals.map.map_start, self.check_points_repartition)
+		self.context.signals.listen(mp_signals.flow.round_start, self.check_points_repartition)
+
 		await self.instance.permission_manager.register('setup_cup', 'Change match settings from the cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
 		await self.instance.command_manager.register(
@@ -139,3 +144,21 @@ class SetupCupManager:
 			view = PresetsView(self)
 			await view.display(player=player)
 
+
+	async def check_points_repartition(self, *args, **kwargs) -> None:
+		# Need to verify points repartition in the mode script backend is set
+		# to the values we wanted. This has been observed to be sometimes inconsistent.
+		current_script = (await self.instance.mode_manager.get_current_script()).lower()
+		if 'rounds' in current_script or 'team' in current_script or 'cup' in current_script:
+			script_current_settings = await self.instance.mode_manager.get_settings()
+
+			if 'S_PointsRepartition' in script_current_settings and script_current_settings['S_PointsRepartition']:
+				pointsrepartition_desired = [int(point) for point in script_current_settings['S_PointsRepartition'].split(',')]
+				getpointsrepartition_response = await self.instance.gbx.script('Trackmania.GetPointsRepartition', encode_json=False)
+
+				if 'pointsrepartition' in getpointsrepartition_response:
+					pointsrepartition_actual = getpointsrepartition_response['pointsrepartition']
+
+					if pointsrepartition_actual != pointsrepartition_desired:
+						logger.info('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
+						await self.instance.gbx.script(*(['Trackmania.SetPointsRepartition'] + [str(point) for point in pointsrepartition_desired]), encode_json=False, response_id=False)
