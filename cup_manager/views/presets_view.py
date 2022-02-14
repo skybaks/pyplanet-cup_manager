@@ -1,6 +1,7 @@
 import logging
 import math
 from pandas import DataFrame
+import re
 
 from .single_instance_view import SingleInstanceView
 
@@ -22,9 +23,9 @@ class PresetsView(SingleInstanceView):
 		self.setting_page = 1
 		self.setting_count = 0
 		self.num_settings_per_page = 11
-		# TODO: Remove this hardcoding
-		self.selected_preset_name = 'rounds_silly'
-		self.selected_preset_script = 'Rounds!!'
+		self.displayed_preset_data = []
+		self.selected_preset_name = ''
+		self.selected_preset_script = ''
 
 		self.subscribe('presets_button_close', self.close)
 		self.subscribe('presetlist_button_first', self._presetlist_first_page)
@@ -38,8 +39,20 @@ class PresetsView(SingleInstanceView):
 
 
 	async def handle_catch_all(self, player, action, values, **kwargs):
-		logger.info(f"called handle_catch_all for action '{action}'")
-		return await super().handle_catch_all(player, action, values, **kwargs)
+		if action.startswith('preset_list_body_'):
+			match = re.search("^preset_list_body_([0-9]+)", action)
+			if len(match.groups()) == 1:
+				try:
+					row = int(match.group(1))
+					if self.selected_preset_name != self.displayed_preset_data[row]['name']:
+						self.selected_preset_name = self.displayed_preset_data[row]['name']
+						self.selected_preset_script = self.displayed_preset_data[row]['script']
+						self.setting_page = 1
+						await self.refresh(player=player)
+				except Exception as e:
+					logger.warning(f'Got unexpected results from preset list item click: {str(e)}')
+		else:
+			logger.debug(f"Called handle_catch_all for action '{action}'")
 
 
 	async def get_context_data(self):
@@ -73,12 +86,14 @@ class PresetsView(SingleInstanceView):
 				preset_data.append({
 					'name': key,
 					'aliases': aliases_combined,
-					'script': script_name
+					'script': script_name,
+					'selected': key == self.selected_preset_name,
 				})
 		frame = DataFrame(preset_data)
 		self.preset_count = len(frame)
 		frame = await self.apply_pagination(frame, self.preset_page, self.num_presets_per_page)
-		return frame.to_dict('records')
+		self.displayed_preset_data = frame.to_dict('records')
+		return self.displayed_preset_data
 
 
 	async def get_setting_data(self):

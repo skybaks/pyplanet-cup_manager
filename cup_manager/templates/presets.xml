@@ -25,7 +25,16 @@
 
       {% for row in presets %}
       <frame pos="0 {{ loop.index0 * -5 }}">
-        <label pos="-53.9 -2.4" size="107.8 5" valign="center2" focusareacolor1="0000" focusareacolor2="fff2" action="{{ id }}__preset_list_body_{{ loop.index0 }}" />
+        <label pos="-53.9 -2.4" size="107.8 5" valign="center2" action="{{ id }}__preset_list_body_{{ loop.index0 }}"
+          {% if row.selected %}
+            focusareacolor1="aaa2"
+            focusareacolor2="fff2"
+          {% else %}
+            focusareacolor1="0000"
+            focusareacolor2="fff2"
+          {% endif %}
+        />
+
         <label pos="-53 -2.4" size="30 4.9" text="{{ row.name }}" textprefix="$fff" textsize="1.2" valign="center2"/>
         <label pos="-23 -2.4" size="30 4.9" text="{{ row.aliases }}" textprefix="$fff" textsize="1.2" valign="center2"/>
         <label pos="7 -2.4" size="46 4.9" text="{{ row.script }}" textprefix="$fff" textsize="1.2" valign="center2"/>
