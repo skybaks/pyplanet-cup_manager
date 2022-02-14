@@ -2,6 +2,7 @@ import logging
 import math
 from pandas import DataFrame
 import re
+from argparse import Namespace
 
 from .single_instance_view import SingleInstanceView
 
@@ -36,6 +37,7 @@ class PresetsView(SingleInstanceView):
 		self.subscribe('settinglist_button_prev', self._settinglist_prev_page)
 		self.subscribe('settinglist_button_next', self._settinglist_next_page)
 		self.subscribe('settinglist_button_last', self._settinglist_last_page)
+		self.subscribe('apply_selected_preset', self.apply_selected_preset)
 
 
 	async def handle_catch_all(self, player, action, values, **kwargs):
@@ -112,6 +114,12 @@ class PresetsView(SingleInstanceView):
 
 	async def apply_pagination(self, frame: DataFrame, page: int, num_per_page: int) -> DataFrame:
 		return frame[(page - 1) * num_per_page:page * num_per_page]
+
+
+	async def apply_selected_preset(self, player, *args, **kwargs):
+		if self.selected_preset_name:
+			await self.app.command_setup(player=player, data=Namespace(**{'preset': self.selected_preset_name}))
+			await self.close(player=player)
 
 
 	@property

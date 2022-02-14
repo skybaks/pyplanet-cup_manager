@@ -94,4 +94,10 @@
     <quad pos="21.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowLast" action="{{ id }}__settinglist_button_last" />
     <label pos="0 1.5" size="72 5" text="$fff$oPage {{ setting_page }} / {{ num_setting_pages }}" textsize="1.5" halign="center"/>
   </frame>
+
+  <label pos="36 -63" size="32 5" text="Apply" textprefix="$o$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="0005" focusareacolor2="0007"
+    {% if selected_preset_name %}
+      action="{{ id }}__apply_selected_preset"
+    {% endif %}
+  />
 </frame>
