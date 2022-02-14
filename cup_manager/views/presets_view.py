@@ -27,6 +27,14 @@ class PresetsView(SingleInstanceView):
 		self.selected_preset_script = 'Rounds!!'
 
 		self.subscribe('presets_button_close', self.close)
+		self.subscribe('presetlist_button_first', self._presetlist_first_page)
+		self.subscribe('presetlist_button_prev', self._presetlist_prev_page)
+		self.subscribe('presetlist_button_next', self._presetlist_next_page)
+		self.subscribe('presetlist_button_last', self._presetlist_last_page)
+		self.subscribe('settinglist_button_first', self._settinglist_first_page)
+		self.subscribe('settinglist_button_prev', self._settinglist_prev_page)
+		self.subscribe('settinglist_button_next', self._settinglist_next_page)
+		self.subscribe('settinglist_button_last', self._settinglist_last_page)
 
 
 	async def handle_catch_all(self, player, action, values, **kwargs):
@@ -99,4 +107,52 @@ class PresetsView(SingleInstanceView):
 	@property
 	def num_setting_pages(self):
 		return int(math.ceil(self.setting_count / self.num_settings_per_page))
+
+
+	async def _presetlist_first_page(self, player, *args, **kwargs):
+		if self.preset_page != 1:
+			self.preset_page = 1
+			await self.refresh(player=player)
+
+
+	async def _presetlist_prev_page(self, player, *args, **kwargs):
+		if self.preset_page - 1 > 0:
+			self.preset_page -= 1
+			await self.refresh(player=player)
+
+
+	async def _presetlist_next_page(self, player, *args, **kwargs):
+		if self.preset_page + 1 <= self.num_preset_pages:
+			self.preset_page += 1
+			await self.refresh(player=player)
+
+
+	async def _presetlist_last_page(self, player, *args, **kwargs):
+		if self.preset_page != self.num_preset_pages:
+			self.preset_page = self.num_preset_pages
+			await self.refresh(player=player)
+
+
+	async def _settinglist_first_page(self, player, *args, **kwargs):
+		if self.setting_page != 1:
+			self.setting_page = 1
+			await self.refresh(player=player)
+
+
+	async def _settinglist_prev_page(self, player, *args, **kwargs):
+		if self.setting_page - 1 > 0:
+			self.setting_page -= 1
+			await self.refresh(player=player)
+
+
+	async def _settinglist_next_page(self, player, *args, **kwargs):
+		if self.setting_page + 1 <= self.num_setting_pages:
+			self.setting_page += 1
+			await self.refresh(player=player)
+
+
+	async def _settinglist_last_page(self, player, *args, **kwargs):
+		if self.setting_page != self.num_setting_pages:
+			self.setting_page = self.num_setting_pages
+			await self.refresh(player=player)
 
