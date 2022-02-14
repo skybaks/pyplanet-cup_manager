@@ -24,7 +24,7 @@ class SetupCupManager:
 		await self.instance.permission_manager.register('setup_cup', 'Change match settings from the cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
 		await self.instance.command_manager.register(
-			Command(command='setup', aliases=['s'], namespace=self.app.namespace, target=self._command_setup,
+			Command(command='setup', aliases=['s'], namespace=self.app.namespace, target=self.command_setup,
 				admin=True, perms='cup:setup_cup', description='Setup match settings based on some common presets.').add_param('preset', required=False),
 		)
 
@@ -114,7 +114,7 @@ class SetupCupManager:
 		return presets
 
 
-	async def _command_setup(self, player, data, **kwargs) -> None:
+	async def command_setup(self, player, data, **kwargs) -> None:
 		if data.preset:
 			cmd_preset = data.preset.lower()
 			presets = await self.get_presets()

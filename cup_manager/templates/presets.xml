@@ -9,7 +9,7 @@
   <quad pos="46 59.5 0" size="7 7" z-index="1" style="Icons128x32_1" substyle="Close" action="{{ id }}__presets_button_close"/>
 
   <frame id="presets_list" pos="0 50.5">
-    <quad pos="0 0" size="108 40" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+    <quad pos="0 0" size="108 35.5" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
 
     <frame id="presets_list_header" pos="0 0">
       <quad pos="0 0" size="108 5.2" z-index="-20" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
@@ -25,7 +25,16 @@
 
       {% for row in presets %}
       <frame pos="0 {{ loop.index0 * -5 }}">
-        <label pos="-53.9 -2.4" size="107.8 5" valign="center2" focusareacolor1="0000" focusareacolor2="fff2" action="{{ id }}__preset_list_body_{{ loop.index0 }}" />
+        <label pos="-53.9 -2.4" size="107.8 5" valign="center2" action="{{ id }}__preset_list_body_{{ loop.index0 }}"
+          {% if row.selected %}
+            focusareacolor1="aaa2"
+            focusareacolor2="fff2"
+          {% else %}
+            focusareacolor1="0000"
+            focusareacolor2="fff2"
+          {% endif %}
+        />
+
         <label pos="-53 -2.4" size="30 4.9" text="{{ row.name }}" textprefix="$fff" textsize="1.2" valign="center2"/>
         <label pos="-23 -2.4" size="30 4.9" text="{{ row.aliases }}" textprefix="$fff" textsize="1.2" valign="center2"/>
         <label pos="7 -2.4" size="46 4.9" text="{{ row.script }}" textprefix="$fff" textsize="1.2" valign="center2"/>
@@ -35,25 +44,60 @@
     </frame>
   </frame>
 
-  <frame pos="0 6.5">
+  <frame pos="0 11">
     <quad pos="0 0" size="108 7" z-index="-49" halign="center" valign="center" style="Bgs1InRace" substyle="BgCardList"/>
     <quad pos="-55 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowFirst" action="{{ id }}__presetlist_button_first" />
-    <quad pos="-47 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowFastPrev" action="{{ id }}__presetlist_button_prev_10" />
-    <quad pos="-35 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowPrev" action="{{ id }}__presetlist_button_prev" />
-    <quad pos="25 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowNext" action="{{ id }}__presetlist_button_next" />
-    <quad pos="37 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowFastNext" action="{{ id }}__presetlist_button_next_10" />
+    <quad pos="-47 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowPrev" action="{{ id }}__presetlist_button_prev" />
+    <quad pos="37 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowNext" action="{{ id }}__presetlist_button_next" />
     <quad pos="45 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowLast" action="{{ id }}__presetlist_button_last" />
-    <label pos="0 1.5" size="72 5" text="$fff$oPage {{ preset_page }} / {{ preset_pages }}" textsize="1.5" halign="center"/>
+    <label pos="0 1.5" size="72 5" text="$fff$oPage {{ preset_page }} / {{ num_preset_pages }}" textsize="1.5" halign="center"/>
   </frame>
 
-  <frame pos="0 2.5">
-    <quad pos="0 0" size="108 68.5" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+  <frame id="selected_preset_info" pos="0 6">
+    <quad pos="0 0" size="108 13" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+    <label pos="-36.5 -3.4" size="17 5.9" text="Preset: " textprefix="$o$fff" textsize="1.7" valign="center2" halign="right" />
+    <label pos="-36.5 -3.4" size="89 5.9" text="{{ selected_preset_name }}" textprefix="$fff" textsize="1.7" valign="center2" />
+    <label pos="-36.5 -9.4" size="17 5.9" text="Script: " textprefix="$o$fff" textsize="1.7" valign="center2"  halign="right" />
+    <label pos="-36.5 -9.4" size="89 5.9" text="{{ selected_preset_script }}" textprefix="$fff" textsize="1.7" valign="center2" />
+  </frame>
 
-    <frame pos="-27.5 -64">
-      <quad pos="0 0" size="53 7" z-index="-49" halign="center" valign="center" style="Bgs1InRace" substyle="BgCardList"/>
-      <quad pos="-26.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowPrev" action="{{ id }}__settinglist_button_prev" />
-      <quad pos="16.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowNext" action="{{ id }}__settinglist_button_next" />
-      <label pos="0 1.5" size="72 5" text="$fff$oPage {{ settingpage }} / {{ settingpages }}" textsize="1.5" halign="center"/>
+  <frame id="settings_list" pos="0 -8">
+    <quad pos="0 0" size="108 51" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+    <frame id="settings_list_header" pos="0 0">
+      <quad pos="0 0" size="108 5.2" z-index="-20" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+      <frame pos="0.1 0">
+        <label pos="-53 -2.4" size="30 4.9" text="Setting" textprefix="$o$fff" textsize="1.3" valign="center2"/>
+        <label pos="-23 -2.4" size="75 4.9" text="Value" textprefix="$o$fff" textsize="1.3" valign="center2"/>
+      </frame>
     </frame>
+
+    <frame id="settings_list_body" pos="0 -5.5">
+
+      {% for row in settings %}
+      <frame pos="0 {{ loop.index0 * -4.1 }}">
+        <label pos="-53 -1.9" size="30 3.9" text="{{ row.name }}" textprefix="$fff" textsize="0.9" valign="center2"/>
+        <label pos="-23 -1.9" size="75 3.9" text="{{ row.value }}" textprefix="$fff" textsize="0.9" valign="center2"/>
+      </frame>
+      {% endfor %}
+
+    </frame>
+
   </frame>
+
+  <frame pos="-22.5 -63">
+    <quad pos="0 0" size="63 7" z-index="-49" halign="center" valign="center" style="Bgs1InRace" substyle="BgCardList"/>
+    <quad pos="-31.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowFirst" action="{{ id }}__settinglist_button_first" />
+    <quad pos="-23.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowPrev" action="{{ id }}__settinglist_button_prev" />
+    <quad pos="13.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowNext" action="{{ id }}__settinglist_button_next" />
+    <quad pos="21.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowLast" action="{{ id }}__settinglist_button_last" />
+    <label pos="0 1.5" size="72 5" text="$fff$oPage {{ setting_page }} / {{ num_setting_pages }}" textsize="1.5" halign="center"/>
+  </frame>
+
+  <label pos="36 -63" size="32 5" text="Apply" textprefix="$o$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="0005" focusareacolor2="0007"
+    {% if selected_preset_name %}
+      action="{{ id }}__apply_selected_preset"
+    {% endif %}
+  />
 </frame>

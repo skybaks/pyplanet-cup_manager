@@ -14,7 +14,8 @@ Commands for admins:
 | Command | Shorthand | Description |
 | --- | --- | --- |
 | `//cup matches`      | `//cup m`        | Same effect as the non-admin version. |
-| `//cup setup [type]` | `//cup s [type]` | Apply the match settings of a particular preset configuration. For most consistent results *ALWAYS* switch to a different mode script than the current. |
+| `//cup setup` | `//cup s` | Open a GUI to display all presets which are available to the current game. From this GUI you can also choose a preset and apply it. |
+| `//cup setup [name]` | `//cup s [name]` | Apply the match settings of a particular preset configuration. For most consistent results *ALWAYS* switch to a different mode script than the current. |
 
 
 ## Preset Setup types
