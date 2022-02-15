@@ -161,7 +161,6 @@ class TextResultsView(TextboxView):
 						text += f':four: {country_codes.get_discord_flag(countries[3])} {nicknames[3]}\n'
 					text += '\n'
 					text += 'Full results:\n'
-					text += '\n'
 
 				text += "```\n"
 				for index, nickname, score, score2 in zip(indexes, nicknames, scores, score2s):
