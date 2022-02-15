@@ -139,21 +139,25 @@ class MatchHistoryView(ManualListView):
 		if self._results_view_mode:
 			buttons.append({
 				'title': 'Back',
-				'width': 30,
+				'width': 25,
 				'action': self._button_back,
 			})
-			if self.custom_results_view_buttons:
-				buttons += self.custom_results_view_buttons
+			for custom_button in self.custom_results_view_buttons:
+				if 'perms' in custom_button and custom_button['perms']:
+					if await self.app.instance.permission_manager.has_permission(self.player, custom_button['perms']):
+						buttons.append(custom_button)
+				else:
+					buttons.append(custom_button)
 		else:
 			if self._selected_matches:
 				buttons.append({
-					'title': 'Sum Selection',
-					'width': 30,
+					'title': 'Sum Sel.',
+					'width': 25,
 					'action': self._button_calculate_results
 				})
 				buttons.append({
-					'title': 'Clear Selection',
-					'width': 30,
+					'title': 'Clear Sel.',
+					'width': 25,
 					'action': self._button_clear_selection
 				})
 		return buttons
@@ -181,23 +185,16 @@ class MatchHistoryView(ManualListView):
 		return await super().close(player, *args, **kwargs)
 
 
+
 	@classmethod
-	def add_button(cls, target, name, width):
+	def add_button(cls, target, name, perms, width):
 		cls.custom_results_view_buttons.append({
 			'action': target,
 			'title': name,
 			'width': width,
+			'perms': perms,
 		})
 
-
-	@classmethod
-	def remove_button(cls, target):
-		for index, button in enumerate(cls.custom_results_view_buttons):
-			if button['action'] == target:
-				del cls.custom_results_view_buttons[index]
-				break
-		else:
-			logger.error(f"Error in remove_button. target not found in custom_results_view_buttons: {str(target)}")
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):

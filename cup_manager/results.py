@@ -52,7 +52,8 @@ class ResultsCupManager:
 				admin=True, description='Display saved match history.'),
 		)
 
-		MatchHistoryView.add_button(self._button_export, 'Export', 30)
+		MatchHistoryView.add_button(self._button_export, 'Export', '', 25)
+		MatchHistoryView.add_button(self._button_payout, 'Payout', 'transactions:pay', 25)
 
 		await self._handle_map_update('OnStart')
 
@@ -263,6 +264,25 @@ class ResultsCupManager:
 
 			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2)
 			await text_view.display(player=player)
+
+
+	async def _button_payout(self, player, values, view, **kwargs):
+		logger.info("Called _button_payout")
+		if not await self.instance.permission_manager.has_permission(player, 'transactions:pay'):
+			logger.error(f"{player.login} Does not have permission 'transactions:pay'")
+			return
+
+		if view.scores_query:
+			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
+
+			match_info = []
+			all_match_data = await self.get_data_matches()
+			for match_data_info in all_match_data:
+				if (isinstance(view.scores_query, int) and match_data_info['map_start_time'] == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info['map_start_time'] in view.scores_query):
+					match_info.append(match_data_info)
+
+			# TODO: view goes here
+			pass
 
 
 	async def get_data_matches(self) -> list:
