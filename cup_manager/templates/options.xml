@@ -53,7 +53,7 @@
     <label pos="0 1.5" size="72 5" text="$fff$oPage {{ option_page }} / {{ num_option_pages }}" textsize="1.5" halign="center"/>
   </frame>
 
-  <frame id="selected_option_info" pos="0 6">
+  <frame id="selected_option_info" pos="0 {{ -6 + (((info_header_fields | length)) * 6) }}">
     <quad pos="0 0" size="108 {{ 1 + ((info_header_fields | length) * 6)}}" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
     {% for info_header_field in info_header_fields %}
       <label pos="{{ -52.5 + info_header_field.width }} {{ -3.4 - (loop.index0 * 6)}}" size="{{ info_header_field.width }} 5.9" text="{{ info_header_field.name }}" textprefix="$o$fff" textsize="1.7" valign="center2" halign="right" />

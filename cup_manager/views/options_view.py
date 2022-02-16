@@ -68,102 +68,31 @@ class OptionsView(SingleInstanceView):
 
 	async def get_option_fields(self) -> 'list[dict]':
 		fields = []
-		fields.append({
-			'name': 'col1',
-			'index': 'data1',
-			'width': 30,
-		})
-		fields.append({
-			'name': 'col2',
-			'index': 'data2',
-			'width': 10,
-		})
-		fields.append({
-			'name': 'col3',
-			'index': 'data3',
-			'width': 20,
-		})
-		fields.append({
-			'name': 'col4',
-			'index': 'data4',
-			'width': 20,
-		})
 		return fields
 
 
 	async def get_option_data(self) -> 'list[dict]':
-		data = [
-			{
-				'data1': 'item 1 1',
-				'data2': 'item 1 2',
-				'data3': 'itme 1 3',
-				'data4': 'item 1 4',
-			},
-			{
-				'data1': 'item 2 1',
-				'data2': 'item 2 2',
-				'data3': 'itme 2 3',
-				'data4': 'item 2 4',
-			},
-		]
+		data = []
 		return data
 
 
 	async def get_info_header_fields(self) -> 'list[dict]':
-		fields = [
-			{
-				'name': 'Smol 1:',
-				'width': 20,
-				'index': 'header1',
-			},
-			{
-				'name': 'Header Diff 2:',
-				'width': 20,
-				'index': 'header2',
-			},
-		]
+		fields = []
 		return fields
 
 
 	async def get_info_header_data(self) -> dict:
-		data = {
-			'header1': 'hoho haha',
-			'header2': 'asdf 1234',
-		}
+		data = {}
 		return data
 
 
 	async def get_info_data_fields(self) -> 'list[dict]':
-		fields = [
-			{
-			'name': 'col1',
-			'index': 'data1',
-			'width': 10,
-			},
-			{
-			'name': 'col2',
-			'index': 'data2',
-			'width': 30,
-			},
-		]
+		fields = []
 		return fields
 
 
 	async def get_info_data(self) -> 'list[dict]':
-		data = [
-			{
-				'data1': 'item 1 1',
-				'data2': 'item 1 2',
-			},
-			{
-				'data1': 'item 2 1',
-				'data2': 'item 2 2',
-			},
-			{
-				'data1': 'item 3 1',
-				'data2': 'item 3 2',
-			},
-		]
+		data = []
 		return data
 
 
@@ -172,3 +101,13 @@ class OptionsView(SingleInstanceView):
 			return str(row[field['index']])
 		else:
 			return str(getattr(row, field['index']))
+
+
+class PayoutsView(OptionsView):
+	
+	title = 'Payouts'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'Coppers'
+
+	def __init__(self, app, tag) -> None:
+		super().__init__(app, tag)

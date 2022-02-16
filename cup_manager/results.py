@@ -11,7 +11,7 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import times
 
 from .models import PlayerScore, MatchInfo
-from .views import MatchHistoryView, TextResultsView, OptionsView
+from .views import MatchHistoryView, TextResultsView, PayoutsView
 from .app_types import GenericPlayerScore
 
 logger = logging.getLogger(__name__)
@@ -288,9 +288,8 @@ class ResultsCupManager:
 			pass
 		else:
 			logger.info('called from command')
-			payout_view = OptionsView(self, 'cup_manager.views.options_view_displayed')
+			payout_view = PayoutsView(self, 'cup_manager.views.payouts_view_displayed')
 			await payout_view.display(player=player)
-
 
 
 	async def get_data_matches(self) -> list:
