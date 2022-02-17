@@ -208,7 +208,6 @@ class ResultsCupManager:
 
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
-		logger.debug(section)
 
 
 	async def _prune_match_history(self):
@@ -224,11 +223,9 @@ class ResultsCupManager:
 			await self._invalidate_view_cache_scores(oldest_time)
 			await self._invalidate_view_cache_matches()
 			map_times.pop(0)
-			logger.debug('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
 
 
 	async def _command_matches(self, player, data, **kwargs):
-		logger.debug("Called the command: _command_matches")
 		if await self.get_data_matches():
 			view = MatchHistoryView(self, player)
 			await view.display(player=player.login)
@@ -237,12 +234,10 @@ class ResultsCupManager:
 
 
 	async def _invalidate_view_cache_matches(self):
-		logger.debug("_invalidate_view_cache_matches")
 		self._view_cache_matches = []
 
 
 	async def _invalidate_view_cache_scores(self, map_start_time: int=0):
-		logger.debug("_invalidate_view_cache_scores: " + str(map_start_time))
 		if map_start_time == 0:
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
@@ -250,7 +245,6 @@ class ResultsCupManager:
 
 
 	async def _button_export(self, player, values, view, **kwargs):
-		logger.debug(f"Called _button_export {player.login}")
 		if view.scores_query:
 			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
 
