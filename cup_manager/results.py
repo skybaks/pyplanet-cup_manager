@@ -272,24 +272,30 @@ class ResultsCupManager:
 		return self._view_cache_matches
 
 
+	async def get_data_player_scores(self, map_start_time: int) -> 'list[PlayerScore]':
+		if not (map_start_time in self._view_cache_scores and self._view_cache_scores[map_start_time]):
+			scores_query = await PlayerScore.execute(PlayerScore.select().where(PlayerScore.map_start_time.in_([map_start_time])))
+			if len(scores_query) > 0:
+				self._view_cache_scores[map_start_time] = list(scores_query)
+		return self._view_cache_scores[map_start_time]
+
+
 	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[GenericPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
-			if map_start_time in self._view_cache_scores and self._view_cache_scores[map_start_time]:
-				return self._view_cache_scores[map_start_time]
 			lookup_matches.append(map_start_time)
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
 
-		map_scores_query = await PlayerScore.execute(PlayerScore.select().where(PlayerScore.map_start_time.in_(lookup_matches)))
-
 		score_by_login = {}
-		for player_score in map_scores_query:
-			if player_score.login not in score_by_login:
-				score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country, 'count': 0 }
-			score_by_login[player_score.login]['score'] += player_score.score
-			score_by_login[player_score.login]['score2'] += player_score.score2
-			score_by_login[player_score.login]['count'] += 1
+		for start_time in lookup_matches:
+			player_scores = await self.get_data_player_scores(start_time)
+			for player_score in player_scores:
+				if player_score.login not in score_by_login:
+					score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country, 'count': 0 }
+				score_by_login[player_score.login]['score'] += player_score.score
+				score_by_login[player_score.login]['score2'] += player_score.score2
+				score_by_login[player_score.login]['count'] += 1
 
 		scores = []
 		for login, score_data in score_by_login.items():
@@ -300,8 +306,5 @@ class ResultsCupManager:
 
 		score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
 		scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=not score_is_time)
-
-		if isinstance(map_start_time, int) and (map_start_time not in self._view_cache_scores or not self._view_cache_scores[map_start_time]):
-			self._view_cache_scores[map_start_time] = scores
 
 		return scores
