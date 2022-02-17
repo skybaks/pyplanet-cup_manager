@@ -1,6 +1,5 @@
 import logging
 import datetime
-from ssl import Options
 from peewee import *
 
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
@@ -9,6 +8,7 @@ from pyplanet.apps.core.shootmania import callbacks as sm_signals
 from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 from pyplanet.utils import times
+from pyplanet.conf import settings
 
 from .models import PlayerScore, MatchInfo
 from .views import MatchHistoryView, TextResultsView, PayoutsView
@@ -290,6 +290,35 @@ class ResultsCupManager:
 			logger.info('called from command')
 			payout_view = PayoutsView(self, 'cup_manager.views.payouts_view_displayed')
 			await payout_view.display(player=player)
+
+
+	async def get_payouts(self) -> dict:
+		payouts = {}
+		try:
+			payouts = settings.CUP_MANAGER_PAYOUTS
+		except:
+			payouts = {
+				'hec': [
+					1000,
+					700,
+					500,
+					400,
+					300,
+				],
+				'smurfscup': [
+					6000,
+					4000,
+					3000,
+					2500,
+					1500,
+					1000,
+					800,
+					600,
+					400,
+					200,
+				],
+			}
+		return payouts
 
 
 	async def get_data_matches(self) -> list:

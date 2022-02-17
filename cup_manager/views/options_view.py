@@ -1,5 +1,6 @@
 import logging
 import math
+from pandas import DataFrame
 import re
 
 from .single_instance_view import SingleInstanceView
@@ -22,6 +23,8 @@ class OptionsView(SingleInstanceView):
 		self.info_data_page = 1
 		self.info_data_count = 0
 		self.num_info_data_per_page = 11
+		self.displayed_option_data = []
+		self.selected_option = None
 
 		self.subscribe('options_button_close', self.close)
 		self.subscribe('optionlist_button_first', self._optionlist_first_page)
@@ -40,7 +43,9 @@ class OptionsView(SingleInstanceView):
 			if len(match.groups()) == 1:
 				try:
 					row = int(match.group(1))
-					# TODO: Use row to execute a function
+					if len(self.displayed_option_data) > row:
+						self.selected_option = self.displayed_option_data[row]
+						await self.refresh(player=player)
 				except Exception as e:
 					logger.error(f"Got unexpected results from option list item action {action}: {e}")
 
@@ -60,12 +65,12 @@ class OptionsView(SingleInstanceView):
 		info_data_fields = await self.get_info_data_fields()
 		info_data = await self.get_info_data()
 
-		option_left = -53
+		option_left = -52
 		for option_field in option_fields:
 			option_field['left'] = option_left
 			option_left += option_field['width']
 		
-		info_data_left = -53
+		info_data_left = -52
 		for info_data_field in info_data_fields:
 			info_data_field['left'] = info_data_left
 			info_data_left += info_data_field['width']
@@ -110,6 +115,11 @@ class OptionsView(SingleInstanceView):
 	async def get_info_data(self) -> 'list[dict]':
 		data = []
 		return data
+
+
+	@staticmethod
+	async def apply_pagination(frame: DataFrame, page: int, num_per_page: int) -> DataFrame:
+		return frame[(page - 1) * num_per_page:page * num_per_page]
 
 
 	async def _render_field(self, row, field) -> str:
@@ -209,7 +219,7 @@ class PayoutsView(OptionsView):
 			},
 			{
 				'name': 'Planets',
-				'width': 30,
+				'width': 20,
 				'index': 'planets',
 			},
 			{
@@ -229,7 +239,7 @@ class PayoutsView(OptionsView):
 	async def get_info_header_fields(self) -> 'list[dict]':
 		fields = [
 			{
-				'name': 'Selected Schema:',
+				'name': 'Selected Payout:',
 				'width': 30,
 				'index': 'name'
 			}
@@ -238,15 +248,39 @@ class PayoutsView(OptionsView):
 
 
 	async def get_option_data(self) -> 'list[dict]':
-		return await super().get_option_data()
+		payouts = await self.app.get_payouts()
+		options = []
+		for key, data in payouts.items():
+			options.append({
+				'name': key,
+				'selected': self.selected_option and self.selected_option['name'] == key,
+			})
+		frame = DataFrame(options)
+		self.option_count = len(frame)
+		frame = await self.apply_pagination(frame, self.option_page, self.num_option_per_page)
+		self.displayed_option_data = frame.to_dict('records')
+		return self.displayed_option_data
 
 
 	async def get_info_header_data(self) -> dict:
 		data = {
-			'name': 'TODO'
+			'name': self.selected_option['name'] if self.selected_option and 'name' in self.selected_option else ''
 		}
 		return data
 
 
 	async def get_info_data(self) -> 'list[dict]':
-		return await super().get_info_data()
+		info_data = []
+		if self.selected_option and 'name' in self.selected_option:
+			payouts = await self.app.get_payouts()
+			selected_payout = payouts[self.selected_option['name']]
+			place_index = 1
+			for planet_amount in selected_payout:
+				info_data.append({
+					'place': place_index,
+					'planets': planet_amount,
+					'login': 'TODO',
+					'nickname': 'TODO',
+				})
+				place_index += 1
+		return info_data
