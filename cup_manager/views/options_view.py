@@ -200,8 +200,8 @@ class PayoutsView(OptionsView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Coppers'
 
-	def __init__(self, app, tag) -> None:
-		super().__init__(app, tag)
+	def __init__(self, app) -> None:
+		super().__init__(app, 'cup_manager.views.payouts_view_displayed')
 
 
 	async def get_option_fields(self) -> 'list[dict]':
@@ -255,6 +255,8 @@ class PayoutsView(OptionsView):
 	async def get_option_data(self) -> 'list[dict]':
 		payouts = await self.app.get_payouts()
 		options = []
+		if not self.selected_option and len(payouts) > 0:
+			self.selected_option = { 'name': list(payouts.keys())[0] }
 		for key, data in payouts.items():
 			options.append({
 				'name': key,

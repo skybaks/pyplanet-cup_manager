@@ -51,11 +51,9 @@ class ResultsCupManager:
 				description='Display saved match history.'),
 			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
 				admin=True, description='Display saved match history.'),
-			Command(command='debug', aliases=['d'], target=self._button_payout)
 		)
 
-		MatchHistoryView.add_button(self._button_export, 'Export', '', 25)
-		MatchHistoryView.add_button(self._button_payout, 'Payout', 'transactions:pay', 25)
+		MatchHistoryView.add_button(self._button_export, 'Export', True, 25)
 
 		await self._handle_map_update('OnStart')
 
@@ -266,59 +264,6 @@ class ResultsCupManager:
 
 			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2)
 			await text_view.display(player=player)
-
-
-	async def _button_payout(self, player, *args, **kwargs):
-		logger.info("Called _button_payout")
-		if not await self.instance.permission_manager.has_permission(player, 'transactions:pay'):
-			logger.error(f"{player.login} Does not have permission 'transactions:pay'")
-			return
-
-		view = kwargs['view'] if 'view' in kwargs else None
-		if view and view.scores_query:
-			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
-
-			match_info = []
-			all_match_data = await self.get_data_matches()
-			for match_data_info in all_match_data:
-				if (isinstance(view.scores_query, int) and match_data_info['map_start_time'] == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info['map_start_time'] in view.scores_query):
-					match_info.append(match_data_info)
-
-			# TODO: view goes here
-			pass
-		else:
-			logger.info('called from command')
-			payout_view = PayoutsView(self, 'cup_manager.views.payouts_view_displayed')
-			await payout_view.display(player=player)
-
-
-	async def get_payouts(self) -> dict:
-		payouts = {}
-		try:
-			payouts = settings.CUP_MANAGER_PAYOUTS
-		except:
-			payouts = {
-				'hec': [
-					1000,
-					700,
-					500,
-					400,
-					300,
-				],
-				'smurfscup': [
-					6000,
-					4000,
-					3000,
-					2500,
-					1500,
-					1000,
-					800,
-					600,
-					400,
-					200,
-				],
-			}
-		return payouts
 
 
 	async def get_data_matches(self) -> list:

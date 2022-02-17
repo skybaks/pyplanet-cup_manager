@@ -1,4 +1,5 @@
 import datetime
+from inspect import iscoroutinefunction, isfunction
 import logging
 
 from pyplanet.views.generics.list import ManualListView
@@ -143,10 +144,15 @@ class MatchHistoryView(ManualListView):
 				'action': self._button_back,
 			})
 			for custom_button in self.custom_results_view_buttons:
-				if 'perms' in custom_button and custom_button['perms']:
-					if await self.app.instance.permission_manager.has_permission(self.player, custom_button['perms']):
+				if isfunction(custom_button['visible']):
+					if custom_button['visible'](player=self.player, view=self):
 						buttons.append(custom_button)
-				else:
+
+				elif iscoroutinefunction(custom_button['visible']):
+					if await custom_button['visible'](player=self.player, view=self):
+						buttons.append(custom_button)
+
+				elif custom_button['visible']:
 					buttons.append(custom_button)
 		else:
 			if self._selected_matches:
@@ -187,12 +193,12 @@ class MatchHistoryView(ManualListView):
 
 
 	@classmethod
-	def add_button(cls, target, name, perms, width):
+	def add_button(cls, target, name, visible, width):
 		cls.custom_results_view_buttons.append({
 			'action': target,
 			'title': name,
 			'width': width,
-			'perms': perms,
+			'visible': visible,
 		})
 
 
