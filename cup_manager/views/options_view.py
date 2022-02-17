@@ -83,6 +83,10 @@ class OptionsView(SingleInstanceView):
 			'info_header_data': info_header_data,
 			'info_data_fields': info_data_fields,
 			'info_data': info_data,
+			'option_page': self.option_page,
+			'num_option_pages': self.num_option_pages,
+			'info_data_page': self.info_data_page,
+			'num_info_data_pages': self.num_info_data_pages,
 		})
 		return context
 
@@ -210,6 +214,7 @@ class PayoutsView(OptionsView):
 		]
 		return fields
 
+
 	async def get_info_data_fields(self) -> 'list[dict]':
 		fields = [
 			{
@@ -283,4 +288,7 @@ class PayoutsView(OptionsView):
 					'nickname': 'TODO',
 				})
 				place_index += 1
-		return info_data
+		frame = DataFrame(info_data)
+		self.info_data_count = len(frame)
+		frame = await self.apply_pagination(frame, self.info_data_page, self.num_info_data_per_page)
+		return frame.to_dict('records')
