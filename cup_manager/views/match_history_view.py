@@ -144,12 +144,12 @@ class MatchHistoryView(ManualListView):
 				'action': self._button_back,
 			})
 			for custom_button in self.custom_results_view_buttons:
-				if isfunction(custom_button['visible']):
-					if custom_button['visible'](player=self.player, view=self):
+				if iscoroutinefunction(custom_button['visible']):
+					if await custom_button['visible'](player=self.player, view=self):
 						buttons.append(custom_button)
 
-				elif iscoroutinefunction(custom_button['visible']):
-					if await custom_button['visible'](player=self.player, view=self):
+				elif isfunction(custom_button['visible']):
+					if custom_button['visible'](player=self.player, view=self):
 						buttons.append(custom_button)
 
 				elif custom_button['visible']:
@@ -173,7 +173,20 @@ class MatchHistoryView(ManualListView):
 		items = []
 		if self._results_view_mode:
 			self.scores_query = self._selected_matches if self._selected_matches_mode else self.results_view_params.map_start_time
-			items = await self.app.get_data_scores(self.scores_query, self.results_view_params.mode_script)
+			scores = await self.app.get_data_scores(self.scores_query, self.results_view_params.mode_script)
+			index = 1
+			for player_score in scores:
+				items.append({
+					'index': index,
+					'login': player_score.login,
+					'nickname': player_score.nickname,
+					'country': player_score.country,
+					'score': player_score.score,
+					'score_str': player_score.score_str,
+					'score2': player_score.score2,
+					'score2_str': player_score.score2_str,
+				})
+				index += 1
 
 		if not items:
 			self.scores_query = None
@@ -181,9 +194,17 @@ class MatchHistoryView(ManualListView):
 			self._results_view_mode = False
 			self._persist_matches_page = 0
 			self._set_match_view_mode()
-			items = await self.app.get_data_matches()
-			for item in items:
-				item['selected'] = '' if item['map_start_time'] in self._selected_matches else ''
+			maps = await self.app.get_data_matches()
+			for map in maps:
+				items.append({
+					'selected': '' if map.map_start_time in self._selected_matches else '',
+					'map_start_time_str': datetime.datetime.fromtimestamp(map.map_start_time).strftime("%c"),
+					'map_start_time': map.map_start_time,
+					'mode_script': map.mode_script,
+					'map_name': map.map_name,
+					'map_uid': map.map_uid,
+					'mx_id': map.mx_id,
+				})
 		return items
 
 
@@ -230,8 +251,8 @@ class MatchHistoryView(ManualListView):
 		matches = await self.app.get_data_matches()
 		mode_script = None
 		for match in matches:
-			if match['map_start_time'] in self._selected_matches:
-				mode_script = match['mode_script']
+			if match.map_start_time in self._selected_matches:
+				mode_script = match.mode_script
 				break
 		self._set_results_view_mode(ResultsViewParams('', -1, mode_script))
 		await self.refresh(player=player)

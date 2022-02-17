@@ -124,11 +124,11 @@ class TextResultsView(TextboxView):
 		if self._instance_data:
 			if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
 
-				indexes = [str(item['index']) for item in self._instance_data]
-				scores = [str(item['score_str']) for item in self._instance_data]
-				score2s = [str(item['score2_str']) for item in self._instance_data]
-				nicknames = [style.style_strip(item['nickname'], style.STRIP_ALL) for item in self._instance_data]
-				countries = [str(item['country']) for item in self._instance_data]
+				indexes = [str(item) for item in range(1, len(self._instance_data) + 1)]
+				scores = [str(item.score_str) for item in self._instance_data]
+				score2s = [str(item.score2_str) for item in self._instance_data]
+				nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in self._instance_data]
+				countries = [str(item.country) for item in self._instance_data]
 
 				index_justify = min(4, len(max(indexes, key=len)))
 				score_justify = min(15, len(max(scores, key=len)))
@@ -137,16 +137,16 @@ class TextResultsView(TextboxView):
 				if self._export_format == self.ExportFormat.DISCORD:
 					text += f'**$(var.cup_name)** - $(var.cup_edition) - {str(len(self._instance_data))} Players\n'
 
-					sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x["map_start_time"])
+					sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x.map_start_time)
 					for match_info in sorted_match_info_list:
-						mx_id = match_info["mx_id"]
+						mx_id = match_info.mx_id
 						mx_base_url = ''
 						if 'mx' in self.app.instance.apps.apps:
 							try:
 								mx_base_url = self.app.instance.apps.apps['mx'].api.base_url()
 							except:
 								logger.error(f'Error determining (T)MX base url')
-						text += f'*{match_info["mode_script"]}* on {style.style_strip(match_info["map_name"])}'
+						text += f'*{match_info.mode_script}* on {style.style_strip(match_info.map_name)}'
 						if mx_id and mx_base_url:
 							text += f' <{mx_base_url}/s/tr/{mx_id}>'
 						text += '\n'
@@ -171,14 +171,15 @@ class TextResultsView(TextboxView):
 					text += str(nickname) + '\n'
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
-				for item in self._instance_data:
-					text += '"' + str(item['index']) + '",'
-					text += '"' + str(item['score_str']) + '",'
+				indexes = [str(item) for item in range(1, len(self._instance_data) + 1)]
+				for item, index in zip(self._instance_data, indexes):
+					text += '"' + str(index) + '",'
+					text += '"' + str(item.score_str) + '",'
 					if self._show_score2:
-						text += '"' + str(item['score2_str']) + '",'
-					text += '"' + style.style_strip(item['nickname'], style.STRIP_ALL) + '",'
-					text += '"' + str(item['login']) + '",'
-					text += '"' + str(item['country']) + '"\n'
+						text += '"' + str(item.score2_str) + '",'
+					text += '"' + style.style_strip(item.nickname, style.STRIP_ALL) + '",'
+					text += '"' + str(item.login) + '",'
+					text += '"' + str(item.country) + '"\n'
 			else:
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
