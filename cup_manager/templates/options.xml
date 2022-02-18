@@ -1,0 +1,105 @@
+
+<frame pos="0 15" z-index="151">
+  <quad pos="0 62.5" size="110 130" z-index="-50" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList" scriptevents="1"/>
+  <quad pos="0 61" size="108 10" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+  <quad pos="-52.5 60.1 0" size="8 8" z-index="1" style="{{ icon_style }}" substyle="{{ icon_substyle }}"/>
+  <label pos="-42 58" size="80 7" z-index="2" text="{{ title }}" textsize="2.5" textprefix="$o" textcolor="FFFFFFF" halign="left"/>
+
+  <quad pos="46 59.5 0" size="7 7" z-index="1" style="Icons128x32_1" substyle="Close" action="{{ id }}__options_button_close"/>
+
+  <frame id="options_list" pos="0 50.5">
+    <quad pos="0 0" size="108 35.5" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+    <frame id="options_list_header" pos="0 0">
+      <quad pos="0 0" size="108 5.2" z-index="-20" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+      <frame pos="0.1 0">
+        {% for option_field in option_fields %}
+          <label pos="{{ option_field.left }} -2.4" size="{{ option_field.width }} 4.9" text="{{ option_field.name }}" textprefix="$o$fff" textsize="1.3" valign="center2"/>
+        {% endfor %}
+      </frame>
+    </frame>
+
+    <frame id="options_list_body" pos="0 -5.5">
+
+      {% for row in options %}
+      <frame pos="0 {{ loop.index0 * -5 }}">
+        <label pos="-53.9 -2.4" size="107.8 5" valign="center2" action="{{ id }}__option_list_body_{{ loop.index0 }}"
+          {% if row.selected %}
+            focusareacolor1="aaa2"
+            focusareacolor2="fff2"
+          {% else %}
+            focusareacolor1="0000"
+            focusareacolor2="fff2"
+          {% endif %}
+        />
+
+        {% for option_field in option_fields %}
+          <label pos="{{ option_field.left }} -2.4" size="{{ option_field.width }} 4.9" text="{{ field_renderer(row, option_field) }}" textprefix="$fff" textsize="1.2" valign="center2"/>
+        {% endfor %}
+      </frame>
+      {% endfor %}
+
+    </frame>
+  </frame>
+
+  <frame pos="0 11">
+    <quad pos="0 0" size="108 7" z-index="-49" halign="center" valign="center" style="Bgs1InRace" substyle="BgCardList"/>
+    <quad pos="-55 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowFirst" action="{{ id }}__optionlist_button_first" />
+    <quad pos="-47 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowPrev" action="{{ id }}__optionlist_button_prev" />
+    <quad pos="37 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowNext" action="{{ id }}__optionlist_button_next" />
+    <quad pos="45 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowLast" action="{{ id }}__optionlist_button_last" />
+    <label pos="0 1.5" size="72 5" text="$fff$oPage {{ option_page }} / {{ num_option_pages }}" textsize="1.5" halign="center"/>
+  </frame>
+
+  <frame id="selected_option_info" pos="0 {{ -6 + (((info_header_fields | length)) * 6) }}">
+    <quad pos="0 0" size="108 {{ 1 + ((info_header_fields | length) * 6)}}" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+    {% for info_header_field in info_header_fields %}
+      <label pos="{{ -52.5 + info_header_field.width }} {{ -3.4 - (loop.index0 * 6)}}" size="{{ info_header_field.width }} 5.9" text="{{ info_header_field.name }}" textprefix="$o$fff" textsize="1.7" valign="center2" halign="right" />
+      <label pos="{{ -51.5 + info_header_field.width }} {{ -3.4 - (loop.index0 * 6)}}" size="{{ 106 - info_header_field.width }} 5.9" text="{{ field_renderer(info_header_data, info_header_field) }}" textprefix="$fff" textsize="1.7" valign="center2" />
+    {% endfor %}
+  </frame>
+
+  <frame id="info_data_list" pos="0 -8">
+    <quad pos="0 0" size="108 51" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+    <frame id="info_data_list_header" pos="0 0">
+      <quad pos="0 0" size="108 5.2" z-index="-20" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
+
+      <frame pos="0.1 0">
+        {% for info_data_field in info_data_fields %}
+          <label pos="{{ info_data_field.left }} -2.4" size="{{ info_data_field.width }} 4.9" text="{{ info_data_field.name }}" textprefix="$o$fff" textsize="1.3" valign="center2"/>
+        {% endfor %}
+      </frame>
+    </frame>
+
+    <frame id="info_data_list_body" pos="0 -5.5">
+
+      {% for row in info_data %}
+      <frame pos="0 {{ loop.index0 * -4.1 }}">
+        {% for info_data_field in info_data_fields %}
+          <label pos="{{ info_data_field.left }} -1.9" size="{{ info_data_field.width }} 3.9" text="{{ field_renderer(row, info_data_field) }}" textprefix="$fff" textsize="0.9" valign="center2"/>
+        {% endfor %}
+      </frame>
+      {% endfor %}
+
+    </frame>
+
+  </frame>
+
+  <frame pos="-22.5 -63">
+    <quad pos="0 0" size="63 7" z-index="-49" halign="center" valign="center" style="Bgs1InRace" substyle="BgCardList"/>
+    <quad pos="-31.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowFirst" action="{{ id }}__info_datalist_button_first" />
+    <quad pos="-23.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowPrev" action="{{ id }}__info_datalist_button_prev" />
+    <quad pos="13.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowNext" action="{{ id }}__info_datalist_button_next" />
+    <quad pos="21.5 4" size="10 8" bgcolor="FFFA" style="Icons64x64_1" substyle="ArrowLast" action="{{ id }}__info_datalist_button_last" />
+    <label pos="0 1.5" size="72 5" text="$fff$oPage {{ info_data_page }} / {{ num_info_data_pages }}" textsize="1.5" halign="center"/>
+  </frame>
+
+  <label pos="36 -63" size="32 5" text="{{ apply_option_button_name }}" textprefix="$o$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="0005" focusareacolor2="0007"
+    {% if option_is_selected %}
+      action="{{ id }}__apply_selected_option"
+    {% endif %}
+  />
+</frame>

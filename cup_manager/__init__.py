@@ -4,6 +4,7 @@ from pyplanet.apps.config import AppConfig
 
 from .results import ResultsCupManager
 from .setup import SetupCupManager
+from .payouts import PayoutCupManager
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,10 @@ class CupManagerApp(AppConfig):
 
 		self.results = ResultsCupManager(self)
 		self.setup = SetupCupManager(self)
+		self.payout = PayoutCupManager(self)
 
 
 	async def on_start(self):
 		await self.results.on_start()
 		await self.setup.on_start()
-
+		await self.payout.on_start()

@@ -7,7 +7,6 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.apps.core.shootmania import callbacks as sm_signals
 from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
-from pyplanet.utils import times
 
 from .models import PlayerScore, MatchInfo
 from .views import MatchHistoryView, TextResultsView
@@ -45,14 +44,16 @@ class ResultsCupManager:
 
 		await self.context.setting.register(self._setting_match_history_amount)
 
+		await self.instance.permission_manager.register('results_cup', 'Handle match results from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
+
 		await self.instance.command_manager.register(
 			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
 				description='Display saved match history.'),
 			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
-				admin=True, description='Display saved match history.'),
+				admin=True, perms='cup:results_cup', description='Display saved match history.'),
 		)
 
-		MatchHistoryView.add_button(self._button_export, 'Export', 30)
+		MatchHistoryView.add_button(self._button_export, 'Export', True, 25)
 
 		await self._handle_map_update('OnStart')
 
@@ -200,8 +201,8 @@ class ResultsCupManager:
 			await self._prune_match_history()
 			match_data = await self.get_data_matches()
 			for match in match_data:
-				if match['map_start_time'] == ended_map_start_time:
-					score_data = await self.get_data_scores(match['map_start_time'], match['mode_script'])
+				if match.map_start_time == ended_map_start_time:
+					score_data = await self.get_data_scores(match.map_start_time, match.mode_script)
 					await self.instance.chat(f'$i$fffSaved {str(len(score_data))} record(s) from map $<{ended_map_map_name}$>.')
 					break
 			else:
@@ -209,7 +210,6 @@ class ResultsCupManager:
 
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
-		logger.debug(section)
 
 
 	async def _prune_match_history(self):
@@ -225,11 +225,9 @@ class ResultsCupManager:
 			await self._invalidate_view_cache_scores(oldest_time)
 			await self._invalidate_view_cache_matches()
 			map_times.pop(0)
-			logger.debug('Removed records from match of time ' + datetime.datetime.fromtimestamp(oldest_time).strftime("%c") + '. new len is ' + str(len(map_times)))
 
 
 	async def _command_matches(self, player, data, **kwargs):
-		logger.debug("Called the command: _command_matches")
 		if await self.get_data_matches():
 			view = MatchHistoryView(self, player)
 			await view.display(player=player.login)
@@ -238,12 +236,10 @@ class ResultsCupManager:
 
 
 	async def _invalidate_view_cache_matches(self):
-		logger.debug("_invalidate_view_cache_matches")
 		self._view_cache_matches = []
 
 
 	async def _invalidate_view_cache_scores(self, map_start_time: int=0):
-		logger.debug("_invalidate_view_cache_scores: " + str(map_start_time))
 		if map_start_time == 0:
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
@@ -251,92 +247,60 @@ class ResultsCupManager:
 
 
 	async def _button_export(self, player, values, view, **kwargs):
-		logger.debug(f"Called _button_export {player.login}")
 		if view.scores_query:
 			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
 
 			match_info = []
 			all_match_data = await self.get_data_matches()
 			for match_data_info in all_match_data:
-				if (isinstance(view.scores_query, int) and match_data_info['map_start_time'] == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info['map_start_time'] in view.scores_query):
+				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
 					match_info.append(match_data_info)
 
 			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2)
 			await text_view.display(player=player)
 
 
-	async def get_data_matches(self) -> list:
+	async def get_data_matches(self) -> 'list[MatchInfo]':
 		if not self._view_cache_matches:
-			map_history_query = await MatchInfo.execute(MatchInfo.select(
-				MatchInfo.map_start_time,
-				MatchInfo.mode_script,
-				MatchInfo.map_name,
-				MatchInfo.map_uid,
-				MatchInfo.mx_id,
-			).order_by(MatchInfo.map_start_time.desc()))
-			for map in map_history_query:
-				self._view_cache_matches.append({
-					'selected': None,
-					'map_start_time_str': datetime.datetime.fromtimestamp(map.map_start_time).strftime("%c"),
-					'map_start_time': map.map_start_time,
-					'mode_script': map.mode_script,
-					'map_name': map.map_name,
-					'map_uid': map.map_uid,
-					'mx_id': map.mx_id,
-				})
+			map_history_query = await MatchInfo.execute(MatchInfo.select().order_by(MatchInfo.map_start_time.desc()))
+			if len(map_history_query) > 0:
+				self._view_cache_matches = list(map_history_query)
 		return self._view_cache_matches
 
 
-	async def get_data_scores(self, map_start_time, mode_script: str) -> list:
+	async def get_data_player_scores(self, map_start_time: int) -> 'list[PlayerScore]':
+		if not (map_start_time in self._view_cache_scores and self._view_cache_scores[map_start_time]):
+			scores_query = await PlayerScore.execute(PlayerScore.select().where(PlayerScore.map_start_time.in_([map_start_time])))
+			if len(scores_query) > 0:
+				self._view_cache_scores[map_start_time] = list(scores_query)
+		return self._view_cache_scores[map_start_time]
+
+
+	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[GenericPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
-			if map_start_time in self._view_cache_scores and self._view_cache_scores[map_start_time]:
-				return self._view_cache_scores[map_start_time]
 			lookup_matches.append(map_start_time)
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
 
-		map_scores_query = await PlayerScore.execute(PlayerScore.select(
-			PlayerScore.login,
-			PlayerScore.nickname,
-			PlayerScore.country,
-			PlayerScore.score,
-			PlayerScore.score2,
-			# TODO: Design team score handling
-			PlayerScore.team,
-		).where(
-			PlayerScore.map_start_time.in_(lookup_matches)
-		))
-
 		score_by_login = {}
-		for player_score in map_scores_query:
-			if player_score.login not in score_by_login:
-				score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country }
-			score_by_login[player_score.login]['score'] += player_score.score
-			score_by_login[player_score.login]['score2'] += player_score.score2
+		for start_time in lookup_matches:
+			player_scores = await self.get_data_player_scores(start_time)
+			for player_score in player_scores:
+				if player_score.login not in score_by_login:
+					score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country, 'count': 0 }
+				score_by_login[player_score.login]['score'] += player_score.score
+				score_by_login[player_score.login]['score2'] += player_score.score2
+				score_by_login[player_score.login]['count'] += 1
+
 		scores = []
 		for login, score_data in score_by_login.items():
-			scores.append(GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score'], score_data['score2']))
+			new_score = GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score'], score_data['score2'])
+			new_score.score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
+			new_score.count = score_data['count']
+			scores.append(new_score)
 
-		score_is_time = True if 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower() else False
+		score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
 		scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=not score_is_time)
 
-		index = 1
-		score_data = []
-		for player_score in scores:
-			score_data.append({
-				'index': index,
-				'login': player_score.login,
-				'nickname': player_score.nickname,
-				'country': player_score.country,
-				'score': player_score.score,
-				'score_str': times.format_time(int(player_score.score)) if score_is_time else str(player_score.score),
-				'score2': player_score.score2,
-				'score2_str': str(player_score.score2),
-			})
-			index += 1
-
-		if isinstance(map_start_time, int) and (map_start_time not in self._view_cache_scores or not self._view_cache_scores[map_start_time]):
-			self._view_cache_scores[map_start_time] = score_data
-
-		return score_data
+		return scores
