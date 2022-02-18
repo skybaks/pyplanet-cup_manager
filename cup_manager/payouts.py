@@ -15,10 +15,6 @@ class PayoutCupManager:
 
 
 	async def on_start(self) -> None:
-		await self.instance.command_manager.register(
-			Command(command='debug', aliases=['d'], target=self._button_payout)
-		)
-
 		MatchHistoryView.add_button(self._button_payout, 'Payout', self._check_payout_permissions, 25)
 
 
@@ -51,15 +47,25 @@ class PayoutCupManager:
 		return payouts
 
 
-	async def _button_payout(self, player, *args, **kwargs):
-		logger.info("Called _button_payout")
+	async def pay_players(self, player, payment_data) -> None:
 		if not await self._check_payout_permissions(player=player):
-			logger.error(f"{player.login} Does not have permission 'transactions:pay'")
+			logger.error(f"{player.login} does not have permission 'transactions:pay'")
+			return
+		if 'transactions' in self.instance.apps.apps:
+			for payment in payment_data:
+				logger.info(f"Attempting to pay {payment.login} {str(payment.amount)}")
+				await self.instance.apps.apps['transactions'].pay_to_player(player=player, data=payment)
+
+
+	async def _button_payout(self, player, values, view, **kwargs):
+		if not await self._check_payout_permissions(player=player):
+			logger.error(f"{player.login} does not have permission 'transactions:pay'")
 			return
 
-		logger.info('called from command')
-		payout_view = PayoutsView(self)
-		await payout_view.display(player=player)
+		if view.scores_query:
+			scores_data = await self.app.results.get_data_scores(view.scores_query, view.results_view_params.mode_script)
+			payout_view = PayoutsView(self, scores_data)
+			await payout_view.display(player=player)
 
 
 	async def _check_payout_permissions(self, player, *args, **kwargs) -> bool:
