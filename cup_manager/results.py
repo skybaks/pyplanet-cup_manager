@@ -44,11 +44,13 @@ class ResultsCupManager:
 
 		await self.context.setting.register(self._setting_match_history_amount)
 
+		await self.instance.permission_manager.register('results_cup', 'Handle match results from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
+
 		await self.instance.command_manager.register(
 			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
 				description='Display saved match history.'),
 			Command(command='matches', aliases=['m'], namespace=self.app.namespace, target=self._command_matches,
-				admin=True, description='Display saved match history.'),
+				admin=True, perms='cup:results_cup', description='Display saved match history.'),
 		)
 
 		MatchHistoryView.add_button(self._button_export, 'Export', True, 25)

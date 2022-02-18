@@ -325,5 +325,5 @@ class PayoutsView(OptionsView):
 			buttons=[{'name': 'Confirm'}, {'name': 'Cancel'}]
 		))
 		if not cancel:
+			await self.close(player=player)
 			await self.app.pay_players(player, payout_data)
-			self.close(player=player)

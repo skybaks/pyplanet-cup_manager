@@ -15,6 +15,9 @@ class PayoutCupManager:
 
 
 	async def on_start(self) -> None:
+		if self.instance.game.game not in ['tm','sm'] or 'transactions' not in self.instance.apps.apps:
+			return
+
 		MatchHistoryView.add_button(self._button_payout, 'Payout', self._check_payout_permissions, 25)
 
 

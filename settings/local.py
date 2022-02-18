@@ -1,5 +1,13 @@
+"""
+Copy this 'local.py' file into your pyplanet settings folder to modify the
+behavior of the cup_manager plugin. If you already have a local.py file then you
+can add these settings to the existing file.
+"""
 
 
+# Use this to define preset script settings which can be activated from the
+# "//cup setup" command. A different script must be defined for each game. For
+# TM2 Maniaplanet use `tm`, for TM2020 use 'tmnext', and for Shootmania use 'sm'.
 CUP_MANAGER_PRESETS = {
 	'rounds180': {
 		'aliases': [ 'smurfscup', 'sc' ],
@@ -79,3 +87,28 @@ CUP_MANAGER_PRESETS = {
 }
 
 
+# Use this to define planet reward payouts. Admins can select from these payout
+# schemes from the match results view.
+CUP_MANAGER_PAYOUTS = {
+	'hec': [
+		1000,
+		700,
+		500,
+		400,
+		300,
+	],
+
+	'smurfscup': [
+		6000,
+		4000,
+		3000,
+		2500,
+		1500,
+		1000,
+		800,
+		600,
+		400,
+		200,
+	],
+
+}
