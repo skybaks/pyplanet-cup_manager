@@ -300,7 +300,11 @@ class ResultsCupManager:
 			new_score.count = score_data['count']
 			scores.append(new_score)
 
-		score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
-		scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=not score_is_time)
+		if 'timeattack'in mode_script.lower():
+			scores = sorted(scores, key=lambda x: (-x.count, x.score))
+		elif 'laps' in mode_script.lower():
+			scores = sorted(scores, key=lambda x: (-x.count, -x.score2, x.score))
+		else:
+			scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=True)
 
 		return scores

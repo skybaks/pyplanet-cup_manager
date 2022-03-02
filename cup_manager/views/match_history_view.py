@@ -109,8 +109,8 @@ class MatchHistoryView(ManualListView):
 				{
 					'name': 'Map',
 					'index': 'map_name',
-					'sorting': True,
-					'searching': True,
+					'sorting': False,
+					'searching': False,
 					'width': 80,
 					'type': 'label',
 					'action': self._action_view_match
@@ -118,17 +118,17 @@ class MatchHistoryView(ManualListView):
 				{
 					'name': 'Start Time',
 					'index': 'map_start_time_str',
-					'sorting': True,
-					'searching': True,
+					'sorting': False,
+					'searching': False,
 					'width': 40,
 					'type': 'label'
 				},
 				{
 					'name': 'Mode',
 					'index': 'mode_script',
-					'sorting': True,
-					'searching': True,
-					'width': 40,
+					'sorting': False,
+					'searching': False,
+					'width': 50,
 					'type': 'label'
 				},
 			]
