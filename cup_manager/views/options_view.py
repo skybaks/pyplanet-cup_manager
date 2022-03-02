@@ -1,7 +1,7 @@
 import logging
 import math
-from pandas import DataFrame
 import re
+from pandas import DataFrame
 from argparse import Namespace
 
 from pyplanet.views.generics import ask_confirmation
@@ -327,3 +327,122 @@ class PayoutsView(OptionsView):
 		if not cancel:
 			await self.close(player=player)
 			await self.app.pay_players(player, payout_data)
+
+
+class PresetsView(OptionsView):
+
+	title = 'Preset Setups'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'NewTrack'
+
+	def __init__(self, app) -> None:
+		super().__init__(app, 'cup_manager.views.presets_view_displayed')
+		self.apply_option_button_name = 'Apply'
+
+
+	async def get_option_fields(self) -> 'list[dict]':
+		fields = [
+			{
+				'name': 'Name',
+				'width': 30,
+				'index': 'name',
+			},
+			{
+				'name': 'Aliases',
+				'width': 30,
+				'index': 'aliases',
+			},
+			{
+				'name': 'Script',
+				'width': 45,
+				'index': 'script',
+			},
+		]
+		return fields
+
+
+	async def get_info_data_fields(self) -> 'list[dict]':
+		fields = [
+			{
+				'name': 'Setting',
+				'width': 30,
+				'index': 'name',
+			},
+			{
+				'name': 'Value',
+				'width': 75,
+				'index': 'value',
+			},
+		]
+		return fields
+
+
+	async def get_info_header_fields(self) -> 'list[dict]':
+		fields = [
+			{
+				'name': 'Preset:',
+				'width': 17,
+				'index': 'name',
+			},
+			{
+				'name': 'Script:',
+				'width': 17,
+				'index': 'script',
+			},
+		]
+		return fields
+
+
+	async def get_option_data(self) -> 'list[dict]':
+		presets = await self.app.get_presets()
+		options = []
+		for key, data in presets.items():
+			if 'script' in data and self.app.instance.game.game in data['script']:
+				aliases_combined = ''
+				if 'aliases' in data and data['aliases']:
+					aliases_combined = ', '.join(data['aliases'])
+				new_option = {
+					'name': key,
+					'selected': self.selected_option and self.selected_option['name'] == key,
+					'aliases': aliases_combined,
+					'script': data['script'][self.app.instance.game.game],
+				}
+
+				if not self.selected_option:
+					new_option['selected'] = True
+					self.selected_option = new_option
+
+				options.append(new_option)
+
+		frame = DataFrame(options)
+		self.option_count = len(frame)
+		frame = await self.apply_pagination(frame, self.option_page, self.num_option_per_page)
+		self.displayed_option_data = frame.to_dict('records')
+		return self.displayed_option_data
+
+
+	async def get_info_header_data(self) -> dict:
+		data = {}
+		if self.selected_option:
+			data.update(self.selected_option)
+		return data
+
+
+	async def get_info_data(self) -> 'list[dict]':
+		info_data = []
+		if self.selected_option and 'name' in self.selected_option:
+			presets = await self.app.get_presets()
+			selected_preset = presets[self.selected_option['name']]
+			if 'settings' in selected_preset and selected_preset['settings']:
+				for key, data in selected_preset['settings'].items():
+					info_data.append({'name': key, 'value': data})
+		frame = DataFrame(info_data)
+		self.info_data_count = len(frame)
+		frame = await self.apply_pagination(frame, self.info_data_page, self.num_info_data_per_page)
+		return frame.to_dict('records')
+
+
+	async def button_pressed(self, player, *args, **kwargs):
+		if 'name' in self.selected_option and self.selected_option['name']:
+			await self.app.command_setup(player=player, data=Namespace(**{'preset': self.selected_option['name']}))
+			await self.close(player=player)
