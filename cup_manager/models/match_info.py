@@ -8,7 +8,7 @@ class MatchInfo(TimedModel):
 	Server start time for a map. Identifies what match a score belongs to
 	"""
 
-	mode_script = CharField(null=True, max_length=150, index=True)
+	mode_script = CharField(null=True, max_length=150)
 	"""
 	Name of the mode script this score was recorded in
 	"""
@@ -30,7 +30,4 @@ class MatchInfo(TimedModel):
 
 	class Meta:
 		db_table = 'cup_manager_matchinfo_v1'
-		indexes = (
-			(('map_start_time',), True)
-		)
 
