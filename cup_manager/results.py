@@ -123,12 +123,12 @@ class ResultsCupManager:
 
 		if new_scores:
 			for new_score in new_scores:
-				logger.info(new_score)
+				logger.debug(new_score)
 				if self._match_start_time != 0:
 					await self._create_match_info()
 
 					if new_score.login in self._match_players_scored:
-						logger.info("Entry exists, updating score")
+						logger.debug("Entry exists, updating score")
 						await PlayerScore.execute(
 							PlayerScore.update(
 								nickname=new_score.nickname,
@@ -141,7 +141,7 @@ class ResultsCupManager:
 							)
 						)
 					else:
-						logger.info("No entry exists, creating score")
+						logger.debug("No entry exists, creating score")
 						self._match_players_scored.append(new_score.login)
 						await PlayerScore.execute(
 							PlayerScore.insert(
@@ -159,7 +159,7 @@ class ResultsCupManager:
 
 	async def _create_match_info(self) -> None:
 		if not self._match_info_created:
-			logger.info("Current match data does not exist, creating")
+			logger.debug("Current match data does not exist, creating")
 			self._match_info_created = True
 
 			current_mode_script = await self.instance.mode_manager.get_current_script()
