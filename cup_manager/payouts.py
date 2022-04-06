@@ -56,7 +56,7 @@ class PayoutCupManager:
 			return
 		if 'transactions' in self.instance.apps.apps:
 			for payment in payment_data:
-				logger.info(f"Attempting to pay {payment.login} {str(payment.amount)}")
+				logger.debug(f"Attempting to pay {payment.login} {str(payment.amount)}")
 				await self.instance.apps.apps['transactions'].pay_to_player(player=player, data=payment)
 
 

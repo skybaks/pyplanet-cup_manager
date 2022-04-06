@@ -160,5 +160,5 @@ class SetupCupManager:
 					pointsrepartition_actual = getpointsrepartition_response['pointsrepartition']
 
 					if pointsrepartition_actual != pointsrepartition_desired:
-						logger.info('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
+						logger.debug('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
 						await self.instance.gbx.script(*(['Trackmania.SetPointsRepartition'] + [str(point) for point in pointsrepartition_desired]), encode_json=False, response_id=False)

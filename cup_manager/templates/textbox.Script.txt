@@ -5,6 +5,8 @@ while (True) {
 			declare CMlTextEdit TextEdit_TextBody <=> (Page.GetFirstChild("{{ id }}__textbox-textedit-text_body") as CMlTextEdit);
 			System.ClipboardSet(TextEdit_TextBody.Value);
 			TriggerPageAction("{{ id }}__textbox_copy_success");
+		} else if (Event.Type == CMlScriptEvent::Type::EntrySubmit) {
+			TriggerPageAction("{{ id }}__textbox_entry_submit");
 		}
 	}
 	yield;
