@@ -21,9 +21,14 @@ class TextboxView(SingleInstanceView):
 	def __init__(self, app, player):
 		super().__init__(app, 'cup_manager.views.textbox_displayed')
 		self.player = player
+		self.exclude_zero_points = True
+		self.cup_name = '$(var.cup_name)'
+		self.cup_edition = '$(var.cup_edition)'
 
 		self.subscribe('textbox_button_close', self.close)
 		self.subscribe('textbox_copy_success', self.copy_success)
+		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
+		self.subscribe('textbox_entry_submit', self.entry_submit)
 
 
 	async def get_context_data(self):
@@ -31,16 +36,19 @@ class TextboxView(SingleInstanceView):
 
 		buttons = await self.get_buttons()
 
-		right = 107
+		left = 15
 		for button in buttons:
-			button['right'] = (right - (button['width'] / 2))
-			right -= button['width'] + 1.5
+			button['left'] = (left + (button['width'] / 2))
+			left += button['width'] + 1.5
 
 		context['title'] = self.title
 		context['icon_style'] = self.icon_style
 		context['icon_substyle'] = self.icon_substyle
 		context['text_body'] = await self.get_text_data()
 		context['buttons'] = buttons
+		context['exclude_zero_points'] = self.exclude_zero_points
+		context['cup_name'] = self.cup_name
+		context['cup_edition'] = self.cup_edition
 		return context
 
 
@@ -64,6 +72,17 @@ class TextboxView(SingleInstanceView):
 
 	async def copy_success(self, player, *args, **kwargs):
 		await self.app.instance.chat(f'Copied to clipboard', player)
+
+
+	async def toggle_excludeplayers(self, player, *args, **kwargs):
+		self.exclude_zero_points = not self.exclude_zero_points
+		await self.refresh(player=player)
+
+
+	async def entry_submit(self, player, action, values, *args, **kwargs):
+		self.cup_name = values['textbox_cupname']
+		self.cup_edition = values['textbox_cupedition']
+		await self.refresh(player=player)
 
 
 	async def get_buttons(self) -> list:
@@ -99,19 +118,19 @@ class TextResultsView(TextboxView):
 		buttons = [
 			{
 				'title': 'Discord',
-				'width': 25,
+				'width': 20,
 				'action': self._action_set_discord,
 				'selected': self._export_format == self.ExportFormat.DISCORD,
 			},
 			{
 				'title': 'Markdown',
-				'width': 25,
+				'width': 20,
 				'action': self._action_set_markdown,
 				'selected': self._export_format == self.ExportFormat.MARKDOWN,
 			},
 			{
 				'title': 'CSV',
-				'width': 25,
+				'width': 20,
 				'action': self._action_set_csv,
 				'selected': self._export_format == self.ExportFormat.CSV,
 			},
@@ -122,20 +141,23 @@ class TextResultsView(TextboxView):
 	async def get_text_data(self) -> str:
 		text = ''
 		if self._instance_data:
+
+			instance_data = [item for item in self._instance_data if item.score != 0] if self.exclude_zero_points else self._instance_data
+
 			if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
 
-				indexes = [str(item) for item in range(1, len(self._instance_data) + 1)]
-				scores = [str(item.score_str) for item in self._instance_data]
-				score2s = [str(item.score2_str) for item in self._instance_data]
-				nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in self._instance_data]
-				countries = [str(item.country) for item in self._instance_data]
+				indexes = [str(item) for item in range(1, len(instance_data) + 1)]
+				scores = [str(item.score_str) for item in instance_data]
+				score2s = [str(item.score2_str) for item in instance_data]
+				nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in instance_data]
+				countries = [str(item.country) for item in instance_data]
 
 				index_justify = min(4, len(max(indexes, key=len)))
 				score_justify = min(15, len(max(scores, key=len)))
 				score2_justify = min(15, len(max(score2s, key=len)))
 
 				if self._export_format == self.ExportFormat.DISCORD:
-					text += f'**$(var.cup_name)** - $(var.cup_edition) - {str(len(self._instance_data))} Players\n'
+					text += f'**{self.cup_name}** - {self.cup_edition} - {str(len(instance_data))} Players\n'
 
 					sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x.map_start_time)
 					for match_info in sorted_match_info_list:
@@ -151,13 +173,13 @@ class TextResultsView(TextboxView):
 							text += f' <{mx_base_url}/s/tr/{mx_id}>'
 						text += '\n'
 
-					if len(self._instance_data) >= 1:
+					if len(instance_data) >= 1:
 						text += f':first_place: {country_codes.get_discord_flag(countries[0])} {nicknames[0]}\n'
-					if len(self._instance_data) >= 2:
+					if len(instance_data) >= 2:
 						text += f':second_place: {country_codes.get_discord_flag(countries[1])} {nicknames[1]}\n'
-					if len(self._instance_data) >= 3:
+					if len(instance_data) >= 3:
 						text += f':third_place: {country_codes.get_discord_flag(countries[2])} {nicknames[2]}\n'
-					if len(self._instance_data) >= 4:
+					if len(instance_data) >= 4:
 						text += f':four: {country_codes.get_discord_flag(countries[3])} {nicknames[3]}\n'
 					text += '\n'
 					text += 'Full results:\n'
@@ -171,8 +193,8 @@ class TextResultsView(TextboxView):
 					text += str(nickname) + '\n'
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
-				indexes = [str(item) for item in range(1, len(self._instance_data) + 1)]
-				for item, index in zip(self._instance_data, indexes):
+				indexes = [str(item) for item in range(1, len(instance_data) + 1)]
+				for item, index in zip(instance_data, indexes):
 					text += '"' + str(index) + '",'
 					text += '"' + str(item.score_str) + '",'
 					if self._show_score2:
@@ -184,10 +206,6 @@ class TextResultsView(TextboxView):
 				text = f"Export format not implemented: {str(self._export_format)}"
 				logger.error(text)
 		return text
-
-
-	async def close(self, player, *args, **kwargs):
-		await super().close(player, *args, **kwargs)
 
 
 	async def _action_set_markdown(self, player, *args, **kwargs):
