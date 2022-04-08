@@ -29,6 +29,7 @@ class ResultsCupManager:
 		self._setting_match_history_amount = None
 		self._view_cache_matches = []
 		self._view_cache_scores = {}
+		self._view_cache_team_scores = {}
 
 		self._setting_match_history_amount = Setting(
 			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
@@ -133,6 +134,7 @@ class ResultsCupManager:
 								score=new_score.score,
 							)
 						)
+					await self._invalidate_view_cache_team_scores(self._match_start_time)
 
 
 	async def _handle_player_score_update(self, player_scores: list):
@@ -268,8 +270,10 @@ class ResultsCupManager:
 			oldest_time = map_times[0]
 			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
 			await MatchInfo.execute(MatchInfo.delete().where(MatchInfo.map_start_time == oldest_time))
+			await TeamScore.execute(TeamScore.delete().where(TeamScore.map_start_time == oldest_time))
 			await self._invalidate_view_cache_scores(oldest_time)
 			await self._invalidate_view_cache_matches()
+			await self._invalidate_view_cache_team_scores(oldest_time)
 			map_times.pop(0)
 
 
@@ -290,6 +294,13 @@ class ResultsCupManager:
 			self._view_cache_scores = {}
 		elif map_start_time in self._view_cache_scores:
 			del self._view_cache_scores[map_start_time]
+
+
+	async def _invalidate_view_cache_team_scores(self, map_start_time: int=0):
+		if map_start_time == 0:
+			self._view_cache_team_scores = {}
+		elif map_start_time in self._view_cache_team_scores:
+			del self._view_cache_team_scores[map_start_time]
 
 
 	async def _button_export(self, player, values, view, **kwargs):
@@ -320,6 +331,14 @@ class ResultsCupManager:
 			if len(scores_query) > 0:
 				self._view_cache_scores[map_start_time] = list(scores_query)
 		return self._view_cache_scores[map_start_time]
+
+
+	async def get_data_team_scores(self, map_start_time: int) -> 'list[TeamScore]':
+		if not (map_start_time in self._view_cache_team_scores and self._view_cache_team_scores[map_start_time]):
+			scores_query = await TeamScore.execute(TeamScore.select().where(TeamScore.map_start_time.in_([map_start_time])))
+			if len(scores_query) > 0:
+				self._view_cache_team_scores[map_start_time] = list(scores_query)
+		return self._view_cache_team_scores[map_start_time]
 
 
 	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[GenericPlayerScore]':
