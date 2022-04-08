@@ -52,3 +52,18 @@ class GenericPlayerScore:
 	def score2_str(self) -> str:
 		return times.format_time(int(self.score2)) if self.score2_is_time else str(self.score2)
 
+
+class GenericTeamScore:
+	id = 0
+	name = ''
+	score = 0
+
+
+	def __init__(self, id, name, score) -> None:
+		self.id = id
+		self.name = name
+		self.score = score
+
+
+	def __repr__(self) -> str:
+		return f"<GenericTeamScore id:{self.id} name:{self.name} score:{self.score}>"
