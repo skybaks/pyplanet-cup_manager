@@ -294,7 +294,7 @@ class ResultsCupManager:
 
 	async def _button_export(self, player, values, view, **kwargs):
 		if view.scores_query:
-			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
+			scores_data = await self.get_data_scores(view.scores_query, view.scores_mode_script)
 
 			match_info = []
 			all_match_data = await self.get_data_matches()

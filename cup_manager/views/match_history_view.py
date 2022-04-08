@@ -4,8 +4,6 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
-from ..app_types import ResultsViewParams
-
 logger = logging.getLogger(__name__)
 
 class MatchHistoryView(ManualListView):
@@ -17,22 +15,18 @@ class MatchHistoryView(ManualListView):
 
 	custom_results_view_buttons = []
 
-	def __init__(self, app, player, map_score_instance: ResultsViewParams=None) -> None:
+	def __init__(self, app, player) -> None:
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
 		self.player = player
+		self.provide_search = False
 		self.results_view_show_score2 = False
-		self.scores_query = None
-		self.results_view_params = None
+		self.scores_query = []
+		self.scores_mode_script = ''
 		self._results_view_mode = False
 		self._persist_matches_page = 0
 		self._selected_matches = []
-		self._selected_matches_mode = False
-		if map_score_instance:
-			self._set_results_view_mode(map_score_instance)
-		else:
-			self._set_match_view_mode()
 
 
 	async def get_fields(self) -> list:
@@ -155,25 +149,23 @@ class MatchHistoryView(ManualListView):
 				elif custom_button['visible']:
 					buttons.append(custom_button)
 		else:
-			if self._selected_matches:
-				buttons.append({
-					'title': 'Sum Sel.',
-					'width': 25,
-					'action': self._button_calculate_results
-				})
-				buttons.append({
-					'title': 'Clear Sel.',
-					'width': 25,
-					'action': self._button_clear_selection
-				})
+			buttons.append({
+				'title': 'Sum Sel.',
+				'width': 25,
+				'action': self._button_calculate_results
+			})
+			buttons.append({
+				'title': 'Clear Sel.',
+				'width': 25,
+				'action': self._button_clear_selection
+			})
 		return buttons
 
 
 	async def get_data(self) -> list:
 		items = []
 		if self._results_view_mode:
-			self.scores_query = self._selected_matches if self._selected_matches_mode else self.results_view_params.map_start_time
-			scores = await self.app.get_data_scores(self.scores_query, self.results_view_params.mode_script)
+			scores = await self.app.get_data_scores(self.scores_query, self.scores_mode_script)
 			index = 1
 			for player_score in scores:
 				items.append({
@@ -189,8 +181,6 @@ class MatchHistoryView(ManualListView):
 				index += 1
 
 		if not items:
-			self.scores_query = None
-			self.results_view_params = None
 			self._results_view_mode = False
 			self._persist_matches_page = 0
 			self._set_match_view_mode()
@@ -223,8 +213,9 @@ class MatchHistoryView(ManualListView):
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs):
-		self._selected_matches_mode = False
-		self._set_results_view_mode(ResultsViewParams(instance['map_name'], instance['map_start_time'], instance['mode_script']))
+		self.scores_query = instance['map_start_time']
+		self.scores_mode_script = instance['mode_script']
+		self._set_results_view_mode('$<' + instance['map_name'] + '$> / ' + datetime.datetime.fromtimestamp(instance['map_start_time']).strftime("%c"), show_score2='laps' in instance['mode_script'].lower())
 		await self.refresh(player=player)
 
 
@@ -237,32 +228,32 @@ class MatchHistoryView(ManualListView):
 
 
 	async def _button_back(self, player, values, **kwargs):
-		self._selected_matches_mode = False
 		self._set_match_view_mode()
 		await self.refresh(player=player)
 
 
 	async def _button_calculate_results(self, player, values, **kwargs):
-		self._selected_matches_mode = True
-		matches = await self.app.get_data_matches()
-		mode_script = None
-		for match in matches:
-			if match.map_start_time in self._selected_matches:
-				mode_script = match.mode_script
-				break
-		self._set_results_view_mode(ResultsViewParams('', -1, mode_script))
-		await self.refresh(player=player)
+		if self._selected_matches:
+			matches = await self.app.get_data_matches()
+			mode_script = None
+			for match in matches:
+				if match.map_start_time in self._selected_matches:
+					mode_script = match.mode_script
+					break
+			self.scores_query = self._selected_matches
+			self.scores_mode_script = mode_script
+			self._set_results_view_mode('Selected Matches Results', show_score2='laps' in mode_script.lower())
+			await self.refresh(player=player)
 
 
 	async def _button_clear_selection(self, player, values, **kwargs):
-		self._selected_matches_mode = False
-		self._selected_matches = []
-		await self.refresh(player=player)
+		if self._selected_matches:
+			self._selected_matches = []
+			await self.refresh(player=player)
 
 
 	def _set_match_view_mode(self):
 		self.icon_substyle = 'Statistics'
-		self.results_view_params = None
 		self._results_view_mode = False
 		if self._persist_matches_page != 0:
 			self.page = self._persist_matches_page
@@ -270,15 +261,10 @@ class MatchHistoryView(ManualListView):
 		self.title = 'Match History'
 
 
-	def _set_results_view_mode(self, results_view_params: ResultsViewParams):
+	def _set_results_view_mode(self, title: str, show_score2: bool=False):
+		self.title = title
 		self.icon_substyle = 'Rankings'
-		self.results_view_show_score2 = 'laps' in results_view_params.mode_script.lower()
-		self.results_view_params = results_view_params
+		self.results_view_show_score2 = show_score2
 		self._results_view_mode = True
 		self._persist_matches_page = self.page
 		self.page = 1
-		if self._selected_matches_mode:
-			self.title = 'Selected Matches Results'
-		else:
-			self.title = '$<' + self.results_view_params.map_name + '$> / ' + datetime.datetime.fromtimestamp(self.results_view_params.map_start_time).strftime("%c")
-
