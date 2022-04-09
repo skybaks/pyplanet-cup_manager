@@ -23,6 +23,7 @@ class TextboxView(SingleInstanceView):
 		self.player = player
 		self.exclude_zero_points = True
 		self.exclude_zero_points_as_spec = True
+		self.display_ties = True
 		self.cup_name = '$(var.cup_name)'
 		self.cup_edition = '$(var.cup_edition)'
 
@@ -30,6 +31,7 @@ class TextboxView(SingleInstanceView):
 		self.subscribe('textbox_copy_success', self.copy_success)
 		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
 		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
+		self.subscribe('textbox_checkbox_displayties', self.toggle_displayties)
 		self.subscribe('textbox_entry_submit', self.entry_submit)
 
 
@@ -50,6 +52,7 @@ class TextboxView(SingleInstanceView):
 		context['buttons'] = buttons
 		context['exclude_zero_points'] = self.exclude_zero_points
 		context['exclude_zero_points_as_spec'] = self.exclude_zero_points_as_spec
+		context['display_ties'] = self.display_ties
 		context['cup_name'] = self.cup_name
 		context['cup_edition'] = self.cup_edition
 		return context
@@ -84,6 +87,11 @@ class TextboxView(SingleInstanceView):
 
 	async def toggle_excludeplayers_as_spec(self, player, *args, **kwargs):
 		self.exclude_zero_points_as_spec = not self.exclude_zero_points_as_spec
+		await self.refresh(player=player)
+
+
+	async def toggle_displayties(self, player, *args, **kwargs):
+		self.display_ties = not self.display_ties
 		await self.refresh(player=player)
 
 
@@ -181,20 +189,44 @@ class TextResultsView(TextboxView):
 							text += f' <{mx_base_url}/s/tr/{mx_id}>'
 						text += '\n'
 
-					if len(instance_data) >= 1:
-						text += f':first_place: {country_codes.get_discord_flag(countries[0])} {nicknames[0]}\n'
-					if len(instance_data) >= 2:
-						text += f':second_place: {country_codes.get_discord_flag(countries[1])} {nicknames[1]}\n'
-					if len(instance_data) >= 3:
-						text += f':third_place: {country_codes.get_discord_flag(countries[2])} {nicknames[2]}\n'
-					if len(instance_data) >= 4:
-						text += f':four: {country_codes.get_discord_flag(countries[3])} {nicknames[3]}\n'
+					score_prev = ()
+					placement_emotes = [
+						':first_place:',
+						':second_place:',
+						':third_place:',
+						':four:',
+					]
+					placement_emote_index = 0
+					prev_placement_emote_index = 0
+					placement_index = 0
+
+					for nickname, country, score, score2 in zip(nicknames, countries, scores, score2s):
+						if self.display_ties and score_prev == (score, score2):
+							placement_emote_index = prev_placement_emote_index
+						if placement_emote_index >= len(placement_emotes) or (placement_index > len(placement_emotes) and placement_emote_index != prev_placement_emote_index):
+							break
+						text += f'{placement_emotes[placement_emote_index]} {country_codes.get_discord_flag(country)} {nickname}\n'
+						prev_placement_emote_index = placement_emote_index
+						score_prev = (score, score2)
+						placement_index += 1
+						placement_emote_index = placement_index
+
 					text += '\n'
 					text += 'Full results:\n'
 
+				score_prev = ()
+				index_prev = ''
+
 				text += "```\n"
 				for index, nickname, score, score2 in zip(indexes, nicknames, scores, score2s):
-					text += str(index.rjust(index_justify)) + '  '
+					display_index = index
+
+					if self.display_ties and score_prev == (score, score2):
+						display_index = index_prev
+					index_prev = display_index
+					score_prev = (score, score2)
+
+					text += str(display_index.rjust(index_justify)) + '  '
 					if self._show_score2:
 						text += str(score2.rjust(score2_justify)) + '  '
 					text += str(score.rjust(score_justify)) + '  '
