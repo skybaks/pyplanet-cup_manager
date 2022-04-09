@@ -43,6 +43,27 @@
     textprefix="$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777" action="{{ id }}__textbox_checkbox_excludeplayers"/>
     <label pos="8 -20" size="98 5" text="Exclude players with zero points" textprefix="$fff" textsize="1.3" valign="center2" halign="left"/>
 
+    <label pos="11 -25.5" size="5 4.9"
+      {% if exclude_zero_points_as_spec %}
+        text=""
+      {% else %}
+        text=""
+      {% endif %}
+    textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777"
+      {% if exclude_zero_points %}
+        textprefix="$fff" action="{{ id }}__textbox_checkbox_excludeplayers_asspec"
+      {% else %}
+        textprefix="$aaa"
+      {% endif %}
+    />
+    <label pos="14 -25.5" size="92 5" text="Show excluded players as &quot;Spec&quot;" textsize="1.3" valign="center2" halign="left"
+      {% if exclude_zero_points %}
+        textprefix="$fff"
+      {% else %}
+        textprefix="$aaa"
+      {% endif %}
+    />
+
   </frame>
   {% endif %}
 
