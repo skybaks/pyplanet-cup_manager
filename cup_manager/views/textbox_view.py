@@ -22,12 +22,14 @@ class TextboxView(SingleInstanceView):
 		super().__init__(app, 'cup_manager.views.textbox_displayed')
 		self.player = player
 		self.exclude_zero_points = True
+		self.exclude_zero_points_as_spec = True
 		self.cup_name = '$(var.cup_name)'
 		self.cup_edition = '$(var.cup_edition)'
 
 		self.subscribe('textbox_button_close', self.close)
 		self.subscribe('textbox_copy_success', self.copy_success)
 		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
+		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
 		self.subscribe('textbox_entry_submit', self.entry_submit)
 
 
@@ -47,6 +49,7 @@ class TextboxView(SingleInstanceView):
 		context['text_body'] = await self.get_text_data()
 		context['buttons'] = buttons
 		context['exclude_zero_points'] = self.exclude_zero_points
+		context['exclude_zero_points_as_spec'] = self.exclude_zero_points_as_spec
 		context['cup_name'] = self.cup_name
 		context['cup_edition'] = self.cup_edition
 		return context
@@ -76,6 +79,11 @@ class TextboxView(SingleInstanceView):
 
 	async def toggle_excludeplayers(self, player, *args, **kwargs):
 		self.exclude_zero_points = not self.exclude_zero_points
+		await self.refresh(player=player)
+
+
+	async def toggle_excludeplayers_as_spec(self, player, *args, **kwargs):
+		self.exclude_zero_points_as_spec = not self.exclude_zero_points_as_spec
 		await self.refresh(player=player)
 
 
@@ -191,6 +199,16 @@ class TextResultsView(TextboxView):
 						text += str(score2.rjust(score2_justify)) + '  '
 					text += str(score.rjust(score_justify)) + '  '
 					text += str(nickname) + '\n'
+
+				if self.exclude_zero_points and self.exclude_zero_points_as_spec:
+					excluded_players = [item for item in self._instance_data if item.score == 0]
+					spec_justify = index_justify + score_justify + 4
+					if self._show_score2:
+						spec_justify += score2_justify + 2
+					for excluded_player in excluded_players:
+						text += str('Spec'.ljust(spec_justify))
+						text += str(style.style_strip(excluded_player.nickname, style.STRIP_ALL)) + '\n'
+
 				text += "```"
 			elif self._export_format == self.ExportFormat.CSV:
 				indexes = [str(item) for item in range(1, len(instance_data) + 1)]
