@@ -157,13 +157,13 @@ class TextResultsView(TextboxView):
 	async def get_text_data(self) -> str:
 		text = ''
 		if self._instance_data:
-			instance_data = [item for item in self._instance_data if item.score != 0] if self.exclude_zero_points else self._instance_data
+			instance_data = [item for item in self._instance_data if item.player_score != 0] if self.exclude_zero_points else self._instance_data
 			if instance_data:
 				if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
 
 					indexes = [str(item) for item in range(1, len(instance_data) + 1)]
-					scores = [str(item.score_str) for item in instance_data]
-					score2s = [str(item.score2_str) for item in instance_data]
+					scores = [str(item.player_score_str) for item in instance_data]
+					score2s = [str(item.player_score2_str) for item in instance_data]
 					nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in instance_data]
 					countries = [str(item.country) for item in instance_data]
 
@@ -232,7 +232,7 @@ class TextResultsView(TextboxView):
 						text += str(nickname) + '\n'
 
 					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
-						excluded_players = [item for item in self._instance_data if item.score == 0]
+						excluded_players = [item for item in self._instance_data if item.player_score == 0]
 						spec_justify = index_justify + score_justify + 4
 						if self._show_score2:
 							spec_justify += score2_justify + 2
@@ -245,9 +245,9 @@ class TextResultsView(TextboxView):
 					indexes = [str(item) for item in range(1, len(instance_data) + 1)]
 					for item, index in zip(instance_data, indexes):
 						text += '"' + str(index) + '",'
-						text += '"' + str(item.score_str) + '",'
+						text += '"' + str(item.player_score_str) + '",'
 						if self._show_score2:
-							text += '"' + str(item.score2_str) + '",'
+							text += '"' + str(item.player_score2_str) + '",'
 						text += '"' + style.style_strip(item.nickname, style.STRIP_ALL) + '",'
 						text += '"' + str(item.login) + '",'
 						text += '"' + str(item.country) + '"\n'

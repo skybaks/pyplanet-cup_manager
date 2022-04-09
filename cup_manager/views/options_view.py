@@ -7,7 +7,7 @@ from argparse import Namespace
 from pyplanet.views.generics import ask_confirmation
 
 from .single_instance_view import SingleInstanceView
-from ..app_types import GenericPlayerScore
+from ..app_types import TeamPlayerScore
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +212,7 @@ class PayoutsView(OptionsView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Coppers'
 
-	def __init__(self, app, score_data: 'list[GenericPlayerScore]') -> None:
+	def __init__(self, app, score_data: 'list[TeamPlayerScore]') -> None:
 		super().__init__(app, 'cup_manager.views.payouts_view_displayed')
 		self.score_data = score_data
 		self.apply_option_button_name = 'Pay'

@@ -27,12 +27,22 @@ class MatchHistoryView(ManualListView):
 		self._results_view_mode = False
 		self._persist_matches_page = 0
 		self._selected_matches = []
+		self.team_score_mode = False
 
 
 	async def get_fields(self) -> list:
 		fields = []
 		if self._results_view_mode:
-			fields = [
+			nickname_width = 105
+			score2_width = 20
+			team_width = 20
+
+			if self.results_view_show_score2:
+				nickname_width -= score2_width
+			if self.team_score_mode:
+				nickname_width -= team_width
+
+			fields.append(
 				{
 					'name': '#',
 					'index': 'index',
@@ -41,14 +51,18 @@ class MatchHistoryView(ManualListView):
 					'width': 10,
 					'type': 'label',
 				},
+			)
+			fields.append(
 				{
 					'name': 'Nickname',
 					'index': 'nickname',
 					'sorting': False,
 					'searching': False,
-					'width': 80,
+					'width': nickname_width,
 					'type': 'label',
 				},
+			)
+			fields.append(
 				{
 					'name': 'Login',
 					'index': 'login',
@@ -57,28 +71,39 @@ class MatchHistoryView(ManualListView):
 					'width': 50,
 					'type': 'label',
 				},
+			)
+			if self.team_score_mode:
+				fields.append(
+					{
+						'name': 'Team',
+						'index': 'team_score_str',
+						'sorting': False,
+						'searching': False,
+						'width': team_width,
+						'type': 'label',
+					}
+				)
+			fields.append(
 				{
 					'name': 'Score',
-					'index': 'score_str',
+					'index': 'player_score_str',
 					'sorting': False,
 					'searching': False,
 					'width': 20,
 					'type': 'label',
 				},
-			]
-
+			)
 			if self.results_view_show_score2:
 				fields.append(
 					{
 						'name': 'Score2',
-						'index': 'score2_str',
+						'index': 'player_score2_str',
 						'sorting': False,
 						'searching': False,
-						'width': 20,
+						'width': score2_width,
 						'type': 'label',
 					}
 				)
-
 			fields.append(
 				{
 					'name': 'Country',
@@ -173,10 +198,11 @@ class MatchHistoryView(ManualListView):
 					'login': player_score.login,
 					'nickname': player_score.nickname,
 					'country': player_score.country,
-					'score': player_score.score,
-					'score_str': player_score.score_str,
-					'score2': player_score.score2,
-					'score2_str': player_score.score2_str,
+					#'score': player_score.player_score,
+					'player_score_str': player_score.player_score_str,
+					#'score2': player_score.player_score2,
+					'player_score2_str': player_score.player_score2_str,
+					'team_score_str':player_score.team_score_str,
 				})
 				index += 1
 
@@ -215,7 +241,11 @@ class MatchHistoryView(ManualListView):
 	async def _action_view_match(self, player, values, instance, **kwargs):
 		self.scores_query = instance['map_start_time']
 		self.scores_mode_script = instance['mode_script']
-		self._set_results_view_mode('$<' + instance['map_name'] + '$> / ' + datetime.datetime.fromtimestamp(instance['map_start_time']).strftime("%c"), show_score2='laps' in instance['mode_script'].lower())
+		self._set_results_view_mode(
+			'$<' + instance['map_name'] + '$> / ' + datetime.datetime.fromtimestamp(instance['map_start_time']).strftime("%c"),
+			show_score2='laps' in instance['mode_script'].lower(),
+			show_team_score=len(await self.app.get_data_team_scores(instance['map_start_time'])) > 0
+		)
 		await self.refresh(player=player)
 
 
@@ -240,9 +270,20 @@ class MatchHistoryView(ManualListView):
 				if match.map_start_time in self._selected_matches:
 					mode_script = match.mode_script
 					break
+
+			show_team_score = False
+			for selected_match in self._selected_matches:
+				if len(await self.app.get_data_team_scores(selected_match)) > 0:
+					show_team_score = True
+					break
+
 			self.scores_query = self._selected_matches
 			self.scores_mode_script = mode_script
-			self._set_results_view_mode('Selected Matches Results', show_score2='laps' in mode_script.lower())
+			self._set_results_view_mode(
+				'Selected Matches Results',
+				show_score2='laps' in mode_script.lower(),
+				show_team_score=show_team_score
+			)
 			await self.refresh(player=player)
 
 
@@ -261,10 +302,11 @@ class MatchHistoryView(ManualListView):
 		self.title = 'Match History'
 
 
-	def _set_results_view_mode(self, title: str, show_score2: bool=False):
+	def _set_results_view_mode(self, title: str, show_score2: bool=False, show_team_score: bool=False):
 		self.title = title
 		self.icon_substyle = 'Rankings'
 		self.results_view_show_score2 = show_score2
+		self.team_score_mode = show_team_score
 		self._results_view_mode = True
 		self._persist_matches_page = self.page
 		self.page = 1

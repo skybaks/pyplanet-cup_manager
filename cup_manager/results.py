@@ -10,7 +10,7 @@ from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo
 from .views import MatchHistoryView, TextResultsView
-from .app_types import GenericPlayerScore, GenericTeamScore
+from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
 
@@ -330,6 +330,8 @@ class ResultsCupManager:
 			scores_query = await PlayerScore.execute(PlayerScore.select().where(PlayerScore.map_start_time.in_([map_start_time])))
 			if len(scores_query) > 0:
 				self._view_cache_scores[map_start_time] = list(scores_query)
+			else:
+				self._view_cache_scores[map_start_time] = []
 		return self._view_cache_scores[map_start_time]
 
 
@@ -338,10 +340,12 @@ class ResultsCupManager:
 			scores_query = await TeamScore.execute(TeamScore.select().where(TeamScore.map_start_time.in_([map_start_time])))
 			if len(scores_query) > 0:
 				self._view_cache_team_scores[map_start_time] = list(scores_query)
+			else:
+				self._view_cache_team_scores[map_start_time] = []
 		return self._view_cache_team_scores[map_start_time]
 
 
-	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[GenericPlayerScore]':
+	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[TeamPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
 			lookup_matches.append(map_start_time)
@@ -350,26 +354,45 @@ class ResultsCupManager:
 
 		score_by_login = {}
 		for start_time in lookup_matches:
+
+			team_score_by_id = {}
+			team_scores = await self.get_data_team_scores(start_time)
+			for team_score in team_scores:
+				team_score_by_id[team_score.team_id] = { 'score': team_score.score, 'name': team_score.name }
+
 			player_scores = await self.get_data_player_scores(start_time)
 			for player_score in player_scores:
 				if player_score.login not in score_by_login:
-					score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country, 'count': 0 }
+					score_by_login[player_score.login] = {
+						'score': 0,
+						'score2': 0,
+						'nickname': player_score.nickname,
+						'country': player_score.country,
+						'count': 0,
+						'team': player_score.team,
+						'team_name': '',
+						'team_score': 0,
+					}
+					if team_score_by_id and player_score.team in team_score_by_id:
+						score_by_login[player_score.login]['team_name'] = team_score_by_id[player_score.team]['name']
+				if team_score_by_id and player_score.team in team_score_by_id:
+					score_by_login[player_score.login]['team_score'] += team_score_by_id[player_score.team]['score']
 				score_by_login[player_score.login]['score'] += player_score.score
 				score_by_login[player_score.login]['score2'] += player_score.score2
 				score_by_login[player_score.login]['count'] += 1
 
 		scores = []
 		for login, score_data in score_by_login.items():
-			new_score = GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score'], score_data['score2'])
-			new_score.score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
+			new_score = TeamPlayerScore(login, score_data['nickname'], score_data['country'], score_data['team'], score_data['team_name'], score_data['team_score'], score_data['score'], score_data['score2'])
+			new_score.player_score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
 			new_score.count = score_data['count']
 			scores.append(new_score)
 
 		if 'timeattack'in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, x.score))
+			scores = sorted(scores, key=lambda x: (-x.count, x.player_score))
 		elif 'laps' in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, -x.score2, x.score))
+			scores = sorted(scores, key=lambda x: (-x.count, -x.player_score2, x.player_score))
 		else:
-			scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=True)
+			scores = sorted(scores, key=lambda x: (x.team_score, -x.player_score2, x.player_score), reverse=True)
 
 		return scores
