@@ -123,11 +123,12 @@ class TextResultsView(TextboxView):
 	_export_format = ExportFormat.DISCORD
 
 
-	def __init__(self, app, player, input_data, match_data, show_score2=False):
+	def __init__(self, app, player, input_data, match_data, show_score2=False, show_team_score=False):
 		super().__init__(app, player)
 		self._instance_data = input_data
 		self._instance_match_data = match_data
 		self._show_score2 = show_score2
+		self._show_team_score = show_team_score
 
 
 	async def get_buttons(self) -> list:
@@ -157,17 +158,19 @@ class TextResultsView(TextboxView):
 	async def get_text_data(self) -> str:
 		text = ''
 		if self._instance_data:
-			instance_data = [item for item in self._instance_data if item.player_score != 0] if self.exclude_zero_points else self._instance_data
+			instance_data = [item for item in self._instance_data if item.team_score > 0 or item.player_score > 0 or item.player_score2 > 0] if self.exclude_zero_points else self._instance_data
 			if instance_data:
 				if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
 
 					indexes = [str(item) for item in range(1, len(instance_data) + 1)]
+					team_scores = [str(item.team_score_str) for item in instance_data]
 					scores = [str(item.player_score_str) for item in instance_data]
 					score2s = [str(item.player_score2_str) for item in instance_data]
 					nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in instance_data]
 					countries = [str(item.country) for item in instance_data]
 
 					index_justify = min(4, len(max(indexes, key=len)))
+					team_score_justify = min(15, len(max(team_scores, key=len)))
 					score_justify = min(15, len(max(scores, key=len)))
 					score2_justify = min(15, len(max(score2s, key=len)))
 
@@ -199,14 +202,14 @@ class TextResultsView(TextboxView):
 						prev_placement_emote_index = 0
 						placement_index = 0
 
-						for nickname, country, score, score2 in zip(nicknames, countries, scores, score2s):
-							if self.display_ties and score_prev == (score, score2):
+						for nickname, country, team_score, score, score2 in zip(nicknames, countries, team_scores, scores, score2s):
+							if self.display_ties and score_prev == (team_score, score, score2):
 								placement_emote_index = prev_placement_emote_index
 							if placement_emote_index >= len(placement_emotes) or (placement_index > len(placement_emotes) and placement_emote_index != prev_placement_emote_index):
 								break
 							text += f'{placement_emotes[placement_emote_index]} {country_codes.get_discord_flag(country)} {nickname}\n'
 							prev_placement_emote_index = placement_emote_index
-							score_prev = (score, score2)
+							score_prev = (team_score, score, score2)
 							placement_index += 1
 							placement_emote_index = placement_index
 
@@ -217,23 +220,27 @@ class TextResultsView(TextboxView):
 					index_prev = ''
 
 					text += "```\n"
-					for index, nickname, score, score2 in zip(indexes, nicknames, scores, score2s):
+					for index, nickname, team_score, score, score2 in zip(indexes, nicknames, team_scores, scores, score2s):
 						display_index = index
 
-						if self.display_ties and score_prev == (score, score2):
+						if self.display_ties and score_prev == (team_score, score, score2):
 							display_index = index_prev
 						index_prev = display_index
-						score_prev = (score, score2)
+						score_prev = (team_score, score, score2)
 
 						text += str(display_index.rjust(index_justify)) + '  '
+						if self._show_team_score:
+							text += str(team_score.rjust(team_score_justify)) + '  '
 						if self._show_score2:
 							text += str(score2.rjust(score2_justify)) + '  '
 						text += str(score.rjust(score_justify)) + '  '
 						text += str(nickname) + '\n'
 
 					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
-						excluded_players = [item for item in self._instance_data if item.player_score == 0]
+						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
 						spec_justify = index_justify + score_justify + 4
+						if self._show_team_score:
+							spec_justify += team_score_justify + 2
 						if self._show_score2:
 							spec_justify += score2_justify + 2
 						for excluded_player in excluded_players:
@@ -245,6 +252,8 @@ class TextResultsView(TextboxView):
 					indexes = [str(item) for item in range(1, len(instance_data) + 1)]
 					for item, index in zip(instance_data, indexes):
 						text += '"' + str(index) + '",'
+						if self._show_team_score:
+							text += '"' + str(item.team_score_str) + '",'
 						text += '"' + str(item.player_score_str) + '",'
 						if self._show_score2:
 							text += '"' + str(item.player_score2_str) + '",'

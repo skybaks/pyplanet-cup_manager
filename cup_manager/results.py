@@ -313,7 +313,7 @@ class ResultsCupManager:
 				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
 					match_info.append(match_data_info)
 
-			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2)
+			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2, view.team_score_mode)
 			await text_view.display(player=player)
 
 
