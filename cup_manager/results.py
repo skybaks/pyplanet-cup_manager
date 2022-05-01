@@ -8,9 +8,9 @@ from pyplanet.apps.core.shootmania import callbacks as sm_signals
 from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
-from .models import PlayerScore, MatchInfo
+from .models import PlayerScore, TeamScore, MatchInfo
 from .views import MatchHistoryView, TextResultsView
-from .app_types import GenericPlayerScore
+from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,12 @@ class ResultsCupManager:
 		self._match_map_name = ''
 		self._match_mx_id = ''
 		self._match_players_scored = []
+		self._match_teams_scored = []
 		self._match_info_created = False
 		self._setting_match_history_amount = None
 		self._view_cache_matches = []
 		self._view_cache_scores = {}
+		self._view_cache_team_scores = {}
 
 		self._setting_match_history_amount = Setting(
 			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
@@ -67,21 +69,23 @@ class ResultsCupManager:
 			pass
 
 		if scores:
-			await self._handle_score_update(scores['players'])
+			await self._handle_player_score_update(scores['players'])
 
 
 	async def _tm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
 		if section == 'PreEndRound':
 			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
 			return
-		await self._handle_score_update(players)
+		await self._handle_player_score_update(players)
 
 
 	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
 		if section == 'PreEndRound':
 			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
 			return
-		await self._handle_score_update(players)
+		if use_teams:
+			await self._handle_team_score_update(teams)
+		await self._handle_player_score_update(players)
 
 
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
@@ -92,7 +96,48 @@ class ResultsCupManager:
 		await self._handle_map_update('MapEnd')
 
 
-	async def _handle_score_update(self, player_scores: list):
+	async def _handle_team_score_update(self, team_scores: list):
+		new_scores = []
+		for team_score in team_scores:
+			try:
+				new_score_id = team_score['id']
+				new_score_name = team_score['name']
+				new_score_score = team_score['map_points']
+				new_scores.append(GenericTeamScore(new_score_id, new_score_name, new_score_score))
+
+			except Exception as e:
+				logger.error(f"Exception while recording scores for following team_score object: {str(team_score)}")
+				logger.error(str(e))
+
+		if new_scores:
+			for new_score in new_scores:
+				logger.info(new_score)
+				if self._match_start_time != 0:
+					await self._create_match_info()
+
+					if new_score.id in self._match_teams_scored:
+						await TeamScore.execute(
+							TeamScore.update(
+								name=new_score.name,
+								score=new_score.score,
+							).where(
+								(TeamScore.team_id == new_score.id) & (TeamScore.map_start_time == self._match_start_time)
+							)
+						)
+					else:
+						self._match_teams_scored.append(new_score.id)
+						await TeamScore.execute(
+							TeamScore.insert(
+								map_start_time=self._match_start_time,
+								team_id=new_score.id,
+								name=new_score.name,
+								score=new_score.score,
+							)
+						)
+					await self._invalidate_view_cache_team_scores(self._match_start_time)
+
+
+	async def _handle_player_score_update(self, player_scores: list):
 		current_script_lower = (await self.instance.mode_manager.get_current_script()).lower()
 		new_scores = []
 		for player_score in player_scores:
@@ -100,22 +145,23 @@ class ResultsCupManager:
 				new_score_login = player_score['login'] if 'login' in player_score else player_score['player'].login
 				new_score_nick = player_score['name'] if 'name' in player_score else player_score['player'].nickname
 				new_score_country = player_score['player'].flow.zone.country if 'player' in player_score else None
+				new_score_team = player_score['player'].flow.team_id if 'player' in player_score else 0
 
 				if 'timeattack' in current_script_lower:
 					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
 					if new_score_score != -1:
-						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score))
+						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, score2=0, team=new_score_team))
 
 				elif 'laps' in current_script_lower:
 					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
 					new_score_score2 = len(player_score['best_race_checkpoints']) if 'best_race_checkpoints' in player_score else len(player_score['bestracecheckpoints'])
 					if new_score_score != -1:
-						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, new_score_score2))
+						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, score2=new_score_score2, team=new_score_team))
 
 				else:
 					new_score_score = player_score['map_points'] if 'map_points' in player_score else player_score['mappoints']
 					if new_score_score != -1:
-						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score))
+						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, score2=0, team=new_score_team))
 
 			except Exception as e:
 				logger.error(f"Exception while recording scores for following player_score object: {str(player_score)}")
@@ -123,7 +169,7 @@ class ResultsCupManager:
 
 		if new_scores:
 			for new_score in new_scores:
-				logger.debug(new_score)
+				logger.info(new_score)
 				if self._match_start_time != 0:
 					await self._create_match_info()
 
@@ -188,6 +234,7 @@ class ResultsCupManager:
 			self._match_start_time = int(datetime.datetime.now().timestamp())
 			self._match_map_name = self.instance.map_manager.current_map.name
 			self._match_players_scored = []
+			self._match_teams_scored = []
 			self._match_info_created = False
 
 		elif section == 'MapEnd':
@@ -196,6 +243,7 @@ class ResultsCupManager:
 			self._match_start_time = 0
 			self._match_map_name = None
 			self._match_players_scored = []
+			self._match_teams_scored = []
 			self._match_info_created = False
 
 			await self._prune_match_history()
@@ -222,8 +270,10 @@ class ResultsCupManager:
 			oldest_time = map_times[0]
 			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
 			await MatchInfo.execute(MatchInfo.delete().where(MatchInfo.map_start_time == oldest_time))
+			await TeamScore.execute(TeamScore.delete().where(TeamScore.map_start_time == oldest_time))
 			await self._invalidate_view_cache_scores(oldest_time)
 			await self._invalidate_view_cache_matches()
+			await self._invalidate_view_cache_team_scores(oldest_time)
 			map_times.pop(0)
 
 
@@ -246,9 +296,16 @@ class ResultsCupManager:
 			del self._view_cache_scores[map_start_time]
 
 
+	async def _invalidate_view_cache_team_scores(self, map_start_time: int=0):
+		if map_start_time == 0:
+			self._view_cache_team_scores = {}
+		elif map_start_time in self._view_cache_team_scores:
+			del self._view_cache_team_scores[map_start_time]
+
+
 	async def _button_export(self, player, values, view, **kwargs):
 		if view.scores_query:
-			scores_data = await self.get_data_scores(view.scores_query, view.results_view_params.mode_script)
+			scores_data = await self.get_data_scores(view.scores_query, view.scores_mode_script)
 
 			match_info = []
 			all_match_data = await self.get_data_matches()
@@ -256,7 +313,7 @@ class ResultsCupManager:
 				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
 					match_info.append(match_data_info)
 
-			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2)
+			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2, view.team_score_mode)
 			await text_view.display(player=player)
 
 
@@ -273,10 +330,22 @@ class ResultsCupManager:
 			scores_query = await PlayerScore.execute(PlayerScore.select().where(PlayerScore.map_start_time.in_([map_start_time])))
 			if len(scores_query) > 0:
 				self._view_cache_scores[map_start_time] = list(scores_query)
+			else:
+				self._view_cache_scores[map_start_time] = []
 		return self._view_cache_scores[map_start_time]
 
 
-	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[GenericPlayerScore]':
+	async def get_data_team_scores(self, map_start_time: int) -> 'list[TeamScore]':
+		if not (map_start_time in self._view_cache_team_scores and self._view_cache_team_scores[map_start_time]):
+			scores_query = await TeamScore.execute(TeamScore.select().where(TeamScore.map_start_time.in_([map_start_time])))
+			if len(scores_query) > 0:
+				self._view_cache_team_scores[map_start_time] = list(scores_query)
+			else:
+				self._view_cache_team_scores[map_start_time] = []
+		return self._view_cache_team_scores[map_start_time]
+
+
+	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[TeamPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
 			lookup_matches.append(map_start_time)
@@ -285,26 +354,45 @@ class ResultsCupManager:
 
 		score_by_login = {}
 		for start_time in lookup_matches:
+
+			team_score_by_id = {}
+			team_scores = await self.get_data_team_scores(start_time)
+			for team_score in team_scores:
+				team_score_by_id[team_score.team_id] = { 'score': team_score.score, 'name': team_score.name }
+
 			player_scores = await self.get_data_player_scores(start_time)
 			for player_score in player_scores:
 				if player_score.login not in score_by_login:
-					score_by_login[player_score.login] = { 'score': 0, 'score2': 0, 'nickname': player_score.nickname, 'country': player_score.country, 'count': 0 }
+					score_by_login[player_score.login] = {
+						'score': 0,
+						'score2': 0,
+						'nickname': player_score.nickname,
+						'country': player_score.country,
+						'count': 0,
+						'team': player_score.team,
+						'team_name': '',
+						'team_score': 0,
+					}
+					if team_score_by_id and player_score.team in team_score_by_id:
+						score_by_login[player_score.login]['team_name'] = team_score_by_id[player_score.team]['name']
+				if team_score_by_id and player_score.team in team_score_by_id:
+					score_by_login[player_score.login]['team_score'] += team_score_by_id[player_score.team]['score']
 				score_by_login[player_score.login]['score'] += player_score.score
 				score_by_login[player_score.login]['score2'] += player_score.score2
 				score_by_login[player_score.login]['count'] += 1
 
 		scores = []
 		for login, score_data in score_by_login.items():
-			new_score = GenericPlayerScore(login, score_data['nickname'], score_data['country'], score_data['score'], score_data['score2'])
-			new_score.score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
+			new_score = TeamPlayerScore(login, score_data['nickname'], score_data['country'], score_data['team'], score_data['team_name'], score_data['team_score'], score_data['score'], score_data['score2'])
+			new_score.player_score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
 			new_score.count = score_data['count']
 			scores.append(new_score)
 
 		if 'timeattack'in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, x.score))
+			scores = sorted(scores, key=lambda x: (-x.count, x.player_score))
 		elif 'laps' in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, -x.score2, x.score))
+			scores = sorted(scores, key=lambda x: (-x.count, -x.player_score2, x.player_score))
 		else:
-			scores = sorted(scores, key=lambda x: (-x.score2, x.score), reverse=True)
+			scores = sorted(scores, key=lambda x: (x.team_score, -x.player_score2, x.player_score), reverse=True)
 
 		return scores

@@ -66,7 +66,7 @@ class PayoutCupManager:
 			return
 
 		if view.scores_query:
-			scores_data = await self.app.results.get_data_scores(view.scores_query, view.results_view_params.mode_script)
+			scores_data = await self.app.results.get_data_scores(view.scores_query, view.scores_mode_script)
 			payout_view = PayoutsView(self, scores_data)
 			await payout_view.display(player=player)
 
