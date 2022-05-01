@@ -53,7 +53,12 @@ You will need to add a local.py file to your pyplanet settings folder and then d
 * Rounds
 * Laps
 * MedalAttack
+* Speedtrap
 
 **Shootmania**
-* Melee - *Implemented, needs testing*
-
+* Melee
+* Elite
+* Royal
+* Siege
+* Infection
+* Combo
