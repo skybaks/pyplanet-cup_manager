@@ -1,6 +1,7 @@
 from asyncio import iscoroutinefunction
 import re
 import logging
+import datetime
 from enum import Enum
 
 from pyplanet.utils import style
@@ -21,17 +22,11 @@ class TextboxView(SingleInstanceView):
 	def __init__(self, app, player):
 		super().__init__(app, 'cup_manager.views.textbox_displayed')
 		self.player = player
-		self.exclude_zero_points = True
-		self.exclude_zero_points_as_spec = True
-		self.display_ties = True
 		self.cup_name = '$(var.cup_name)'
 		self.cup_edition = '$(var.cup_edition)'
 
 		self.subscribe('textbox_button_close', self.close)
 		self.subscribe('textbox_copy_success', self.copy_success)
-		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
-		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
-		self.subscribe('textbox_checkbox_displayties', self.toggle_displayties)
 		self.subscribe('textbox_entry_submit', self.entry_submit)
 
 
@@ -50,9 +45,6 @@ class TextboxView(SingleInstanceView):
 		context['icon_substyle'] = self.icon_substyle
 		context['text_body'] = await self.get_text_data()
 		context['buttons'] = buttons
-		context['exclude_zero_points'] = self.exclude_zero_points
-		context['exclude_zero_points_as_spec'] = self.exclude_zero_points_as_spec
-		context['display_ties'] = self.display_ties
 		context['cup_name'] = self.cup_name
 		context['cup_edition'] = self.cup_edition
 		return context
@@ -78,21 +70,6 @@ class TextboxView(SingleInstanceView):
 
 	async def copy_success(self, player, *args, **kwargs):
 		await self.app.instance.chat(f'Copied to clipboard', player)
-
-
-	async def toggle_excludeplayers(self, player, *args, **kwargs):
-		self.exclude_zero_points = not self.exclude_zero_points
-		await self.refresh(player=player)
-
-
-	async def toggle_excludeplayers_as_spec(self, player, *args, **kwargs):
-		self.exclude_zero_points_as_spec = not self.exclude_zero_points_as_spec
-		await self.refresh(player=player)
-
-
-	async def toggle_displayties(self, player, *args, **kwargs):
-		self.display_ties = not self.display_ties
-		await self.refresh(player=player)
 
 
 	async def entry_submit(self, player, action, values, *args, **kwargs):
@@ -129,6 +106,29 @@ class TextResultsView(TextboxView):
 		self._instance_match_data = match_data
 		self._show_score2 = show_score2
 		self._show_team_score = show_team_score
+		self.exclude_zero_points = True
+		self.exclude_zero_points_as_spec = True
+		self.display_ties = True
+		self.include_match_info = True
+
+		self.subscribe('textbox_checkbox_include_match_info', self.toggle_include_match_info)
+		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
+		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
+		self.subscribe('textbox_checkbox_displayties', self.toggle_displayties)
+
+
+	async def get_context_data(self):
+		context = await super().get_context_data()
+		context.update({
+			'export_format_discord': self._export_format == self.ExportFormat.DISCORD,
+			'export_format_markdown': self._export_format == self.ExportFormat.MARKDOWN,
+			'export_format_csv': self._export_format == self.ExportFormat.CSV,
+			'exclude_zero_points': self.exclude_zero_points,
+			'exclude_zero_points_as_spec': self.exclude_zero_points_as_spec,
+			'display_ties': self.display_ties,
+			'include_match_info': self.include_match_info,
+		})
+		return context
 
 
 	async def get_buttons(self) -> list:
@@ -249,6 +249,15 @@ class TextResultsView(TextboxView):
 
 					text += "```"
 				elif self._export_format == self.ExportFormat.CSV:
+					if self.include_match_info:
+						sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x.map_start_time)
+						for match_info in sorted_match_info_list:
+							text += '"' + str(datetime.datetime.fromtimestamp(match_info.map_start_time).strftime("%c")) + '",'
+							text += '"' + str(match_info.mode_script) + '",'
+							text += '"' + str(style.style_strip(match_info.map_name, style.STRIP_ALL)) + '",'
+							text += '"' + str(match_info.map_uid) + '",'
+							text += '"' + str(match_info.mx_id) + '"'
+							text += '\n'
 					indexes = [str(item) for item in range(1, len(instance_data) + 1)]
 					for item, index in zip(instance_data, indexes):
 						text += '"' + str(index) + '",'
@@ -259,7 +268,8 @@ class TextResultsView(TextboxView):
 							text += '"' + str(item.player_score2_str) + '",'
 						text += '"' + style.style_strip(item.nickname, style.STRIP_ALL) + '",'
 						text += '"' + str(item.login) + '",'
-						text += '"' + str(item.country) + '"\n'
+						text += '"' + str(item.country) + '"'
+						text += '\n'
 				else:
 					text = f"Export format not implemented: {str(self._export_format)}"
 					logger.error(text)
@@ -283,3 +293,22 @@ class TextResultsView(TextboxView):
 			self._export_format = self.ExportFormat.DISCORD
 			await self.refresh(player=player)
 
+
+	async def toggle_excludeplayers(self, player, *args, **kwargs):
+		self.exclude_zero_points = not self.exclude_zero_points
+		await self.refresh(player=player)
+
+
+	async def toggle_excludeplayers_as_spec(self, player, *args, **kwargs):
+		self.exclude_zero_points_as_spec = not self.exclude_zero_points_as_spec
+		await self.refresh(player=player)
+
+
+	async def toggle_displayties(self, player, *args, **kwargs):
+		self.display_ties = not self.display_ties
+		await self.refresh(player=player)
+
+
+	async def toggle_include_match_info(self, player, *args, **kwargs):
+		self.include_match_info = not self.include_match_info
+		await self.refresh(player=player)

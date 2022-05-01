@@ -43,6 +43,7 @@
     textprefix="$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777" action="{{ id }}__textbox_checkbox_excludeplayers"/>
     <label pos="8 -20" size="98 5" text="Exclude players with zero points" textprefix="$fff" textsize="1.3" valign="center2" halign="left"/>
 
+    {% if export_format_discord or export_format_markdown %}
     <label pos="13 -25.5" size="5 4.9"
       {% if exclude_zero_points_as_spec %}
         text=""
@@ -72,6 +73,16 @@
       {% endif %}
     textprefix="$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777" action="{{ id }}__textbox_checkbox_displayties"/>
     <label pos="8 -31" size="98 5" text="Display ties with same placement number" textprefix="$fff" textsize="1.3" valign="center2" halign="left"/>
+    {% elif export_format_csv %}
+    <label pos="5 -25.5" size="5 4.9"
+      {% if include_match_info %}
+        text=""
+      {% else %}
+        text=""
+      {% endif %}
+    textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777" textprefix="$fff" action="{{ id }}__textbox_checkbox_include_match_info" />
+    <label pos="8 -25.5" size="90 5" text="Include match and map information" textprefix="$fff" textsize="1.3" valign="center2" halign="left" />
+    {% endif %}
 
   </frame>
   {% endif %}
