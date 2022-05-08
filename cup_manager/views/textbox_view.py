@@ -6,7 +6,7 @@ from enum import Enum
 
 from pyplanet.utils import style
 
-from ..utils import country_codes
+from ..utils import country_codes, markdown
 from .single_instance_view import SingleInstanceView
 
 logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class TextResultsView(TextboxView):
 									mx_base_url = self.app.instance.apps.apps['mx'].api.base_url()
 								except:
 									logger.error(f'Error determining (T)MX base url')
-							text += f'*{match_info.mode_script}* on {style.style_strip(match_info.map_name)}'
+							text += f'*{markdown.escape_discord(match_info.mode_script)}* on {markdown.escape_discord(style.style_strip(match_info.map_name))}'
 							if mx_id and mx_base_url:
 								text += f' <{mx_base_url}/s/tr/{mx_id}>'
 							text += '\n'
@@ -207,7 +207,7 @@ class TextResultsView(TextboxView):
 								placement_emote_index = prev_placement_emote_index
 							if placement_emote_index >= len(placement_emotes) or (placement_index > len(placement_emotes) and placement_emote_index != prev_placement_emote_index):
 								break
-							text += f'{placement_emotes[placement_emote_index]} {country_codes.get_discord_flag(country)} {nickname}\n'
+							text += f'{placement_emotes[placement_emote_index]} {country_codes.get_discord_flag(country)} {markdown.escape_discord(nickname)}\n'
 							prev_placement_emote_index = placement_emote_index
 							score_prev = (team_score, score, score2)
 							placement_index += 1
