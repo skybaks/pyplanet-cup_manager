@@ -144,8 +144,18 @@ class ResultsCupManager:
 			try:
 				new_score_login = player_score['login'] if 'login' in player_score else player_score['player'].login
 				new_score_nick = player_score['name'] if 'name' in player_score else player_score['player'].nickname
-				new_score_country = player_score['player'].flow.zone.country if 'player' in player_score else None
-				new_score_team = player_score['player'].flow.team_id if 'player' in player_score else 0
+
+				new_score_country = 'World'
+				try:
+					new_score_country = player_score['player'].flow.zone.country if 'player' in player_score else None
+				except Exception as e:
+					logger.error("Exception while accessing country for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
+
+				new_score_team = 0
+				try:
+					new_score_team = player_score['player'].flow.team_id if 'player' in player_score else 0
+				except Exception as e:
+					logger.error("Exception while accessing team_id for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
 
 				if 'timeattack' in current_script_lower:
 					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
