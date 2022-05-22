@@ -207,4 +207,4 @@ def get_discord_flag(country: str )-> str:
 	if country in CountryCodes:
 		return f':flag_{CountryCodes[country].lower()}:'
 	logger.error(f"Country not found in CountryCodes lookup: '{country}'")
-	return ':world:'
+	return ':globe_with_meridians:'
