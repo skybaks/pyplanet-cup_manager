@@ -189,33 +189,39 @@ class ResultsCupManager:
 				if self._match_start_time != 0:
 					await self._create_match_info()
 
-					if new_score.login in self._match_players_scored:
-						logger.debug("Entry exists, updating score")
-						await PlayerScore.execute(
-							PlayerScore.update(
-								nickname=new_score.nickname,
-								country=new_score.country,
-								score=new_score.score,
-								score2=new_score.score2,
-								team=new_score.team,
-							).where(
-								(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
+					try:
+						if new_score.login in self._match_players_scored:
+							logger.debug("Entry exists, updating score")
+							await PlayerScore.execute(
+								PlayerScore.update(
+									nickname=new_score.nickname,
+									country=new_score.country,
+									score=new_score.score,
+									score2=new_score.score2,
+									team=new_score.team,
+								).where(
+									(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
+								)
 							)
-						)
-					else:
-						logger.debug("No entry exists, creating score")
-						self._match_players_scored.append(new_score.login)
-						await PlayerScore.execute(
-							PlayerScore.insert(
-								map_start_time=self._match_start_time,
-								login=new_score.login,
-								nickname=new_score.nickname,
-								country=new_score.country,
-								score=new_score.score,
-								score2=new_score.score2,
-								team=new_score.team,
+						else:
+							logger.debug("No entry exists, creating score")
+							self._match_players_scored.append(new_score.login)
+							await PlayerScore.execute(
+								PlayerScore.insert(
+									map_start_time=self._match_start_time,
+									login=new_score.login,
+									nickname=new_score.nickname,
+									country=new_score.country,
+									score=new_score.score,
+									score2=new_score.score2,
+									team=new_score.team,
+								)
 							)
-						)
+					except Exception as e:
+						logger.error("Exception writing PlayerScore to database."
+							+ f" map_start_time: {str(self._match_start_time)}, login: {str(new_score.login)},"
+							+ f" nickname: {str(new_score.nickname)}, country: {str(new_score.country)}, score: {str(new_score.score)},"
+							+ f" score2: {str(new_score.score2)}, team: {str(new_score.team)}")
 					await self._invalidate_view_cache_scores(self._match_start_time)
 
 
@@ -235,13 +241,18 @@ class ResultsCupManager:
 				except Exception as e:
 					logger.error(f'Could not retrieve the map info from (T)MX API for the current map: {str(e)}')
 
-			await MatchInfo.execute(MatchInfo.insert(
-				map_start_time=self._match_start_time,
-				mode_script=current_mode_script,
-				map_name=self._match_map_name,
-				map_uid=current_map_uid,
-				mx_id=current_mx_id,
-			))
+			try:
+				await MatchInfo.execute(MatchInfo.insert(
+					map_start_time=self._match_start_time,
+					mode_script=current_mode_script,
+					map_name=self._match_map_name,
+					map_uid=current_map_uid,
+					mx_id=current_mx_id,
+				))
+			except Exception as e:
+				logger.error("Exception while attempting to write map information to database."
+					+ f" map_start_time: {str(self._match_start_time)}, mode_script: {str(current_mode_script)},"
+					+ f" map_name: {str(self._match_map_name)}, map_uid: {str(current_map_uid)}, mx_id: {str(current_mx_id)}")
 			await self._invalidate_view_cache_matches()
 
 
