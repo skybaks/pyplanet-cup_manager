@@ -288,8 +288,8 @@ class ResultsCupManager:
 
 
 	async def _prune_match_history(self):
-		map_time_rows_query = await PlayerScore.execute(PlayerScore.select(fn.Distinct(PlayerScore.map_start_time)))
-		map_times = [time.map_start_time for time in map_time_rows_query]
+		match_data = await self.get_data_matches()
+		map_times = [time.map_start_time for time in match_data]
 		map_times.sort()
 		match_limit = await self._setting_match_history_amount.get_value()
 
