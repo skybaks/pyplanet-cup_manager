@@ -147,13 +147,19 @@ class ResultsCupManager:
 
 				new_score_country = 'World'
 				try:
-					new_score_country = player_score['player'].flow.zone.country if 'player' in player_score else None
+					if 'player' in player_score and player_score['player'].flow.zone.country != None:
+						new_score_country = player_score['player'].flow.zone.country
+					else:
+						logger.warning("player.flow.zone.country was None for login \"" + new_score_login + "\" nickname \"" + new_score_nick + "\". Defaulting to " + str(new_score_country))
 				except Exception as e:
 					logger.error("Exception while accessing country for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
 
-				new_score_team = 0
+				new_score_team = -1
 				try:
-					new_score_team = player_score['player'].flow.team_id if 'player' in player_score else 0
+					if 'player' in player_score and player_score['player'].flow.team_id != None:
+						new_score_team = player_score['player'].flow.team_id
+					else:
+						logger.warning("player.flow.team_id was None for login \"" + new_score_login + "\" nickname \"" + new_score_nick + "\". Defaulting to " + str(new_score_team))
 				except Exception as e:
 					logger.error("Exception while accessing team_id for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
 
