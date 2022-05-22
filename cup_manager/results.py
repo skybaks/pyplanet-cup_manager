@@ -147,13 +147,19 @@ class ResultsCupManager:
 
 				new_score_country = 'World'
 				try:
-					new_score_country = player_score['player'].flow.zone.country if 'player' in player_score else None
+					if 'player' in player_score and player_score['player'].flow.zone.country != None:
+						new_score_country = player_score['player'].flow.zone.country
+					else:
+						logger.warning("player.flow.zone.country was None for login \"" + new_score_login + "\" nickname \"" + new_score_nick + "\". Defaulting to " + str(new_score_country))
 				except Exception as e:
 					logger.error("Exception while accessing country for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
 
-				new_score_team = 0
+				new_score_team = -1
 				try:
-					new_score_team = player_score['player'].flow.team_id if 'player' in player_score else 0
+					if 'player' in player_score and player_score['player'].flow.team_id != None:
+						new_score_team = player_score['player'].flow.team_id
+					else:
+						logger.warning("player.flow.team_id was None for login \"" + new_score_login + "\" nickname \"" + new_score_nick + "\". Defaulting to " + str(new_score_team))
 				except Exception as e:
 					logger.error("Exception while accessing team_id for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
 
@@ -183,33 +189,39 @@ class ResultsCupManager:
 				if self._match_start_time != 0:
 					await self._create_match_info()
 
-					if new_score.login in self._match_players_scored:
-						logger.debug("Entry exists, updating score")
-						await PlayerScore.execute(
-							PlayerScore.update(
-								nickname=new_score.nickname,
-								country=new_score.country,
-								score=new_score.score,
-								score2=new_score.score2,
-								team=new_score.team,
-							).where(
-								(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
+					try:
+						if new_score.login in self._match_players_scored:
+							logger.debug("Entry exists, updating score")
+							await PlayerScore.execute(
+								PlayerScore.update(
+									nickname=new_score.nickname,
+									country=new_score.country,
+									score=new_score.score,
+									score2=new_score.score2,
+									team=new_score.team,
+								).where(
+									(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
+								)
 							)
-						)
-					else:
-						logger.debug("No entry exists, creating score")
-						self._match_players_scored.append(new_score.login)
-						await PlayerScore.execute(
-							PlayerScore.insert(
-								map_start_time=self._match_start_time,
-								login=new_score.login,
-								nickname=new_score.nickname,
-								country=new_score.country,
-								score=new_score.score,
-								score2=new_score.score2,
-								team=new_score.team,
+						else:
+							logger.debug("No entry exists, creating score")
+							self._match_players_scored.append(new_score.login)
+							await PlayerScore.execute(
+								PlayerScore.insert(
+									map_start_time=self._match_start_time,
+									login=new_score.login,
+									nickname=new_score.nickname,
+									country=new_score.country,
+									score=new_score.score,
+									score2=new_score.score2,
+									team=new_score.team,
+								)
 							)
-						)
+					except Exception as e:
+						logger.error("Exception writing PlayerScore to database."
+							+ f" map_start_time: {str(self._match_start_time)}, login: {str(new_score.login)},"
+							+ f" nickname: {str(new_score.nickname)}, country: {str(new_score.country)}, score: {str(new_score.score)},"
+							+ f" score2: {str(new_score.score2)}, team: {str(new_score.team)}")
 					await self._invalidate_view_cache_scores(self._match_start_time)
 
 
@@ -229,13 +241,18 @@ class ResultsCupManager:
 				except Exception as e:
 					logger.error(f'Could not retrieve the map info from (T)MX API for the current map: {str(e)}')
 
-			await MatchInfo.execute(MatchInfo.insert(
-				map_start_time=self._match_start_time,
-				mode_script=current_mode_script,
-				map_name=self._match_map_name,
-				map_uid=current_map_uid,
-				mx_id=current_mx_id,
-			))
+			try:
+				await MatchInfo.execute(MatchInfo.insert(
+					map_start_time=self._match_start_time,
+					mode_script=current_mode_script,
+					map_name=self._match_map_name,
+					map_uid=current_map_uid,
+					mx_id=current_mx_id,
+				))
+			except Exception as e:
+				logger.error("Exception while attempting to write map information to database."
+					+ f" map_start_time: {str(self._match_start_time)}, mode_script: {str(current_mode_script)},"
+					+ f" map_name: {str(self._match_map_name)}, map_uid: {str(current_map_uid)}, mx_id: {str(current_mx_id)}")
 			await self._invalidate_view_cache_matches()
 
 
@@ -271,8 +288,8 @@ class ResultsCupManager:
 
 
 	async def _prune_match_history(self):
-		map_time_rows_query = await PlayerScore.execute(PlayerScore.select(fn.Distinct(PlayerScore.map_start_time)))
-		map_times = [time.map_start_time for time in map_time_rows_query]
+		match_data = await self.get_data_matches()
+		map_times = [time.map_start_time for time in match_data]
 		map_times.sort()
 		match_limit = await self._setting_match_history_amount.get_value()
 
