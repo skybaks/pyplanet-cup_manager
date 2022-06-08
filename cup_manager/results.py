@@ -30,6 +30,7 @@ class ResultsCupManager:
 		self._view_cache_matches = []
 		self._view_cache_scores = {}
 		self._view_cache_team_scores = {}
+		self._match_start_notify_list = []
 
 		self._setting_match_history_amount = Setting(
 			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
@@ -77,6 +78,7 @@ class ResultsCupManager:
 			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
 			return
 		await self._handle_player_score_update(players)
+		logger.info("Update TM scores complete in _tm_signals_scores")
 
 
 	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
@@ -263,6 +265,9 @@ class ResultsCupManager:
 			self._match_players_scored = []
 			self._match_teams_scored = []
 			self._match_info_created = False
+			if self._match_start_notify_list:
+				for notify_method in self._match_start_notify_list:
+					await notify_method(match_start_time=self._match_start_time)
 
 		elif section == 'MapEnd':
 			ended_map_start_time = self._match_start_time
@@ -342,6 +347,11 @@ class ResultsCupManager:
 
 			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2, view.team_score_mode)
 			await text_view.display(player=player)
+
+
+	async def register_match_start_notify(self, notify_method) -> None:
+		if notify_method not in self._match_start_notify_list:
+			self._match_start_notify_list.append(notify_method)
 
 
 	async def get_data_matches(self) -> 'list[MatchInfo]':
