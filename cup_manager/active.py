@@ -13,9 +13,10 @@ class ActiveCupManager:
 		self.app = app
 		self.instance = app.instance
 		self.context = app.context
-		self._cup_active = False
-		self._display_podium_results = False
-		self._match_start_times = []
+		self.cup_active = False
+		self.display_podium_results = False
+		self.match_start_times = []
+		self.score_sorting = ScoreSortingPresets.UNDEFINED
 
 
 	async def on_start(self) -> None:
@@ -24,10 +25,12 @@ class ActiveCupManager:
 		await self.instance.permission_manager.register('manage_cup', 'Manage an active cup from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
 		await self.instance.command_manager.register(
-			Command(command='start', aliases=['st'], namespace=self.app.namespace, target=self._command_start,
+			Command(command='start', aliases=['st', 'begin'], namespace=self.app.namespace, target=self._command_start,
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will begin on the next map.'),
-			Command(command='end', aliases=['e'], namespace=self.app.namespace, target=self._command_end,
+			Command(command='end', aliases=['e', 'stop'], namespace=self.app.namespace, target=self._command_end,
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will end on current map.'),
+			Command(command='edit', aliases=[], namespace=self.app.namespace, target=self._command_edit,
+				admin=True, perms='cup:manage_cup', description='Edit maps in the current cup.'),
 			Command(command='results', aliases=['r'], namespace=self.app.namespace, target=self._command_results,
 				description='Display the standings of the current cup.'),
 		)
@@ -36,33 +39,37 @@ class ActiveCupManager:
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
-		if self._display_podium_results:
-			scores = await self.app.results.get_data_scores(self._match_start_times, ScoreSortingPresets.UNDEFINED)
+		if self.display_podium_results:
+			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)
 			logger.info("TODO:")
 			logger.info(str(scores))
-			self._display_podium_results = False
+			self.display_podium_results = False
 
 
 	async def _notify_match_start(self, match_start_time: int, **kwargs) -> None:
-		logger.info("Match start from active " + str(match_start_time))
-		if self._cup_active and match_start_time not in self._match_start_times:
-			self._match_start_times.append(match_start_time)
-			self._display_podium_results = True
+		if self.cup_active and match_start_time not in self.match_start_times:
+			logger.info("Match start from active " + str(match_start_time))
+			self.match_start_times.append(match_start_time)
+			self.display_podium_results = True
+			self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
+			await self.instance.chat(f'$z$s$0cfStarting cup map {str(len(self.match_start_times))}.')
 
 
 	async def _command_start(self, player, data, **kwargs) -> None:
-		if not self._cup_active:
+		if not self.cup_active:
 			await self.instance.chat(f'$z$s$0cfThe cup will start on the next map.')
-			self._cup_active = True
-			self._match_start_times = []
+			self.cup_active = True
+			self.match_start_times = []
+		else:
+			await self.instance.chat(f'$z$s$i$f00A cup is already active. Use "//cup edit" to change cup maps.', player)
 
 
 	async def _command_end(self, player, data, **kwargs) -> None:
-		if self._cup_active:
-			self._cup_active = False
-			if len(self._match_start_times) < 1:
+		if self.cup_active:
+			self.cup_active = False
+			if len(self.match_start_times) < 1:
 				await self.instance.chat(f'$z$s$0cfThe cup has been canceled.')
-			elif len(self._match_start_times) == 1:
+			elif len(self.match_start_times) == 1:
 				# Dont print a message. If the cup lasts one map its implied that the single map is also the last map.
 				pass
 			else:
@@ -70,6 +77,9 @@ class ActiveCupManager:
 
 
 	async def _command_results(self, player, data, **kwargs) -> None:
-		# TODO: Hardcoded ids for testing only  ＜（＾－＾）＞
-		view = ResultsView(self, player, [1659377650,1649585755,1659377651,1651977625,1659379651,1659379752])
+		view = ResultsView(self, player, self.match_start_times, self.score_sorting)
 		await view.display(player=player.login)
+
+
+	async def _command_edit(self, player, data, **kwargs) -> None:
+		pass

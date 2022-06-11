@@ -2,7 +2,7 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
-from ..app_types import TeamPlayerScore
+from ..app_types import TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +16,13 @@ class ResultsView(ManualListView):
 	get_data_method = None
 
 
-	def __init__(self, app: any, player: any, score_query: 'list[int]') -> None:
+	def __init__(self, app: any, player: any, score_query: 'list[int]', score_sorting: ScoreSortingPresets) -> None:
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
 		self.player = player
 		self.score_query = score_query
+		self.score_sorting = score_sorting
 
 		self.provide_search = False
 
@@ -104,7 +105,7 @@ class ResultsView(ManualListView):
 	async def get_data(self):
 		items = []
 		if self.get_data_method:
-			scores = await self.get_data_method(self.score_query, '')	# type: list[TeamPlayerScore]
+			scores = await self.get_data_method(self.score_query, self.score_sorting)	# type: list[TeamPlayerScore]
 			index = 1
 			for player_score in scores:
 				items.append({
