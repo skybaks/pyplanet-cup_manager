@@ -458,7 +458,6 @@ class ResultsCupManager:
 			sort_method = lambda x: (-x.player_score)
 		else:
 			# 1.	team	desc	(team score)
-			# 2.	score2	asc		(alt score)
 			# 3.	score	desc	(score)
-			sort_method = lambda x: (-x.team_score, x.player_score2, -x.player_score)
+			sort_method = lambda x: (-x.team_score, -x.player_score)
 		return sorted(input_scores, key=sort_method)
