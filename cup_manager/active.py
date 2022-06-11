@@ -3,6 +3,8 @@ import logging
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.contrib.command import Command
 
+from .views import ResultsView
+
 logger = logging.getLogger(__name__)
 
 class ActiveCupManager:
@@ -25,6 +27,8 @@ class ActiveCupManager:
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will begin on the next map.'),
 			Command(command='end', aliases=['e'], namespace=self.app.namespace, target=self._command_end,
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will end on current map.'),
+			Command(command='results', aliases=['r'], namespace=self.app.namespace, target=self._command_results,
+				description='Display the standings of the current cup.'),
 		)
 
 		await self.app.results.register_match_start_notify(self._notify_match_start)
@@ -62,3 +66,9 @@ class ActiveCupManager:
 				pass
 			else:
 				await self.instance.chat(f'$z$s$0cfThis is the final map of the cup.')
+
+
+	async def _command_results(self, player, data, **kwargs) -> None:
+		# TODO: Hardcoded ids for testing only  ＜（＾－＾）＞
+		view = ResultsView(self, player, [1659377650,1649585755,1659377651,1651977625,1659379651,1659379752])
+		await view.display(player=player.login)

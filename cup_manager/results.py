@@ -9,7 +9,7 @@ from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo
-from .views import MatchHistoryView, TextResultsView
+from .views import MatchHistoryView, TextResultsView, ResultsView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,8 @@ class ResultsCupManager:
 			description='Set this number to the number of previous matches you want to save in the database.',
 			default=100
 		)
+
+		ResultsView.set_get_data_method(self.get_data_scores)
 
 
 	async def on_start(self) -> None:
