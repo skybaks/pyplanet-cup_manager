@@ -4,6 +4,8 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
+from ..app_types import ScoreSortingPresets
+
 logger = logging.getLogger(__name__)
 
 class MatchHistoryView(ManualListView):
@@ -190,7 +192,7 @@ class MatchHistoryView(ManualListView):
 	async def get_data(self) -> list:
 		items = []
 		if self._results_view_mode:
-			scores = await self.app.get_data_scores(self.scores_query, self.scores_mode_script)
+			scores = await self.app.get_data_scores(self.scores_query, ScoreSortingPresets.get_preset(self.scores_mode_script))
 			index = 1
 			for player_score in scores:
 				items.append({
