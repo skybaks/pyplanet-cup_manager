@@ -10,7 +10,7 @@ from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo
 from .views import MatchHistoryView, TextResultsView, ResultsView
-from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
+from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 
@@ -284,7 +284,7 @@ class ResultsCupManager:
 			match_data = await self.get_data_matches()
 			for match in match_data:
 				if match.map_start_time == ended_map_start_time:
-					score_data = await self.get_data_scores(match.map_start_time, match.mode_script)
+					score_data = await self.get_data_scores(match.map_start_time, ScoreSortingPresets.get_preset(match.mode_script))
 					await self.instance.chat(f'$i$fffSaved {str(len(score_data))} record(s) from map $<{ended_map_map_name}$>.')
 					break
 			else:
@@ -339,7 +339,7 @@ class ResultsCupManager:
 
 	async def _button_export(self, player, values, view, **kwargs):
 		if view.scores_query:
-			scores_data = await self.get_data_scores(view.scores_query, view.scores_mode_script)
+			scores_data = await self.get_data_scores(view.scores_query, ScoreSortingPresets.get_preset(view.scores_mode_script))
 
 			match_info = []
 			all_match_data = await self.get_data_matches()
@@ -384,12 +384,14 @@ class ResultsCupManager:
 		return self._view_cache_team_scores[map_start_time]
 
 
-	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[TeamPlayerScore]':
+	async def get_data_scores(self, map_start_time: any, sorting: ScoreSortingPresets) -> 'list[TeamPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
 			lookup_matches.append(map_start_time)
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
+		else:
+			logger.error("Unexpected type in get_data_scores: " + str(map_start_time))
 
 		score_by_login = {}
 		for start_time in lookup_matches:
@@ -422,16 +424,41 @@ class ResultsCupManager:
 
 		scores = []	# type: list[TeamPlayerScore]
 		for login, score_data in score_by_login.items():
-			new_score = TeamPlayerScore(login, score_data['nickname'], score_data['country'], score_data['team'], score_data['team_name'], score_data['team_score'], score_data['score'], score_data['score2'])
-			new_score.player_score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
+			new_score = TeamPlayerScore(
+				login,
+				score_data['nickname'],
+				score_data['country'],
+				score_data['team'],
+				score_data['team_name'],
+				score_data['team_score'],
+				score_data['score'],
+				score_data['score2']
+			)
+			new_score.player_score_is_time = sorting in [ScoreSortingPresets.TIMEATTACK, ScoreSortingPresets.LAPS]
 			new_score.count = score_data['count']
 			scores.append(new_score)
 
-		if 'timeattack'in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, x.player_score))
-		elif 'laps' in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, -x.player_score2, x.player_score))
-		else:
-			scores = sorted(scores, key=lambda x: (x.team_score, -x.player_score2, x.player_score), reverse=True)
+		scores = ResultsCupManager.sort_scores(scores, sorting)
 
 		return scores
+
+
+	@staticmethod
+	def sort_scores(input_scores: 'list[TeamPlayerScore]', sorting: ScoreSortingPresets=ScoreSortingPresets.UNDEFINED) -> 'list[TeamPlayerScore]':
+		if sorting == ScoreSortingPresets.TIMEATTACK:
+			# 1.	maps	desc	(maps played)
+			# 2.	score	asc		(finish time)
+			sort_method = lambda x: (-x.count, x.player_score)
+		elif sorting == ScoreSortingPresets.LAPS:
+			# 1.	score2	desc	(checkpoint count)
+			# 2.	score	asc		(finish time)
+			sort_method = lambda x: (-x.player_score2, x.player_score)
+		elif sorting == ScoreSortingPresets.ROUNDS:
+			# 1.	score	desc	(player score)
+			sort_method = lambda x: (-x.player_score)
+		else:
+			# 1.	team	desc	(team score)
+			# 2.	score2	asc		(alt score)
+			# 3.	score	desc	(score)
+			sort_method = lambda x: (-x.team_score, x.player_score2, -x.player_score)
+		return sorted(input_scores, key=sort_method)

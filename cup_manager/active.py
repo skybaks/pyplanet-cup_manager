@@ -4,6 +4,7 @@ from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.contrib.command import Command
 
 from .views import ResultsView
+from .app_types import ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class ActiveCupManager:
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
 		if self._display_podium_results:
-			scores = await self.app.results.get_data_scores(self._match_start_times, '')
+			scores = await self.app.results.get_data_scores(self._match_start_times, ScoreSortingPresets.UNDEFINED)
 			logger.info("TODO:")
 			logger.info(str(scores))
 			self._display_podium_results = False
