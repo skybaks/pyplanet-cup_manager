@@ -420,7 +420,7 @@ class ResultsCupManager:
 				score_by_login[player_score.login]['score2'] += player_score.score2
 				score_by_login[player_score.login]['count'] += 1
 
-		scores = []
+		scores = []	# type: list[TeamPlayerScore]
 		for login, score_data in score_by_login.items():
 			new_score = TeamPlayerScore(login, score_data['nickname'], score_data['country'], score_data['team'], score_data['team_name'], score_data['team_score'], score_data['score'], score_data['score2'])
 			new_score.player_score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()

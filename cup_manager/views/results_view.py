@@ -50,6 +50,38 @@ class ResultsView(ManualListView):
 				'type': 'label',
 			},
 			{
+				'name': 'Count',
+				'index': 'count',
+				'sorting': False,
+				'searching': False,
+				'width': 20,
+				'type': 'label',
+			},
+			{
+				'name': 'Team',
+				'index': 'team_score_str',
+				'sorting': False,
+				'searching': False,
+				'width': 20,
+				'type': 'label',
+			},
+			{
+				'name': 'Score2',
+				'index': 'player_score2_str',
+				'sorting': False,
+				'searching': False,
+				'width': 20,
+				'type': 'label',
+			},
+			{
+				'name': 'Score1',
+				'index': 'player_score_str',
+				'sorting': False,
+				'searching': False,
+				'width': 20,
+				'type': 'label',
+			},
+			{
 				'name': 'Login',
 				'index': 'login',
 				'sorting': False,
@@ -80,6 +112,10 @@ class ResultsView(ManualListView):
 					'login': player_score.login,
 					'nickname': player_score.nickname,
 					'country': player_score.country,
+					'count': player_score.count,
+					'team_score_str': player_score.team_score_str,
+					'player_score2_str': player_score.player_score2_str,
+					'player_score_str': player_score.player_score_str,
 				})
 				index += 1
 		else:
