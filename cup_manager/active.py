@@ -2,9 +2,10 @@ import logging
 
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.contrib.command import Command
+from pyplanet.utils import style
 
 from .views import ResultsView
-from .app_types import ScoreSortingPresets
+from .app_types import ScoreSortingPresets, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +41,13 @@ class ActiveCupManager:
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
 		if self.display_podium_results:
-			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)
-			logger.info("TODO:")
-			logger.info(str(scores))
+			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
+			index = 1
+			podium_text = []
+			for player_score in scores[0:10]:
+				podium_text.append(f'$0cf{str(index)}. $fff{style.style_strip(player_score.nickname)} [{player_score.relevant_score_str(self.score_sorting)}]$0cf')
+				index += 1
+			await self.instance.chat('$z$s$0cf' + ', '.join(podium_text))
 			self.display_podium_results = False
 
 
@@ -52,7 +57,11 @@ class ActiveCupManager:
 			self.match_start_times.append(match_start_time)
 			self.display_podium_results = True
 			self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
-			await self.instance.chat(f'$z$s$0cfStarting cup map {str(len(self.match_start_times))}.')
+			current_map_num = len(self.match_start_times)
+			if current_map_num == 1:
+				await self.instance.chat(f'$z$s$0cfStarting cup with this map.')
+			else:
+				await self.instance.chat(f'$z$s$0cfStarting cup map {str(current_map_num)}.')
 
 
 	async def _command_start(self, player, data, **kwargs) -> None:
@@ -82,4 +91,4 @@ class ActiveCupManager:
 
 
 	async def _command_edit(self, player, data, **kwargs) -> None:
-		pass
+		logger.error("TODO: Implement this method")

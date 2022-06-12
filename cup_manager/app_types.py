@@ -2,6 +2,27 @@ from enum import Enum
 from pyplanet.utils import times
 
 
+class ScoreSortingPresets(Enum):
+	UNDEFINED = -1
+	TIMEATTACK = 0
+	LAPS = 1
+	ROUNDS = 2
+
+
+	@staticmethod
+	def get_preset(mode: str) -> 'ScoreSortingPresets':
+		mode_lower = mode.lower()
+		if 'timeattack' in mode_lower:
+			preset = ScoreSortingPresets.TIMEATTACK
+		elif 'laps' in mode_lower:
+			preset = ScoreSortingPresets.LAPS
+		elif 'rounds' in mode_lower:
+			preset = ScoreSortingPresets.ROUNDS
+		else:
+			preset = ScoreSortingPresets.UNDEFINED
+		return preset
+
+
 class GenericPlayerScore:
 	login = ''
 	nickname = ''
@@ -85,22 +106,14 @@ class TeamPlayerScore:
 		return times.format_time(int(self.player_score2)) if self.player_score2_is_time else str(self.player_score2)
 
 
-class ScoreSortingPresets(Enum):
-	UNDEFINED = -1
-	TIMEATTACK = 0
-	LAPS = 1
-	ROUNDS = 2
-
-
-	@staticmethod
-	def get_preset(mode: str) -> 'ScoreSortingPresets':
-		mode_lower = mode.lower()
-		if 'timeattack' in mode_lower:
-			preset = ScoreSortingPresets.TIMEATTACK
-		elif 'laps' in mode_lower:
-			preset = ScoreSortingPresets.LAPS
-		elif 'rounds' in mode_lower:
-			preset = ScoreSortingPresets.ROUNDS
+	def relevant_score_str(self, sorting: ScoreSortingPresets) -> str:
+		score_str = ''
+		if sorting == ScoreSortingPresets.TIMEATTACK:
+			score_str = self.player_score_str
+		elif sorting == ScoreSortingPresets.LAPS:
+			score_str = self.player_score2_str + ', ' + self.player_score_str
+		elif sorting == ScoreSortingPresets.ROUNDS:
+			score_str = self.player_score_str
 		else:
-			preset = ScoreSortingPresets.UNDEFINED
-		return preset
+			score_str = self.team_score + ', ' + self.player_score_str
+		return score_str
