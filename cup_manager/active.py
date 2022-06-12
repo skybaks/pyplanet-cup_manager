@@ -5,7 +5,7 @@ from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import ResultsView
+from .views import ResultsView, MatchesView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
@@ -44,6 +44,20 @@ class ActiveCupManager:
 
 		await self.app.results.register_match_start_notify(self._notify_match_start)
 		await self.app.results.register_scores_update_notify(self._notify_scores_update)
+
+
+	async def get_selected_matches(self) -> 'list[int]':
+		return self.match_start_times
+
+
+	async def add_selected_match(self, selected_match: int) -> None:
+		if selected_match not in self.match_start_times:
+			self.match_start_times.append(selected_match)
+
+
+	async def remove_selected_match(self, selected_match: int) -> None:
+		if selected_match in self.match_start_times:
+			self.match_start_times.remove(selected_match)
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
@@ -119,7 +133,8 @@ class ActiveCupManager:
 
 
 	async def _command_edit(self, player, data, **kwargs) -> None:
-		logger.error("TODO: Implement this method")
+		view = MatchesView(self, player)
+		await view.display(player=player.login)
 
 
 	async def _command_name(self, player, data, **kwargs) -> None:

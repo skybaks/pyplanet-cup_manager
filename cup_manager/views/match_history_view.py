@@ -226,10 +226,6 @@ class MatchHistoryView(ManualListView):
 		return items
 
 
-	async def close(self, player, *args, **kwargs):
-		return await super().close(player, *args, **kwargs)
-
-
 	@classmethod
 	def add_button(cls, target, name, visible, width):
 		cls.custom_results_view_buttons.append({

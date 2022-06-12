@@ -9,7 +9,7 @@ from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo
-from .views import MatchHistoryView, TextResultsView, ResultsView
+from .views import MatchHistoryView, TextResultsView, ResultsView, MatchesView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,7 @@ class ResultsCupManager:
 		)
 
 		ResultsView.set_get_data_method(self.get_data_scores)
+		MatchesView.set_get_data_method(self.get_data_matches)
 
 
 	async def on_start(self) -> None:
