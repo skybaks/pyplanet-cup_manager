@@ -32,11 +32,15 @@ class ActiveCupManager:
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will end on current map.'),
 			Command(command='edit', aliases=[], namespace=self.app.namespace, target=self._command_edit,
 				admin=True, perms='cup:manage_cup', description='Edit maps in the current cup.'),
+			Command(command='name', aliases=[], namespace=self.app.namespace, target=self._command_name,
+				admin=True, perms='cup:manage_cup', description='Manage the cup name and edition.'),
+
 			Command(command='results', aliases=['r'], namespace=self.app.namespace, target=self._command_results,
 				description='Display the standings of the current cup.'),
 		)
 
 		await self.app.results.register_match_start_notify(self._notify_match_start)
+		await self.app.results.register_scores_update_notify(self._notify_scores_update)
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
@@ -45,7 +49,7 @@ class ActiveCupManager:
 			index = 1
 			podium_text = []
 			for player_score in scores[0:10]:
-				podium_text.append(f'$0cf{str(index)}. $fff{style.style_strip(player_score.nickname)} [{player_score.relevant_score_str(self.score_sorting)}]$0cf')
+				podium_text.append(f'$0cf{str(index)}. $fff{style.style_strip(player_score.nickname)} $fff[$999{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
 				index += 1
 			await self.instance.chat('$z$s$0cf' + ', '.join(podium_text))
 			self.display_podium_results = False
@@ -62,6 +66,11 @@ class ActiveCupManager:
 				await self.instance.chat(f'$z$s$0cfStarting cup with this map.')
 			else:
 				await self.instance.chat(f'$z$s$0cfStarting cup map {str(current_map_num)}.')
+
+
+	async def _notify_scores_update(self, match_start_time: int, **kwargs) -> None:
+		if match_start_time in self.match_start_times:
+			logger.info("Signaled new scores update for cup")
 
 
 	async def _command_start(self, player, data, **kwargs) -> None:
@@ -91,4 +100,8 @@ class ActiveCupManager:
 
 
 	async def _command_edit(self, player, data, **kwargs) -> None:
+		logger.error("TODO: Implement this method")
+
+
+	async def _command_name(self, player, data, **kwargs) -> None:
 		logger.error("TODO: Implement this method")

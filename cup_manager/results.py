@@ -31,6 +31,7 @@ class ResultsCupManager:
 		self._view_cache_scores = {}
 		self._view_cache_team_scores = {}
 		self._match_start_notify_list = []
+		self._scores_update_notify_list = []
 
 		self._setting_match_history_amount = Setting(
 			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
@@ -45,7 +46,7 @@ class ResultsCupManager:
 		self.context.signals.listen(tm_signals.scores, self._tm_signals_scores)
 		self.context.signals.listen(mp_signals.map.map_start, self._mp_signals_map_map_start)
 		self.context.signals.listen(mp_signals.map.map_end, self._mp_signals_map_map_end)
-		self.context.signals.listen(sm_signals.base.scores, self._sm_signals_scores)
+		self.context.signals.listen(sm_signals.base.scores, self._tm_signals_scores)
 
 		await self.context.setting.register(self._setting_match_history_amount)
 
@@ -79,17 +80,14 @@ class ResultsCupManager:
 		if section == 'PreEndRound':
 			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
 			return
-		await self._handle_player_score_update(players)
-		logger.info("Update TM scores complete in _tm_signals_scores")
-
-
-	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
-		if section == 'PreEndRound':
-			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
-			return
 		if use_teams:
 			await self._handle_team_score_update(teams)
 		await self._handle_player_score_update(players)
+
+		if self._scores_update_notify_list:
+			for score_notify in self._scores_update_notify_list:
+				await score_notify(match_start_time=self._match_start_time)
+		logger.info("Update TM scores complete in _tm_signals_scores")
 
 
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
@@ -354,6 +352,11 @@ class ResultsCupManager:
 	async def register_match_start_notify(self, notify_method) -> None:
 		if notify_method not in self._match_start_notify_list:
 			self._match_start_notify_list.append(notify_method)
+
+
+	async def register_scores_update_notify(self, notify_method) -> None:
+		if notify_method not in self._scores_update_notify_list:
+			self._scores_update_notify_list.append(notify_method)
 
 
 	async def get_data_matches(self) -> 'list[MatchInfo]':
