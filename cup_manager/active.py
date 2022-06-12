@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
@@ -18,6 +19,8 @@ class ActiveCupManager:
 		self.display_podium_results = False
 		self.match_start_times = []
 		self.score_sorting = ScoreSortingPresets.UNDEFINED
+		self.cached_scores_lock = asyncio.Lock()
+		self.cached_scores = []
 
 
 	async def on_start(self) -> None:
@@ -65,12 +68,28 @@ class ActiveCupManager:
 			if current_map_num == 1:
 				await self.instance.chat(f'$z$s$0cfStarting cup with this map.')
 			else:
-				await self.instance.chat(f'$z$s$0cfStarting cup map {str(current_map_num)}.')
+				await self.instance.chat(f'$z$s$0cfStarting cup map $fff{str(current_map_num)}$0cf.')
 
 
 	async def _notify_scores_update(self, match_start_time: int, **kwargs) -> None:
 		if match_start_time in self.match_start_times:
 			logger.info("Signaled new scores update for cup")
+			async with self.cached_scores_lock:
+				new_scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
+				if self.cached_scores and new_scores != self.cached_scores:
+					# Compare scores to find if players gained placement positions
+					for new_index in range(0, len(new_scores)):
+						current_login = new_scores[new_index].login
+						for old_index in range(0, len(self.cached_scores)):
+							if current_login == self.cached_scores[old_index].login:
+								# Gained placements
+								if new_index < old_index:
+									await self.instance.chat(f"$z$s$0cfYou gained $fff{str(old_index - new_index)}$0cf positions in the overall cup. $fff[{str(old_index + 1)} ➙ {str(new_index + 1)}]", current_login)
+								# Lost placements. Do we really want to rub it in?
+								elif new_index > old_index:
+									pass
+								break
+				self.cached_scores = new_scores
 
 
 	async def _command_start(self, player, data, **kwargs) -> None:
