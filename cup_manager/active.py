@@ -68,7 +68,7 @@ class ActiveCupManager:
 			for player_score in scores[0:10]:
 				podium_text.append(f'$0cf{str(index)}. $fff{style.style_strip(player_score.nickname)} $fff[$999{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
 				index += 1
-			await self.instance.chat('$z$s$0cf' + ', '.join(podium_text))
+			await self.instance.chat('$z$s$0cfCurrent cup standings: ' + ', '.join(podium_text))
 			self.display_podium_results = False
 
 
