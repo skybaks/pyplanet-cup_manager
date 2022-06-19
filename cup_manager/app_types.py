@@ -117,3 +117,43 @@ class TeamPlayerScore:
 		else:
 			score_str = self.team_score + ', ' + self.player_score_str
 		return score_str
+
+
+	@staticmethod
+	def sort_scores(input_scores: 'list[TeamPlayerScore]', sorting: ScoreSortingPresets=ScoreSortingPresets.UNDEFINED) -> 'list[TeamPlayerScore]':
+		if sorting == ScoreSortingPresets.TIMEATTACK:
+			# 1.	maps	desc	(maps played)
+			# 2.	score	asc		(finish time)
+			sort_method = lambda x: (-x.count, x.player_score)
+		elif sorting == ScoreSortingPresets.LAPS:
+			# 1.	score2	desc	(checkpoint count)
+			# 2.	score	asc		(finish time)
+			sort_method = lambda x: (-x.player_score2, x.player_score)
+		elif sorting == ScoreSortingPresets.ROUNDS:
+			# 1.	score	desc	(player score)
+			sort_method = lambda x: (-x.player_score)
+		else:
+			# 1.	team	desc	(team score)
+			# 3.	score	desc	(score)
+			sort_method = lambda x: (-x.team_score, -x.player_score)
+		return sorted(input_scores, key=sort_method)
+
+
+	@staticmethod
+	def diff_scores_str(score: 'TeamPlayerScore', other: 'TeamPlayerScore', sorting: ScoreSortingPresets) -> str:
+		diff_str = ''
+
+		count_diff = abs(other.count - score.count)
+		score1_diff = abs(other.player_score - score.player_score)
+		score2_diff = abs(other.player_score2 - score.player_score2)
+		team_score_diff = abs(other.team_score - score.team_score)
+
+		if sorting == ScoreSortingPresets.TIMEATTACK:
+			diff_str = str(count_diff) + ' map(s), ' + times.format_time(score1_diff)
+		elif sorting == ScoreSortingPresets.LAPS:
+			diff_str = str(score2_diff) + ' CP(s), ' + times.format_time(score1_diff)
+		elif sorting == ScoreSortingPresets.ROUNDS:
+			diff_str = str(score1_diff) + ' point(s)'
+		else:
+			diff_str = str(team_score_diff) + ' team point(s), ' + str(score1_diff) + ' point(s)'
+		return diff_str

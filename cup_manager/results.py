@@ -442,26 +442,6 @@ class ResultsCupManager:
 			new_score.count = score_data['count']
 			scores.append(new_score)
 
-		scores = ResultsCupManager.sort_scores(scores, sorting)
+		scores = TeamPlayerScore.sort_scores(scores, sorting)
 
 		return scores
-
-
-	@staticmethod
-	def sort_scores(input_scores: 'list[TeamPlayerScore]', sorting: ScoreSortingPresets=ScoreSortingPresets.UNDEFINED) -> 'list[TeamPlayerScore]':
-		if sorting == ScoreSortingPresets.TIMEATTACK:
-			# 1.	maps	desc	(maps played)
-			# 2.	score	asc		(finish time)
-			sort_method = lambda x: (-x.count, x.player_score)
-		elif sorting == ScoreSortingPresets.LAPS:
-			# 1.	score2	desc	(checkpoint count)
-			# 2.	score	asc		(finish time)
-			sort_method = lambda x: (-x.player_score2, x.player_score)
-		elif sorting == ScoreSortingPresets.ROUNDS:
-			# 1.	score	desc	(player score)
-			sort_method = lambda x: (-x.player_score)
-		else:
-			# 1.	team	desc	(team score)
-			# 3.	score	desc	(score)
-			sort_method = lambda x: (-x.team_score, -x.player_score)
-		return sorted(input_scores, key=sort_method)
