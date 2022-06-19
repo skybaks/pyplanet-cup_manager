@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
+from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
@@ -25,6 +26,8 @@ class ActiveCupManager:
 
 	async def on_start(self) -> None:
 		self.context.signals.listen(mp_signals.flow.podium_start, self._mp_signals_flow_podium_start)
+		self.context.signals.listen(tm_signals.warmup_start, self._tm_signals_warmup_start)
+		self.context.signals.listen(tm_signals.warmup_end, self._tm_signals_warmup_end)
 
 		await self.instance.permission_manager.register('manage_cup', 'Manage an active cup from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
@@ -81,6 +84,16 @@ class ActiveCupManager:
 				index += 1
 
 
+	async def _tm_signals_warmup_start(self) -> None:
+		if self.cup_active or self.display_podium_results:
+			await self.instance.chat(f"$z$s$0cfGoing live after warmup.")
+
+
+	async def _tm_signals_warmup_end(self) -> None:
+		if self.cup_active or self.display_podium_results:
+			await self.instance.chat(f"$z$s$0cfWarmup complete, going live now!")
+
+
 	async def _notify_match_start(self, match_start_time: int, **kwargs) -> None:
 		if self.cup_active and match_start_time not in self.match_start_times:
 			logger.info("Match start from active " + str(match_start_time))
@@ -99,10 +112,16 @@ class ActiveCupManager:
 					current_score = scores[score_index]
 					if score_index-1 >= 0:
 						ahead_score = scores[score_index-1]
-						await self.instance.chat(f"$z$s$i$0cfYou are behind $fff{style.style_strip(ahead_score.nickname)}$0cf by $fff{TeamPlayerScore.diff_scores_str(current_score, ahead_score, self.score_sorting)}$0cf in the overall cup.", current_score.login)
+						await self.instance.chat(
+							f"$z$s$i$0cfYou are behind $fff{style.style_strip(ahead_score.nickname)}$0cf by $fff{TeamPlayerScore.diff_scores_str(current_score, ahead_score, self.score_sorting)}$0cf in the overall cup.",
+							current_score.login
+						)
 					elif score_index+1 < len(scores):
 						behind_score = scores[score_index+1]
-						await self.instance.chat(f"$z$s$i$0cfYou are leading $fff{style.style_strip(behind_score.nickname)}$0cf by $fff{TeamPlayerScore.diff_scores_str(current_score, behind_score, self.score_sorting)}$0cf in the overall cup.", current_score.login)
+						await self.instance.chat(
+							f"$z$s$i$0cfYou are leading $fff{style.style_strip(behind_score.nickname)}$0cf by $fff{TeamPlayerScore.diff_scores_str(current_score, behind_score, self.score_sorting)}$0cf in the overall cup.",
+							current_score.login
+						)
 
 
 	async def _notify_scores_update(self, match_start_time: int, **kwargs) -> None:
