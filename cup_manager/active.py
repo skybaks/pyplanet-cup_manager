@@ -29,9 +29,9 @@ class ActiveCupManager:
 		await self.instance.permission_manager.register('manage_cup', 'Manage an active cup from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
 		await self.instance.command_manager.register(
-			Command(command='start', aliases=['st', 'begin'], namespace=self.app.namespace, target=self._command_start,
+			Command(command='start', aliases=['st', 'begin', 'on'], namespace=self.app.namespace, target=self._command_start,
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will begin on the next map.'),
-			Command(command='end', aliases=['e', 'stop'], namespace=self.app.namespace, target=self._command_end,
+			Command(command='end', aliases=['e', 'stop', 'off'], namespace=self.app.namespace, target=self._command_end,
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will end on current map.'),
 			Command(command='edit', aliases=[], namespace=self.app.namespace, target=self._command_edit,
 				admin=True, perms='cup:manage_cup', description='Edit maps in the current cup.'),
