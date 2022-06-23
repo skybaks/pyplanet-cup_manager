@@ -9,7 +9,7 @@ from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo
-from .views import MatchHistoryView, TextResultsView, ResultsView, MatchesView
+from .views import MatchHistoryView, TextResultsView, MatchesView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,6 @@ class ResultsCupManager:
 			default=100
 		)
 
-		ResultsView.set_get_data_method(self.get_data_scores)
 		MatchesView.set_get_data_method(self.get_data_matches)
 
 
@@ -312,7 +311,7 @@ class ResultsCupManager:
 
 	async def _command_matches(self, player, data, **kwargs):
 		if await self.get_data_matches():
-			view = MatchHistoryView(self, player)
+			view = MatchHistoryView(self.app, player)
 			await view.display(player=player.login)
 		else:
 			await self.instance.chat('$i$f00No matches found.', player)
@@ -336,9 +335,9 @@ class ResultsCupManager:
 			del self._view_cache_team_scores[map_start_time]
 
 
-	async def _button_export(self, player, values, view, **kwargs):
+	async def _button_export(self, player, values, view: MatchHistoryView, **kwargs):
 		if view.scores_query:
-			scores_data = await self.get_data_scores(view.scores_query, ScoreSortingPresets.get_preset(view.scores_mode_script))
+			scores_data = await self.get_data_scores(view.scores_query, view.scores_sorting)
 
 			match_info = []
 			all_match_data = await self.get_data_matches()
@@ -346,7 +345,7 @@ class ResultsCupManager:
 				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
 					match_info.append(match_data_info)
 
-			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2, view.team_score_mode)
+			text_view = TextResultsView(self, player, scores_data, match_info, view.get_score2_visible(), view.get_team_score_visible())
 			await text_view.display(player=player)
 
 

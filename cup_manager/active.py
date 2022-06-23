@@ -6,7 +6,7 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import ResultsView, MatchesView
+from .views import MatchesView, MatchHistoryView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ class ActiveCupManager:
 
 
 	async def _command_results(self, player, data, **kwargs) -> None:
-		view = ResultsView(self, player, self.match_start_times, self.score_sorting)
+		view = MatchHistoryView(self.app, player, init_query=self.match_start_times, init_results_view=True, init_sorting=self.score_sorting, init_title='Cup Results')
 		await view.display(player=player.login)
 
 

@@ -149,7 +149,7 @@ class TeamPlayerScore:
 		team_score_diff = abs(other.team_score - score.team_score)
 
 		if sorting == ScoreSortingPresets.TIMEATTACK:
-			diff_str = str(count_diff) + ' map(s), ' + times.format_time(score1_diff)
+			diff_str = times.format_time(score1_diff)
 		elif sorting == ScoreSortingPresets.LAPS:
 			diff_str = str(score2_diff) + ' CP(s), ' + times.format_time(score1_diff)
 		elif sorting == ScoreSortingPresets.ROUNDS:
