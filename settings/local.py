@@ -112,3 +112,14 @@ CUP_MANAGER_PAYOUTS = {
 	],
 
 }
+
+
+# Use this to define the name and alias of cup.
+CUP_MANAGER_NAMES = {
+	'mxlc': {
+		'name': 'ManiaExchange Lagoon Cup',
+	},
+	'hec': {
+		'name': 'Hypeboys Endurance Cup',
+	},
+}
