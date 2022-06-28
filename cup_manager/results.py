@@ -1,5 +1,5 @@
 import logging
-import datetime
+from datetime import datetime
 from peewee import *
 
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
@@ -260,7 +260,7 @@ class ResultsCupManager:
 
 	async def _handle_map_update(self, section: str):
 		if section == 'OnStart' or section == 'MapStart':
-			self._match_start_time = int(datetime.datetime.now().timestamp())
+			self._match_start_time = int(datetime.now().timestamp())
 			self._match_map_name = self.instance.map_manager.current_map.name
 			self._match_players_scored = []
 			self._match_teams_scored = []

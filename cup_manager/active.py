@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 
 from pyplanet.conf import settings
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
@@ -9,6 +10,7 @@ from pyplanet.utils import style
 
 from .views import MatchesView, MatchHistoryView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
+from .models import CupInfo
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,9 @@ class ActiveCupManager:
 		self.cup_name = ''
 		self.cup_edition_num = 0
 		self.cup_map_count_target = 0
+		self.cup_start_time = 0
+		self._view_cache_cup_info = {}
+		self._view_cache_cup_maps = {}
 
 
 	@property
@@ -188,6 +193,7 @@ class ActiveCupManager:
 			self.cup_active = True
 			self.match_start_times = []
 			self.cup_map_count_target = 0
+			self.cup_start_time = int(datetime.now().timestamp())
 
 			self.cup_name = ''
 			if new_cup_name:
@@ -197,6 +203,7 @@ class ActiveCupManager:
 			if new_cup_edition:
 				self.cup_edition_num = new_cup_edition
 
+			await self._save_cup_info()
 			await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
 		elif new_cup_name or new_cup_edition:
 			self.cup_name = ''
@@ -236,3 +243,27 @@ class ActiveCupManager:
 	async def _command_mapcount(self, player, data, **kwargs) -> None:
 		self.cup_map_count_target = data.map_count
 		await self.instance.chat(f'$z$s$i$0cfNumber of cup maps set to: {str(self.cup_map_count_target)}', player)
+
+
+	async def _save_cup_info(self) -> None:
+		logger.info("Saving cup info")
+		cup_query = await CupInfo.execute(CupInfo.select().where(CupInfo.cup_start_time.in_([self.cup_start_time])))
+		if len(cup_query) > 0:
+			logger.info("Info already exists, updating")
+			await CupInfo.execute(
+				CupInfo.update(
+					cup_name=self.cup_name,
+					cup_edition=self.cup_edition_num
+				).where(
+					CupInfo.cup_start_time == self.cup_start_time
+				)
+			)
+		else:
+			logger.info("no existing entry, creating")
+			await CupInfo.execute(
+				CupInfo.insert(
+					cup_start_time=self.cup_start_time,
+					cup_name=self.cup_name,
+					cup_edition=self.cup_edition_num
+				)
+			)
