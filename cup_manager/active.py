@@ -125,10 +125,13 @@ class ActiveCupManager:
 			self.display_podium_results = True
 			self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
 			current_map_num = len(self.match_start_times)
-			if current_map_num == 1:
-				await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} with this map')
+			if self.cup_map_count_target > 0:
+				await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $fff{str(current_map_num)}$0cf of $fff{str(self.cup_map_count_target)}$0cf')
 			else:
-				await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $fff{str(current_map_num)}$0cf')
+				if current_map_num == 1:
+					await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} with this map')
+				else:
+					await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $fff{str(current_map_num)}$0cf')
 
 				# If not map 1 then dump out player diffs
 				scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
@@ -237,8 +240,11 @@ class ActiveCupManager:
 
 
 	async def _command_mapcount(self, player, data, **kwargs) -> None:
-		self.cup_map_count_target = data.map_count
-		await self.instance.chat(f'$z$s$i$0cfNumber of cup maps set to: {str(self.cup_map_count_target)}', player)
+		if self.cup_active:
+			self.cup_map_count_target = data.map_count
+			await self.instance.chat(f'$z$s$i$0cfNumber of cup maps set to: {str(self.cup_map_count_target)}', player)
+		else:
+			await self.instance.chat(f'$z$s$i$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
 
 
 	async def _save_cup_info(self) -> None:
