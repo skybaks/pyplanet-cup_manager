@@ -74,6 +74,7 @@ class TeamPlayerScore:
 	player_score_is_time = False
 	player_score2_is_time = False
 	count = 1
+	placement = 0
 
 
 	def __init__(self, login, nickname, country, team_id, team_name, team_score, player_score, player_score2) -> None:
@@ -157,3 +158,39 @@ class TeamPlayerScore:
 		else:
 			diff_str = str(team_score_diff) + ' team point(s), ' + str(score1_diff) + ' point(s)'
 		return diff_str
+
+
+	@staticmethod
+	def update_placements(input_scores: 'list[TeamPlayerScore]', sorting: ScoreSortingPresets=ScoreSortingPresets.UNDEFINED) -> 'list[TeamPlayerScore]':
+		for index in range(0, len(input_scores)):
+			if index > 0:
+
+				if sorting == ScoreSortingPresets.TIMEATTACK:
+					if input_scores[index-1].count == input_scores[index].count \
+							and input_scores[index-1].player_score == input_scores[index].player_score:
+						input_scores[index].placement = input_scores[index-1].placement
+					else:
+						input_scores[index].placement = index + 1
+
+				elif sorting == ScoreSortingPresets.LAPS:
+					if input_scores[index-1].player_score2 == input_scores[index].player_score2 \
+							and input_scores[index-1].player_score == input_scores[index].player_score:
+						input_scores[index].placement = input_scores[index-1].placement
+					else:
+						input_scores[index].placement = index + 1
+
+				elif sorting == ScoreSortingPresets.ROUNDS:
+					if input_scores[index-1].player_score == input_scores[index].player_score:
+						input_scores[index].placement = input_scores[index-1].placement
+					else:
+						input_scores[index].placement = index + 1
+
+				else:
+					if input_scores[index-1].team_score == input_scores[index].team_score \
+							and input_scores[index-1].player_score == input_scores[index].player_score:
+						input_scores[index].placement = input_scores[index-1].placement
+					else:
+						input_scores[index].placement = index + 1
+			else:
+				input_scores[index].placement = 1
+		return input_scores

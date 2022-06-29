@@ -442,5 +442,6 @@ class ResultsCupManager:
 			scores.append(new_score)
 
 		scores = TeamPlayerScore.sort_scores(scores, sorting)
+		scores = TeamPlayerScore.update_placements(scores, sorting)
 
 		return scores

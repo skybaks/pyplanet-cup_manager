@@ -95,21 +95,17 @@ class ActiveCupManager:
 		if self.display_podium_results:
 			self.display_podium_results = False
 			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
-			index = 1
 			podium_text = []
 			for player_score in scores[0:10]:
-				podium_text.append(f'$0cf{str(index)}. $fff{style.style_strip(player_score.nickname)} $fff[$aaa{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
-				index += 1
+				podium_text.append(f'$0cf{str(player_score.placement)}. $fff{style.style_strip(player_score.nickname)} $fff[$aaa{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
 			if not self.cup_active:
 				podium_prefix = 'Final'
 			else:
 				podium_prefix = 'Current'
 			await self.instance.chat(f'$z$s$0cf{podium_prefix} {self.cup_name_fmt} standings: ' + ', '.join(podium_text))
 
-			index = 1
 			for player_score in scores:
-				await self.instance.chat(f"$z$s$i$0cfYou are placed $fff{str(index)}$0cf in the {self.cup_name_fmt}", player_score.login)
-				index += 1
+				await self.instance.chat(f"$z$s$i$0cfYou are placed $fff{str(player_score.placement)}$0cf in the {self.cup_name_fmt}", player_score.login)
 
 
 	async def _tm_signals_warmup_start(self) -> None:
