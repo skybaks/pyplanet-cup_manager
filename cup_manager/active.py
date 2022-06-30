@@ -10,7 +10,7 @@ from pyplanet.utils import style
 
 from .views import MatchesView, MatchHistoryView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
-from .models import CupInfo
+from .models import CupInfo, CupMatch
 
 logger = logging.getLogger(__name__)
 
@@ -82,13 +82,30 @@ class ActiveCupManager:
 
 
 	async def add_selected_match(self, selected_match: int) -> None:
-		if selected_match not in self.match_start_times:
+		if self.cup_start_time > 0 and selected_match not in self.match_start_times:
 			self.match_start_times.append(selected_match)
+			map_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time == self.cup_start_time & CupMatch.map_start_time == selected_match))
+			if len(map_query) == 0:
+				try:
+					logger.info(f"adding cup map with id {str(selected_match)}")
+					await CupMatch.execute(CupMatch.insert(
+						cup_start_time=self.cup_start_time,
+						map_start_time=selected_match
+					))
+				except:
+					logger.error(f"Error adding cup map to database with id {str(selected_match)}")
+			else:
+				logger.info("map already exists")
 
 
 	async def remove_selected_match(self, selected_match: int) -> None:
-		if selected_match in self.match_start_times:
+		if self.cup_start_time > 0 and selected_match in self.match_start_times:
 			self.match_start_times.remove(selected_match)
+			try:
+				logger.info(f"removing cup match with id {str(selected_match)}")
+				await CupMatch.execute(CupMatch.delete().where(CupMatch.cup_start_time == self.cup_start_time & CupMatch.map_start_time == selected_match))
+			except:
+				logger.error(f"Error deleting selected match with id {str(selected_match)} from cup with id {str(self.cup_start_time)}")
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
@@ -121,7 +138,7 @@ class ActiveCupManager:
 	async def _notify_match_start(self, match_start_time: int, **kwargs) -> None:
 		if self.cup_active and match_start_time not in self.match_start_times:
 			logger.info("Match start from active " + str(match_start_time))
-			self.match_start_times.append(match_start_time)
+			await self.add_selected_match(match_start_time)
 			self.display_podium_results = True
 			self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
 			current_map_num = len(self.match_start_times)
