@@ -7,6 +7,13 @@
     * [Install the plugin](./usage.md#install-the-plugin)
     * [Set up a local.py](./usage.md#set-up-a-local.py)
 * [Running a cup as server admin](./usage.md#running-a-cup-as-server-admin)
+    * [Set up before the cup map starts](./usage.md#set-up-before-the-cup-map-starts)
+        * [Choose the mode script and settings preset](./usage.md#choose-the-mode-script-and-settings-preset)
+        * [Start the cup logic](./usage.md#start-the-cup-logic)
+        * [Set the number of maps](./usage.md#set-the-number-of-maps)
+    * [During the cup](./usage.md#during-the-cup)
+        * [Reset the mode script and settings](./usage.md#reset-the-mode-script-and-settings)
+        * [Notify the cup logic of cup end](./usage.md#notify-the-cup-logic-of-cup-end)
 * [Plugin operations as a player](./usage.md#plugin-operations-as-a-player)
 
 # Setting up with a dedicated server
@@ -36,19 +43,19 @@ After the plugin is installed you should have the following:
 
 ```
 my_pyplanet
-+-- apps
-|   +-- cup_manager
-|   |   +-- cup_manager
-|   |   +-- settings
-|   |   +-- .gitignore
-|   |   +-- readme.md
-|   |   +-- usage.md
-+-- env
-+-- settings
-|   +-- __init__.py
-|   +-- apps.py
-|   +-- base.py
-+-- manage.py
+\ apps
+    \ cup_manager
+        \ cup_manager
+        \ settings
+        - .gitignore
+        - readme.md
+        - usage.md
+\ env
+\ settings
+    - __init__.py
+    - apps.py
+    - base.py
+- manage.py
 ```
 
 Then you will need to add the plugin to your "settings\apps.py". Add the following to the list of apps to load:
@@ -77,7 +84,81 @@ screen.
 TODO: `CUP_MANAGER_NAMES`
 
 # Running a cup as server admin
-tbd
+
+## Set up before the cup map starts
+
+The expected use cases for this plugin are competitions in Rounds or Laps modes. The server is most likely starting in
+TimeAttack mode before the cup. This is good because Pyplanet and the dedicated server provide the most consistent results
+from the "setup" command.
+
+### Choose the mode script and settings preset
+
+If you know the name of the preset you want, run the command:
+
+```
+//cup setup <preset_name>
+```
+
+If you dont remember the name of the preset, run this command instead and you will be able to pick from all the defined
+presets:
+
+```
+//cup setup
+```
+
+### Start the cup logic
+
+Activating the cup logic tells the plugin that it should pay special attention to next map(s) and adds some special
+printouts to keep players updated on maps and scores.
+
+If you have defined named cups in the "local.py" under CUP_MANAGER_NAMES, you can use them now by entering the key name as an argument to the command:
+
+```
+//cup on <cup_key_name>
+```
+
+If you dont have any named cups defined you can run an anonymous cup by simply entering the command:
+
+```
+//cup on
+```
+
+TODO: decide on how the edition will be implemented
+
+### Set the number of maps
+
+For a multi-map cup (more than one map), you can define the number of maps in the cup. Then with the cup logic active, you
+can see a nice message printed at the start of each map that says something like "Map X of Y". If you are not running a multilap cup (one cup map), you can skip running this command.
+
+```
+//cup mapcount <number_of_maps>
+```
+
+## During the cup
+
+While the cup is running there is not really any actions you need to take **until you reach the final map**.
+
+### Reset the mode script and settings
+
+After the cup is over you want to immediately switch back to the mode the server was playing before the cup started. This is most likely TimeAttack. On the final cup map run the command:
+
+```
+//cup setup <preset>
+```
+
+With the TimeAttack preset so that the map immediately following the cup will return to TimeAttack mode.
+
+### Notify the cup logic of cup end
+
+On the final map of the cup you want to tell the cup logic. At any time while the final map is playing, run the following command:
+
+```
+//cup off
+```
+
+## After the cup
+
+tbh
 
 # Plugin operations as a player
 tbd
