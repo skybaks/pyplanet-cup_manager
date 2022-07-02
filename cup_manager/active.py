@@ -243,6 +243,7 @@ class ActiveCupManager:
 			self.cup_active = False
 			if len(self.match_start_times) < 1:
 				await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} has been canceled')
+				await CupInfo.execute(CupInfo.delete().where(CupInfo.cup_start_time.in_([self.cup_start_time])))
 			elif len(self.match_start_times) == 1:
 				await self.instance.chat(f'$z$s$i$0cfYou have designated this as the only map of the {self.cup_name_fmt}', player)
 			else:
