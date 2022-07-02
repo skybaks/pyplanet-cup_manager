@@ -25,6 +25,7 @@ class ActiveCupManager:
 		self.score_sorting = ScoreSortingPresets.UNDEFINED
 		self.cached_scores_lock = asyncio.Lock()
 		self.cached_scores = []
+		self.cup_key_name = ''
 		self.cup_name = ''
 		self.cup_edition_num = 0
 		self.cup_map_count_target = 0
@@ -59,6 +60,9 @@ class ActiveCupManager:
 			Command(command='mapcount', aliases=[], namespace=self.app.namespace, target=self._command_mapcount,
 				admin=True, perms='cup:manage_cup', description='Set the number of maps to target for the current cup.').add_param(
 					'map_count', nargs=1, type=int, default=0, required=True),
+			Command(command='edition', aliases=[], namespace=self.app.namespace, target=self._command_edition,
+				admin=True, perms='cup:manage_cup', description='Force the edition of the current cup.').add_param(
+					'cup_edition', nargs=1, type=int, required=True),
 
 			Command(command='results', aliases=['r'], namespace=self.app.namespace, target=self._command_results,
 				description='Display the standings of the current cup.'),
@@ -204,23 +208,24 @@ class ActiveCupManager:
 
 			self.cup_name = ''
 			if new_cup_name:
+				self.cup_key_name = data.cup_alias
 				self.cup_name = new_cup_name
 
-			self.cup_edition_num = 0
-			# TODO: Look up cup edition from DB
+			self.cup_edition_num = await self._lookup_previous_edition() + 1
+			await self.instance.chat(f'$z$s$i$0cfSet edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use "//cup edition" if this is incorrect', player)
 
 			await self._save_cup_info()
 			await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
 		elif new_cup_name:
 			self.cup_name = ''
 			if new_cup_name:
+				self.cup_key_name = data.cup_alias
 				self.cup_name = new_cup_name
 
-			self.cup_edition_num = 0
-			# TODO: Look up cup edition from DB
+			self.cup_edition_num = await self._lookup_previous_edition() + 1
 
 			await self._save_cup_info()
-			await self.instance.chat(f'$z$s$i$0cfUpdated cup name and edition to: {str(self.cup_name)}, {str(self.cup_edition_num)}', player)
+			await self.instance.chat(f'$z$s$i$0cfUpdated cup name and edition to Name: $<$fff{str(self.cup_name)}$> Edition: $<$fff{str(self.cup_edition_num)}$>', player)
 		else:
 			await self.instance.chat(f'$z$s$i$f00A cup is already active. Use "//cup edit" to change cup maps or "//cup on cup_name:str" to edit cup name', player)
 
@@ -249,7 +254,16 @@ class ActiveCupManager:
 	async def _command_mapcount(self, player, data, **kwargs) -> None:
 		if self.cup_active:
 			self.cup_map_count_target = data.map_count
-			await self.instance.chat(f'$z$s$i$0cfNumber of cup maps set to: {str(self.cup_map_count_target)}', player)
+			await self.instance.chat(f'$z$s$i$0cfNumber of cup maps set to: $<$fff{str(self.cup_map_count_target)}$>', player)
+		else:
+			await self.instance.chat(f'$z$s$i$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
+
+
+	async def _command_edition(self, player, data, **kwargs) -> None:
+		if self.cup_active:
+			self.cup_edition_num = data.cup_edition
+			await self._save_cup_info()
+			await self.instance.chat(f'$z$s$i$0cfCup edition set to: $<$fff{str(self.cup_edition_num)}$>', player)
 		else:
 			await self.instance.chat(f'$z$s$i$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
 
@@ -261,6 +275,7 @@ class ActiveCupManager:
 			logger.info("Info already exists, updating")
 			await CupInfo.execute(
 				CupInfo.update(
+					cup_key=self.cup_key_name,
 					cup_name=self.cup_name,
 					cup_edition=self.cup_edition_num
 				).where(
@@ -272,7 +287,25 @@ class ActiveCupManager:
 			await CupInfo.execute(
 				CupInfo.insert(
 					cup_start_time=self.cup_start_time,
+					cup_key=self.cup_key_name,
 					cup_name=self.cup_name,
 					cup_edition=self.cup_edition_num
 				)
 			)
+
+
+	async def _lookup_previous_edition(self) -> int:
+		previous_edition_num = 0
+		if self.cup_key_name:
+			logger.info(f"looking up previous edition from key name: {str(self.cup_key_name)}")
+			cup_query = await CupInfo.execute(
+				CupInfo.select().where(
+					CupInfo.cup_key.in_([self.cup_key_name]) & CupInfo.cup_start_time.not_in([self.cup_start_time])
+				).order_by(
+					CupInfo.cup_start_time.desc()
+				)
+			)
+			if len(cup_query) > 0:
+				previous_edition_num =  cup_query[0].cup_edition
+		logger.info(f"found previous edition as {str(previous_edition_num)} for key {str(self.cup_key_name)}")
+		return previous_edition_num

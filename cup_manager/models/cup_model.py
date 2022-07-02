@@ -8,6 +8,11 @@ class CupInfo(TimedModel):
 	Time the cup was started. Identifies what cup a match belongs to
 	"""
 
+	cup_key = CharField(null=False, max_length=150)
+	"""
+	Key value identifier for the cup. Defined in the local.py
+	"""
+
 	cup_name = CharField(null=False, max_length=150)
 	"""
 	Display name of the cup
