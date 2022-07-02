@@ -350,6 +350,14 @@ class ActiveCupManager:
 		return list(cups_query)
 
 
+	async def get_data_cup_info(self, cup_start_time: int) -> CupInfo:
+		# TODO: Add view cache
+		cups_query = await CupInfo.execute(CupInfo.select().where(CupInfo.cup_start_time.in_([cup_start_time])))
+		if len(cups_query) > 0:
+			return cups_query[0]
+		return None
+
+
 	async def get_data_cup_match_times(self, cup_start_time: int) -> 'list[int]':
 		# TODO: Add view cache
 		cup_maps_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time.in_([cup_start_time])))

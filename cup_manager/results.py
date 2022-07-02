@@ -8,7 +8,7 @@ from pyplanet.apps.core.shootmania import callbacks as sm_signals
 from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
-from .models import PlayerScore, TeamScore, MatchInfo
+from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
 from .views import MatchHistoryView, TextResultsView, MatchesView, ResultsView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
@@ -337,7 +337,7 @@ class ResultsCupManager:
 			del self._view_cache_team_scores[map_start_time]
 
 
-	async def _button_export(self, player, values, view: MatchHistoryView, **kwargs):
+	async def _button_export(self, player, values, view: any, **kwargs):
 		if view.scores_query:
 			scores_data = await self.get_data_scores(view.scores_query, view.scores_sorting)
 
@@ -355,6 +355,12 @@ class ResultsCupManager:
 				TeamPlayerScore.score2_relevant(view.scores_sorting),
 				TeamPlayerScore.score_team_relevant(view.scores_sorting)
 			)
+
+			if hasattr(view, 'cup_start_time'):
+				cup_info = await self.app.active.get_data_cup_info(view.cup_start_time)	# type: CupInfo
+				text_view.cup_name = cup_info.cup_name
+				text_view.cup_edition = 'Edition #' + str(cup_info.cup_edition)
+
 			await text_view.display(player=player)
 
 
