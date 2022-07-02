@@ -359,6 +359,10 @@ class ResultsCupManager:
 			self._scores_update_notify_list.append(notify_method)
 
 
+	async def get_current_match_start_time(self) -> int:
+		return self._match_start_time
+
+
 	async def get_data_matches(self) -> 'list[MatchInfo]':
 		if not self._view_cache_matches:
 			map_history_query = await MatchInfo.execute(MatchInfo.select().order_by(MatchInfo.map_start_time.desc()))

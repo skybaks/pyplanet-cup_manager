@@ -110,13 +110,13 @@ class TeamPlayerScore:
 	def relevant_score_str(self, sorting: ScoreSortingPresets) -> str:
 		score_str = ''
 		if sorting == ScoreSortingPresets.TIMEATTACK:
-			score_str = self.player_score_str
+			score_str = str(self.player_score_str)
 		elif sorting == ScoreSortingPresets.LAPS:
-			score_str = self.player_score2_str + ', ' + self.player_score_str
+			score_str = str(self.player_score2_str) + ', ' + str(self.player_score_str)
 		elif sorting == ScoreSortingPresets.ROUNDS:
-			score_str = self.player_score_str
+			score_str = str(self.player_score_str)
 		else:
-			score_str = self.team_score + ', ' + self.player_score_str
+			score_str = str(self.team_score) + ', ' + str(self.player_score_str)
 		return score_str
 
 

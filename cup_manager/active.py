@@ -10,7 +10,7 @@ from pyplanet.utils import style
 
 from .views import MatchesView, MatchHistoryView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
-from .models import CupInfo, CupMatch
+from .models import CupInfo, CupMatch, MatchInfo
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,6 @@ class ActiveCupManager:
 		self.instance = app.instance
 		self.context = app.context
 		self.cup_active = False
-		self.display_podium_results = False
 		self.match_start_times = []
 		self.score_sorting = ScoreSortingPresets.UNDEFINED
 		self.cached_scores_lock = asyncio.Lock()
@@ -88,6 +87,18 @@ class ActiveCupManager:
 	async def add_selected_match(self, selected_match: int) -> None:
 		if self.cup_start_time > 0 and selected_match not in self.match_start_times:
 			self.match_start_times.append(selected_match)
+			self.match_start_times.sort()
+
+			all_match_data = await self.app.results.get_data_matches()	# type: list[MatchInfo]
+			for match_data in all_match_data:
+				if match_data.map_start_time == self.match_start_times[-1]:
+					self.score_sorting = ScoreSortingPresets.get_preset(match_data.mode_script)
+					logger.info(f"update score sorting to {str(self.score_sorting)} from map with id {str(self.match_start_times[-1])}")
+					break
+			else:
+				self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
+				logger.info(f"no scores entry for map with id {str(self.match_start_times[-1])}. update sorting based on current script to {str(self.score_sorting)}")
+
 			map_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time == self.cup_start_time & CupMatch.map_start_time == selected_match))
 			if len(map_query) == 0:
 				try:
@@ -113,8 +124,7 @@ class ActiveCupManager:
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
-		if self.display_podium_results:
-			self.display_podium_results = False
+		if  await self._current_match_in_cup():
 			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
 			podium_text = []
 			for player_score in scores[0:10]:
@@ -130,12 +140,12 @@ class ActiveCupManager:
 
 
 	async def _tm_signals_warmup_start(self) -> None:
-		if self.cup_active or self.display_podium_results:
+		if self.cup_active or await self._current_match_in_cup():
 			await self.instance.chat(f"$z$s$0cfGoing live after warmup")
 
 
 	async def _tm_signals_warmup_end(self) -> None:
-		if self.cup_active or self.display_podium_results:
+		if self.cup_active or await self._current_match_in_cup():
 			await self.instance.chat(f"$z$s$0cfWarmup complete, going live now!")
 
 
@@ -143,8 +153,6 @@ class ActiveCupManager:
 		if self.cup_active and match_start_time not in self.match_start_times:
 			logger.info("Match start from active " + str(match_start_time))
 			await self.add_selected_match(match_start_time)
-			self.display_podium_results = True
-			self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
 			current_map_num = len(self.match_start_times)
 			if self.cup_map_count_target > 0:
 				await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $fff{str(current_map_num)}$0cf of $fff{str(self.cup_map_count_target)}$0cf')
@@ -309,3 +317,7 @@ class ActiveCupManager:
 				previous_edition_num =  cup_query[0].cup_edition
 		logger.info(f"found previous edition as {str(previous_edition_num)} for key {str(self.cup_key_name)}")
 		return previous_edition_num
+
+
+	async def _current_match_in_cup(self) -> bool:
+		return await self.app.results.get_current_match_start_time() in self.match_start_times
