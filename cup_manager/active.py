@@ -9,7 +9,7 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import MatchesView, MatchHistoryView, CupView, CupMapsView
+from .views import MatchesView, CupView, CupMapsView, ResultsView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 
@@ -92,18 +92,7 @@ class ActiveCupManager:
 	async def add_selected_match(self, selected_match: int) -> None:
 		if self.cup_start_time > 0 and selected_match not in self.match_start_times:
 			self.match_start_times.append(selected_match)
-			self.match_start_times.sort()
-
-			all_match_data = await self.app.results.get_data_matches()	# type: list[MatchInfo]
-			for match_data in all_match_data:
-				if match_data.map_start_time == self.match_start_times[-1]:
-					self.score_sorting = ScoreSortingPresets.get_preset(match_data.mode_script)
-					logger.info(f"update score sorting to {str(self.score_sorting)} from map with id {str(self.match_start_times[-1])}")
-					break
-			else:
-				self.score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
-				logger.info(f"no scores entry for map with id {str(self.match_start_times[-1])}. update sorting based on current script to {str(self.score_sorting)}")
-
+			self.score_sorting = await self.determine_cup_score_sorting(self.match_start_times)
 			map_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time == self.cup_start_time & CupMatch.map_start_time == selected_match))
 			if len(map_query) == 0:
 				try:
@@ -256,8 +245,7 @@ class ActiveCupManager:
 
 
 	async def _command_results(self, player, data, **kwargs) -> None:
-		view = MatchHistoryView(self.app, player, init_query=self.match_start_times, init_results_view=True, init_sorting=self.score_sorting, init_title='Cup Results')
-		await view.display(player=player.login)
+		await self.open_view_results(player, self.match_start_times, self.cup_start_time)
 
 
 	async def _command_cups(self, player, data, **kwargs) -> None:
@@ -350,8 +338,10 @@ class ActiveCupManager:
 		await view.display(player=player)
 
 
-	async def open_view_results(self, player, maps_query: 'list[int]') -> None:
-		pass
+	async def open_view_results(self, player, maps_query: 'list[int]', cup_start_time: int) -> None:
+		score_sorting = await self.determine_cup_score_sorting(maps_query)
+		view = ResultsView(self.app, player, maps_query, score_sorting, cup_start_time)
+		await view.display(player=player.login)
 
 
 	async def get_data_cup_infos(self) -> 'list[CupInfo]':
@@ -364,3 +354,18 @@ class ActiveCupManager:
 		# TODO: Add view cache
 		cup_maps_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time.in_([cup_start_time])))
 		return [int(map_time.map_start_time) for map_time in list(cup_maps_query)]
+
+
+	async def determine_cup_score_sorting(self, matches: 'list[int]') -> ScoreSortingPresets:
+		matches.sort(reverse=True)
+		score_sorting = ScoreSortingPresets.UNDEFINED
+		all_match_data = await self.app.results.get_data_matches()	# type: list[MatchInfo]
+		for match_data in all_match_data:
+			if match_data.map_start_time == matches[0]:
+				score_sorting = ScoreSortingPresets.get_preset(match_data.mode_script)
+				logger.info(f"update score sorting to {str(score_sorting)} from map with id {str(matches[0])}")
+				break
+		else:
+			score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
+			logger.info(f"no scores entry for map with id {str(matches[0])}. update sorting based on current script to {str(score_sorting)}")
+		return score_sorting

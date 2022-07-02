@@ -43,7 +43,7 @@ class CupView(ManualListView):
 				'index': 'cup_start_time_str',
 				'sorting': True,
 				'searching': True,
-				'width': 30,
+				'width': 40,
 				'type': 'label',
 			}
 		]
@@ -107,7 +107,7 @@ class CupMapsView(ManualListView):
 				'index': 'map_start_time_str',
 				'sorting': True,
 				'searching': True,
-				'width': 30,
+				'width': 40,
 				'type': 'label',
 			},
 		]
@@ -148,7 +148,7 @@ class CupMapsView(ManualListView):
 
 	async def _action_select_map(self, player, values, instance, **kwargs) -> None:
 		await self.close(player=player)
-		await self.app.active.open_view_results(player, [instance['map_start_time']])
+		await self.app.active.open_view_results(player, [instance['map_start_time']], self.cup_start_time)
 
 
 	async def _action_back(self, player, values, **kwargs) -> None:
@@ -159,4 +159,4 @@ class CupMapsView(ManualListView):
 	async def _action_total_results(self, player, values, **kwargs) -> None:
 		await self.close(player=player)
 		map_times = await self.app.active.get_data_cup_match_times(self.cup_start_time)	# type: list[int]
-		await self.app.active.open_view_results(player, map_times)
+		await self.app.active.open_view_results(player, map_times, self.cup_start_time)

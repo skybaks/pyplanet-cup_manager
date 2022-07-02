@@ -40,11 +40,11 @@ class MatchesView(ManualListView):
 				'action': self._action_match_select
 			},
 			{
-				'name': 'Match Time',
+				'name': 'Date',
 				'index': 'match_time_str',
 				'sorting': False,
 				'searching': False,
-				'width': 30,
+				'width': 40,
 				'type': 'label'
 			},
 			{

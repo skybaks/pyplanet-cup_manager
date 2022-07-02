@@ -194,3 +194,17 @@ class TeamPlayerScore:
 			else:
 				input_scores[index].placement = 1
 		return input_scores
+
+
+	@staticmethod
+	def score2_relevant(sorting: ScoreSortingPresets) -> bool:
+		return sorting in [
+			ScoreSortingPresets.LAPS
+		]
+
+
+	@staticmethod
+	def score_team_relevant(sorting: ScoreSortingPresets) -> bool:
+		return sorting in [
+			ScoreSortingPresets.UNDEFINED
+		]
