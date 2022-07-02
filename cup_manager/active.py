@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
+import uuid
 
 from pyplanet.conf import settings
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
@@ -8,7 +9,7 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import MatchesView, MatchHistoryView
+from .views import MatchesView, MatchHistoryView, CupView, CupMapsView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 
@@ -62,9 +63,13 @@ class ActiveCupManager:
 			Command(command='edition', aliases=[], namespace=self.app.namespace, target=self._command_edition,
 				admin=True, perms='cup:manage_cup', description='Force the edition of the current cup.').add_param(
 					'cup_edition', nargs=1, type=int, required=True),
+			Command(command='cups', aliases=[], namespace=self.app.namespace, target=self._command_cups,
+				admin=True, perms='cup:manage_cup', description='Display current and past cups.'),
 
 			Command(command='results', aliases=['r'], namespace=self.app.namespace, target=self._command_results,
 				description='Display the standings of the current cup.'),
+			Command(command='cups', aliases=[], namespace=self.app.namespace, target=self._command_cups,
+				description='Display current and past cups.'),
 		)
 
 		await self.app.results.register_match_start_notify(self._notify_match_start)
@@ -255,6 +260,10 @@ class ActiveCupManager:
 		await view.display(player=player.login)
 
 
+	async def _command_cups(self, player, data, **kwargs) -> None:
+		await self.open_view_cups(player)
+
+
 	async def _command_edit(self, player, data, **kwargs) -> None:
 		view = MatchesView(self, player)
 		await view.display(player=player.login)
@@ -280,13 +289,20 @@ class ActiveCupManager:
 	async def _save_cup_info(self) -> None:
 		logger.info("Saving cup info")
 		cup_query = await CupInfo.execute(CupInfo.select().where(CupInfo.cup_start_time.in_([self.cup_start_time])))
+		save_cup_name = self.cup_name
+		save_key_name = self.cup_key_name
+		save_edition = self.cup_edition_num
+		if not self.cup_name:
+			save_cup_name = 'Cup'
+			# Use a silly key name so we never get overlap on the edition lookup for anonymous cups
+			save_key_name = 'unnamed_cup_' + str(uuid.uuid4())
 		if len(cup_query) > 0:
 			logger.info("Info already exists, updating")
 			await CupInfo.execute(
 				CupInfo.update(
-					cup_key=self.cup_key_name,
-					cup_name=self.cup_name,
-					cup_edition=self.cup_edition_num
+					cup_key=save_key_name,
+					cup_name=save_cup_name,
+					cup_edition=save_edition
 				).where(
 					CupInfo.cup_start_time == self.cup_start_time
 				)
@@ -296,9 +312,9 @@ class ActiveCupManager:
 			await CupInfo.execute(
 				CupInfo.insert(
 					cup_start_time=self.cup_start_time,
-					cup_key=self.cup_key_name,
-					cup_name=self.cup_name,
-					cup_edition=self.cup_edition_num
+					cup_key=save_key_name,
+					cup_name=save_cup_name,
+					cup_edition=save_edition
 				)
 			)
 
@@ -322,3 +338,29 @@ class ActiveCupManager:
 
 	async def _current_match_in_cup(self) -> bool:
 		return await self.app.results.get_current_match_start_time() in self.match_start_times
+
+
+	async def open_view_cups(self, player) -> None:
+		view = CupView(self.app, player)
+		await view.display(player=player)
+
+
+	async def open_view_cup_maps(self, player, cup_start_time: int) -> None:
+		view = CupMapsView(self.app, player, cup_start_time)
+		await view.display(player=player)
+
+
+	async def open_view_results(self, player, maps_query: 'list[int]') -> None:
+		pass
+
+
+	async def get_data_cup_infos(self) -> 'list[CupInfo]':
+		# TODO: Add view cache
+		cups_query = await CupInfo.execute(CupInfo.select().order_by(CupInfo.cup_start_time.desc()))
+		return list(cups_query)
+
+
+	async def get_data_cup_match_times(self, cup_start_time: int) -> 'list[int]':
+		# TODO: Add view cache
+		cup_maps_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time.in_([cup_start_time])))
+		return [int(map_time.map_start_time) for map_time in list(cup_maps_query)]

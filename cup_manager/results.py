@@ -293,6 +293,7 @@ class ResultsCupManager:
 
 
 	async def _prune_match_history(self):
+		# TODO: Logic to not prune matches that are part of a cup
 		match_data = await self.get_data_matches()
 		map_times = [time.map_start_time for time in match_data]
 		map_times.sort()
@@ -367,8 +368,21 @@ class ResultsCupManager:
 		if not self._view_cache_matches:
 			map_history_query = await MatchInfo.execute(MatchInfo.select().order_by(MatchInfo.map_start_time.desc()))
 			if len(map_history_query) > 0:
-				self._view_cache_matches = list(map_history_query)
+				self._view_cache_matches = list(map_history_query)	# type: list[MatchInfo]
 		return self._view_cache_matches
+
+
+	async def get_data_specific_matches(self, matches: any) -> 'list[MatchInfo]':
+		lookup_matches = []
+		if isinstance(matches, int):
+			lookup_matches.append(matches)
+		elif isinstance(matches, list):
+			lookup_matches = matches
+		else:
+			logger.error(f"Unexpected type in get_data_specific_matches: {str(matches)}")
+
+		all_matches = await self.get_data_matches()
+		return [match for match in all_matches if match.map_start_time in lookup_matches]
 
 
 	async def get_data_player_scores(self, map_start_time: int) -> 'list[PlayerScore]':

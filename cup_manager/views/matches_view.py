@@ -69,7 +69,7 @@ class MatchesView(ManualListView):
 					'selected': match_info.map_start_time in selected_matches,
 					'map_start_time': match_info.map_start_time,
 					'selected_str': '$z$f55$iRemove from Cup' if match_info.map_start_time in selected_matches else '$z$0cf$iAdd to Cup',
-					'match_time_str': datetime.fromtimestamp(match_info.map_start_time).strftime("%y/%m/%d %H:%M:%S"),
+					'match_time_str': datetime.fromtimestamp(match_info.map_start_time).strftime("%c"),
 					'map_name_str': match_info.map_name,
 				})
 		return items
