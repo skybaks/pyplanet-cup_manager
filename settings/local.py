@@ -122,4 +122,10 @@ CUP_MANAGER_NAMES = {
 	'hec': {
 		'name': 'Hypeboys Endurance Cup',
 	},
+	'nac': {
+		'name': 'North America Cup',
+	},
+	'tec': {
+		'name': 'Expedition Cup',
+	},
 }

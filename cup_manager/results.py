@@ -9,7 +9,7 @@ from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo
-from .views import MatchHistoryView, TextResultsView, MatchesView
+from .views import MatchHistoryView, TextResultsView, MatchesView, ResultsView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,7 @@ class ResultsCupManager:
 		)
 
 		MatchHistoryView.add_button(self._button_export, 'Export', True, 25)
+		ResultsView.add_button('Export', self._button_export, True)
 
 		await self._handle_map_update('OnStart')
 
@@ -346,7 +347,14 @@ class ResultsCupManager:
 				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
 					match_info.append(match_data_info)
 
-			text_view = TextResultsView(self, player, scores_data, match_info, view.get_score2_visible(), view.get_team_score_visible())
+			text_view = TextResultsView(
+				self,
+				player,
+				scores_data,
+				match_info,
+				TeamPlayerScore.score2_relevant(view.scores_sorting),
+				TeamPlayerScore.score_team_relevant(view.scores_sorting)
+			)
 			await text_view.display(player=player)
 
 

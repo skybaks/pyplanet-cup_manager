@@ -4,7 +4,7 @@ import logging
 from pyplanet.conf import settings
 from pyplanet.contrib.command import Command
 
-from .views import MatchHistoryView, PayoutsView
+from .views import MatchHistoryView, PayoutsView, ResultsView
 from .app_types import ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ class PayoutCupManager:
 			return
 
 		MatchHistoryView.add_button(self._button_payout, 'Payout', self._check_payout_permissions, 25)
+		ResultsView.add_button('Payout', self._button_payout, self._check_payout_permissions)
 
 
 	async def get_payouts(self) -> dict:

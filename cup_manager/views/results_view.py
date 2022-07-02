@@ -1,3 +1,4 @@
+from inspect import iscoroutinefunction, isfunction
 import logging
 
 from pyplanet.views.generics.list import ManualListView
@@ -11,6 +12,8 @@ class ResultsView(ManualListView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Rankings'
 
+	external_buttons = []
+
 	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreSortingPresets, cup_start_time: int=0):
 		super().__init__(self)
 		self.app = app
@@ -19,6 +22,16 @@ class ResultsView(ManualListView):
 		self.scores_query = scores_query
 		self.scores_sorting = scores_sorting
 		self.cup_start_time = cup_start_time
+
+
+	@classmethod
+	def add_button(cls, name, target, visible) -> None:
+		cls.external_buttons.append({
+			'title': name,
+			'action': target,
+			'width': 25,
+			'visible': visible,
+		})
 
 
 	async def get_fields(self) -> 'list[dict[str, any]]':
@@ -114,6 +127,12 @@ class ResultsView(ManualListView):
 				'action': self._action_back,
 			},
 		]
+		for extern_button in self.external_buttons:
+			if (iscoroutinefunction(extern_button['visible']) and await extern_button['visible'](player=self.player, view=self)) \
+					or (isfunction(extern_button['visible']) and extern_button['visible'](player=self.player, view=self)) \
+					or (extern_button['visible']):
+				buttons.append(extern_button)
+
 		return buttons
 
 
