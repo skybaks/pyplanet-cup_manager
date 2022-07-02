@@ -50,8 +50,8 @@ class ActiveCupManager:
 
 		await self.instance.command_manager.register(
 			Command(command='on', aliases=['start'], namespace=self.app.namespace, target=self._command_start,
-				admin=True, perms='cup:manage_cup', description='Signal to start cup on the next map or edit the name properties of a running cup. Usage //cup start cup_alias:str cup_edition:int').add_param(
-					'config', nargs='*', required=False),
+				admin=True, perms='cup:manage_cup', description='Signal to start cup on the next map or edit the name properties of a running cup.').add_param(
+					'cup_alias', type=str, required=False),
 			Command(command='off', aliases=['stop'], namespace=self.app.namespace, target=self._command_stop,
 				admin=True, perms='cup:manage_cup', description='Signals to the server that a cup will end on current map.'),
 			Command(command='edit', aliases=[], namespace=self.app.namespace, target=self._command_edit,
@@ -190,20 +190,11 @@ class ActiveCupManager:
 
 	async def _command_start(self, player, data, **kwargs) -> None:
 		new_cup_name = None
-		new_cup_edition = None
 
-		if data.config and isinstance(data.config, list):
-			if len(data.config) > 0:
-				alias = data.config[0]
-				cup_names = await self.get_cup_names()
-				if alias in cup_names:
-					new_cup_name = cup_names[alias]['name']
-			if len(data.config) > 1:
-				try:
-					new_cup_edition = int(data.config[1])
-				except:
-					await self.instance.chat(f'$z$s$i$f00The input argument for cup_edition must be an integer', player)
-					return
+		if data.cup_alias:
+			cup_names = await self.get_cup_names()
+			if data.cup_alias in cup_names:
+				new_cup_name = cup_names[data.cup_alias]['name']
 
 		if not self.cup_active:
 			self.cup_active = True
@@ -216,23 +207,22 @@ class ActiveCupManager:
 				self.cup_name = new_cup_name
 
 			self.cup_edition_num = 0
-			if new_cup_edition:
-				self.cup_edition_num = new_cup_edition
+			# TODO: Look up cup edition from DB
 
 			await self._save_cup_info()
 			await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
-		elif new_cup_name or new_cup_edition:
+		elif new_cup_name:
 			self.cup_name = ''
 			if new_cup_name:
 				self.cup_name = new_cup_name
 
 			self.cup_edition_num = 0
-			if new_cup_edition:
-				self.cup_edition_num = new_cup_edition
+			# TODO: Look up cup edition from DB
 
+			await self._save_cup_info()
 			await self.instance.chat(f'$z$s$i$0cfUpdated cup name and edition to: {str(self.cup_name)}, {str(self.cup_edition_num)}', player)
 		else:
-			await self.instance.chat(f'$z$s$i$f00A cup is already active. Use "//cup edit" to change cup maps or "//cup on cup_name:str cup_edition:int" to edit cup name and edition', player)
+			await self.instance.chat(f'$z$s$i$f00A cup is already active. Use "//cup edit" to change cup maps or "//cup on cup_name:str" to edit cup name', player)
 
 
 	async def _command_stop(self, player, data, **kwargs) -> None:
