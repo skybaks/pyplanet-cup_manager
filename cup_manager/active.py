@@ -313,7 +313,7 @@ class ActiveCupManager:
 			logger.info(f"looking up previous edition from key name: {str(self.cup_key_name)}")
 			cup_query = await CupInfo.execute(
 				CupInfo.select().where(
-					(CupInfo.cup_key.in_([self.cup_key_name])) & (CupInfo.cup_start_time.not_in([self.cup_start_time]))
+					(CupInfo.cup_key == self.cup_key_name) & (CupInfo.cup_start_time == self.cup_start_time)
 				).order_by(
 					CupInfo.cup_start_time.desc()
 				)
