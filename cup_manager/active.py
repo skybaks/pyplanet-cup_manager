@@ -93,7 +93,7 @@ class ActiveCupManager:
 		if self.cup_start_time > 0 and selected_match not in self.match_start_times:
 			self.match_start_times.append(selected_match)
 			self.score_sorting = await self.determine_cup_score_sorting(self.match_start_times)
-			map_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time == self.cup_start_time & CupMatch.map_start_time == selected_match))
+			map_query = await CupMatch.execute(CupMatch.select().where((CupMatch.cup_start_time == self.cup_start_time) & (CupMatch.map_start_time == selected_match)))
 			if len(map_query) == 0:
 				try:
 					logger.info(f"adding cup map with id {str(selected_match)}")
@@ -112,13 +112,13 @@ class ActiveCupManager:
 			self.match_start_times.remove(selected_match)
 			try:
 				logger.info(f"removing cup match with id {str(selected_match)}")
-				await CupMatch.execute(CupMatch.delete().where(CupMatch.cup_start_time == self.cup_start_time & CupMatch.map_start_time == selected_match))
+				await CupMatch.execute(CupMatch.delete().where((CupMatch.cup_start_time == self.cup_start_time) & (CupMatch.map_start_time == selected_match)))
 			except:
 				logger.error(f"Error deleting selected match with id {str(selected_match)} from cup with id {str(self.cup_start_time)}")
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
-		if  await self._current_match_in_cup():
+		if await self._current_match_in_cup():
 			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
 			podium_text = []
 			for player_score in scores[0:10]:
@@ -313,7 +313,7 @@ class ActiveCupManager:
 			logger.info(f"looking up previous edition from key name: {str(self.cup_key_name)}")
 			cup_query = await CupInfo.execute(
 				CupInfo.select().where(
-					CupInfo.cup_key.in_([self.cup_key_name]) & CupInfo.cup_start_time.not_in([self.cup_start_time])
+					(CupInfo.cup_key.in_([self.cup_key_name])) & (CupInfo.cup_start_time.not_in([self.cup_start_time]))
 				).order_by(
 					CupInfo.cup_start_time.desc()
 				)
