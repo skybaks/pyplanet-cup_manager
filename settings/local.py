@@ -116,16 +116,35 @@ CUP_MANAGER_PAYOUTS = {
 
 # Use this to define the name and alias of cup.
 CUP_MANAGER_NAMES = {
+
 	'mxlc': {
 		'name': 'ManiaExchange Lagoon Cup',
+		'preset_on': 'mxlc',
+		'preset_off': 'ta',
 	},
+
 	'hec': {
 		'name': 'Hypeboys Endurance Cup',
+		'preset_on': 'laps50',
+		'preset_off': 'ta',
 	},
+
 	'nac': {
 		'name': 'North America Cup',
+		'preset_on': 'nac',
+		'preset_off': 'ta',
 	},
+
 	'tec': {
 		'name': 'Expedition Cup',
+		'preset_on': 'rounds180',
+		'preset_off': 'ta',
 	},
+
+	'test': {
+		'name': 'Testing Cup',
+		'preset_on': 'test',
+		'preset_off': 'timeattack3',
+	}
+
 }

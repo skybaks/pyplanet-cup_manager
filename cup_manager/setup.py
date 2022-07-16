@@ -115,6 +115,9 @@ class SetupCupManager:
 
 
 	async def command_setup(self, player, data, **kwargs) -> None:
+		if not await self.instance.permission_manager.has_permission(player, 'cup:setup_cup'):
+			return
+
 		if data.preset:
 			cmd_preset = data.preset.lower()
 			presets = await self.get_presets()
@@ -137,9 +140,9 @@ class SetupCupManager:
 					for command in preset_data['commands']:
 						await self.instance.gbx.script(*command, encode_json=False, response_id=False)
 
-				await self.app.instance.chat(f"$i$fffSet next script settings to preset '{selected_preset}'", player)
+				await self.app.instance.chat(f"$z$s$i$0cfSet next script settings to preset: $<$fff{selected_preset}$>", player)
 			else:
-				await self.app.instance.chat(f"$i$f00Unknown preset name '{data.preset}'.\nAvailable presets are: {', '.join(presets.keys())}", player)
+				await self.app.instance.chat(f"$z$s$i$f00Unknown preset name $<$fff'{data.preset}'$>\nAvailable presets are: $<$fff{', '.join(presets.keys())}$>", player)
 		else:
 			view = PresetsView(self)
 			await view.display(player=player)

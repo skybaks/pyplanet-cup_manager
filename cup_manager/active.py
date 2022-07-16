@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 import uuid
+from argparse import Namespace
 
 from pyplanet.conf import settings
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
@@ -14,6 +15,7 @@ from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 
 logger = logging.getLogger(__name__)
+
 
 class ActiveCupManager:
 	def __init__(self, app) -> None:
@@ -196,11 +198,14 @@ class ActiveCupManager:
 
 	async def _command_start(self, player, data, **kwargs) -> None:
 		new_cup_name = None
+		new_cup_preset_on = None
 
 		if data.cup_alias:
 			cup_names = await self.get_cup_names()
 			if data.cup_alias in cup_names:
 				new_cup_name = cup_names[data.cup_alias]['name']
+				if 'preset_on' in cup_names[data.cup_alias]:
+					new_cup_preset_on = cup_names[data.cup_alias]['preset_on']
 
 		if not self.cup_active:
 			self.cup_active = True
@@ -215,6 +220,9 @@ class ActiveCupManager:
 
 			self.cup_edition_num = await self._lookup_previous_edition() + 1
 			await self.instance.chat(f'$z$s$i$0cfSet edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use "//cup edition" if this is incorrect', player)
+
+			if new_cup_preset_on:
+				await self.app.setup.command_setup(player, Namespace(**{'preset': new_cup_preset_on}))
 
 			await self._save_cup_info()
 			await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
@@ -242,6 +250,10 @@ class ActiveCupManager:
 				await self.instance.chat(f'$z$s$i$0cfYou have designated this as the only map of the {self.cup_name_fmt}', player)
 			else:
 				await self.instance.chat(f'$z$s$0cfThis is the final map of the {self.cup_name_fmt}')
+
+			cup_names = await self.get_cup_names()
+			if self.cup_key_name in cup_names and 'preset_off' in cup_names[self.cup_key_name]:
+				await self.app.setup.command_setup(player, Namespace(**{'preset': cup_names[self.cup_key_name]['preset_off']}))
 
 
 	async def _command_results(self, player, data, **kwargs) -> None:
