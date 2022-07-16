@@ -284,10 +284,10 @@ class ResultsCupManager:
 			for match in match_data:
 				if match.map_start_time == ended_map_start_time:
 					score_data = await self.get_data_scores(match.map_start_time, ScoreSortingPresets.get_preset(match.mode_script))
-					await self.instance.chat(f'$i$fffSaved {str(len(score_data))} record(s) from map $<{ended_map_map_name}$>.')
+					await self.instance.chat(f'$ff0Saved $<$fff{str(len(score_data))}$> record(s) from map $<$fff{ended_map_map_name}$>')
 					break
 			else:
-				await self.instance.chat(f'$i$fffNo records saved from map $<{ended_map_map_name}$>.')
+				await self.instance.chat(f'$ff0No records saved from map $<$fff{ended_map_map_name}$>')
 
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
@@ -316,7 +316,7 @@ class ResultsCupManager:
 			view = MatchHistoryView(self.app, player)
 			await view.display(player=player.login)
 		else:
-			await self.instance.chat('$i$f00No matches found.', player)
+			await self.instance.chat('$f00No matches found', player)
 
 
 	async def _invalidate_view_cache_matches(self):

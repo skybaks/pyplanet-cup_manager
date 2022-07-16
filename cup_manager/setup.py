@@ -140,9 +140,9 @@ class SetupCupManager:
 					for command in preset_data['commands']:
 						await self.instance.gbx.script(*command, encode_json=False, response_id=False)
 
-				await self.app.instance.chat(f"$z$s$i$0cfSet next script settings to preset: $<$fff{selected_preset}$>", player)
+				await self.app.instance.chat(f"$ff0Set next script settings to preset: $<$fff{selected_preset}$>", player)
 			else:
-				await self.app.instance.chat(f"$z$s$i$f00Unknown preset name $<$fff'{data.preset}'$>\nAvailable presets are: $<$fff{', '.join(presets.keys())}$>", player)
+				await self.app.instance.chat(f"$f00Unknown preset name $<$fff'{data.preset}'$>\nAvailable presets are: $<$fff{', '.join(presets.keys())}$>", player)
 		else:
 			view = PresetsView(self)
 			await view.display(player=player)
@@ -163,5 +163,5 @@ class SetupCupManager:
 					pointsrepartition_actual = getpointsrepartition_response['pointsrepartition']
 
 					if pointsrepartition_actual != pointsrepartition_desired:
-						logger.debug('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
+						logger.info('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
 						await self.instance.gbx.script(*(['Trackmania.SetPointsRepartition'] + [str(point) for point in pointsrepartition_desired]), encode_json=False, response_id=False)

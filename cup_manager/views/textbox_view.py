@@ -69,7 +69,7 @@ class TextboxView(SingleInstanceView):
 
 
 	async def copy_success(self, player, *args, **kwargs):
-		await self.app.instance.chat(f'Copied to clipboard', player)
+		await self.app.instance.chat(f'$ff0Copied to clipboard', player)
 
 
 	async def entry_submit(self, player, action, values, *args, **kwargs):

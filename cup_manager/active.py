@@ -132,7 +132,7 @@ class ActiveCupManager:
 			await self.instance.chat(f'$z$s$0cf{podium_prefix} {self.cup_name_fmt} standings: ' + ', '.join(podium_text))
 
 			for player_score in scores:
-				await self.instance.chat(f"$z$s$i$0cfYou are placed $fff{str(player_score.placement)}$0cf in the {self.cup_name_fmt}", player_score.login)
+				await self.instance.chat(f"$ff0You are placed $<$fff{str(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
 
 
 	async def _tm_signals_warmup_start(self) -> None:
@@ -151,12 +151,12 @@ class ActiveCupManager:
 			await self.add_selected_match(match_start_time)
 			current_map_num = len(self.match_start_times)
 			if self.cup_map_count_target > 0:
-				await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $fff{str(current_map_num)}$0cf of $fff{str(self.cup_map_count_target)}$0cf')
+				await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $<$fff{str(current_map_num)}$> of $<$fff{str(self.cup_map_count_target)}$>')
 			else:
 				if current_map_num == 1:
 					await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} with this map')
 				else:
-					await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $fff{str(current_map_num)}$0cf')
+					await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $<$fff{str(current_map_num)}$>')
 
 				# If not map 1 then dump out player diffs
 				scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
@@ -165,13 +165,13 @@ class ActiveCupManager:
 					if score_index-1 >= 0:
 						ahead_score = scores[score_index-1]
 						await self.instance.chat(
-							f"$z$s$i$0cfYou are behind $fff{style.style_strip(ahead_score.nickname)}$0cf by $fff{TeamPlayerScore.diff_scores_str(current_score, ahead_score, self.score_sorting)}$0cf in the {self.cup_name_fmt}",
+							f"$ff0You are behind $<$fff{style.style_strip(ahead_score.nickname)}$> by $<$fff{TeamPlayerScore.diff_scores_str(current_score, ahead_score, self.score_sorting)}$> in the {self.cup_name_fmt}",
 							current_score.login
 						)
 					elif score_index+1 < len(scores):
 						behind_score = scores[score_index+1]
 						await self.instance.chat(
-							f"$z$s$i$0cfYou are leading $fff{style.style_strip(behind_score.nickname)}$0cf by $fff{TeamPlayerScore.diff_scores_str(current_score, behind_score, self.score_sorting)}$0cf in the {self.cup_name_fmt}",
+							f"$ff0You are leading $<$fff{style.style_strip(behind_score.nickname)}$> by $<$fff{TeamPlayerScore.diff_scores_str(current_score, behind_score, self.score_sorting)}$> in the {self.cup_name_fmt}",
 							current_score.login
 						)
 
@@ -188,7 +188,7 @@ class ActiveCupManager:
 							if current_login == self.cached_scores[old_index].login:
 								# Gained placements
 								if new_index < old_index:
-									await self.instance.chat(f"$z$s$i$0cfYou gained $fff{str(old_index - new_index)}$0cf positions in the {self.cup_name_fmt}. $fff[{str(old_index + 1)} ➙ {str(new_index + 1)}]", current_login)
+									await self.instance.chat(f"$ff0You gained $<$fff{str(old_index - new_index)}$> positions in the {self.cup_name_fmt}. $fff[{str(old_index + 1)} ➙ {str(new_index + 1)}]", current_login)
 								# Lost placements. Do we really want to rub it in?
 								elif new_index > old_index:
 									pass
@@ -219,7 +219,7 @@ class ActiveCupManager:
 				self.cup_name = new_cup_name
 
 			self.cup_edition_num = await self._lookup_previous_edition() + 1
-			await self.instance.chat(f'$z$s$i$0cfSet edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use "//cup edition" if this is incorrect', player)
+			await self.instance.chat(f'$ff0Set edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use "//cup edition" if this is incorrect', player)
 
 			if new_cup_preset_on:
 				await self.app.setup.command_setup(player, Namespace(**{'preset': new_cup_preset_on}))
@@ -235,9 +235,9 @@ class ActiveCupManager:
 			self.cup_edition_num = await self._lookup_previous_edition() + 1
 
 			await self._save_cup_info()
-			await self.instance.chat(f'$z$s$i$0cfUpdated cup name and edition to Name: $<$fff{str(self.cup_name)}$> Edition: $<$fff{str(self.cup_edition_num)}$>', player)
+			await self.instance.chat(f'$ff0Updated cup name and edition to Name: $<$fff{str(self.cup_name)}$> Edition: $<$fff{str(self.cup_edition_num)}$>', player)
 		else:
-			await self.instance.chat(f'$z$s$i$f00A cup is already active. Use "//cup edit" to change cup maps or "//cup on cup_name:str" to edit cup name', player)
+			await self.instance.chat(f'$f00A cup is already active. Use $<$fff//cup edit$> to change cup maps or $<$fff//cup on cup_name:str$> to edit cup name', player)
 
 
 	async def _command_stop(self, player, data, **kwargs) -> None:
@@ -247,7 +247,7 @@ class ActiveCupManager:
 				await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} has been canceled')
 				await CupInfo.execute(CupInfo.delete().where(CupInfo.cup_start_time.in_([self.cup_start_time])))
 			elif len(self.match_start_times) == 1:
-				await self.instance.chat(f'$z$s$i$0cfYou have designated this as the only map of the {self.cup_name_fmt}', player)
+				await self.instance.chat(f'$ff0You have designated this as the only map of the {self.cup_name_fmt}', player)
 			else:
 				await self.instance.chat(f'$z$s$0cfThis is the final map of the {self.cup_name_fmt}')
 
@@ -272,18 +272,18 @@ class ActiveCupManager:
 	async def _command_mapcount(self, player, data, **kwargs) -> None:
 		if self.cup_active:
 			self.cup_map_count_target = data.map_count
-			await self.instance.chat(f'$z$s$i$0cfNumber of cup maps set to: $<$fff{str(self.cup_map_count_target)}$>', player)
+			await self.instance.chat(f'$ff0Number of cup maps set to: $<$fff{str(self.cup_map_count_target)}$>', player)
 		else:
-			await self.instance.chat(f'$z$s$i$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
+			await self.instance.chat(f'$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
 
 
 	async def _command_edition(self, player, data, **kwargs) -> None:
 		if self.cup_active:
 			self.cup_edition_num = data.cup_edition
 			await self._save_cup_info()
-			await self.instance.chat(f'$z$s$i$0cfCup edition set to: $<$fff{str(self.cup_edition_num)}$>', player)
+			await self.instance.chat(f'$ff0Cup edition set to: $<$fff{str(self.cup_edition_num)}$>', player)
 		else:
-			await self.instance.chat(f'$z$s$i$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
+			await self.instance.chat(f'$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
 
 
 	async def _save_cup_info(self) -> None:
@@ -325,7 +325,7 @@ class ActiveCupManager:
 			logger.info(f"looking up previous edition from key name: {str(self.cup_key_name)}")
 			cup_query = await CupInfo.execute(
 				CupInfo.select().where(
-					(CupInfo.cup_key == self.cup_key_name) & (CupInfo.cup_start_time == self.cup_start_time)
+					(CupInfo.cup_key == self.cup_key_name) & (CupInfo.cup_start_time != self.cup_start_time)
 				).order_by(
 					CupInfo.cup_start_time.desc()
 				)
