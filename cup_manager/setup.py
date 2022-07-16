@@ -134,6 +134,10 @@ class SetupCupManager:
 					await self.instance.mode_manager.set_next_script(preset_data['script'][self.instance.game.game])
 
 				if 'settings' in preset_data:
+					# HACK: There is not a method to clear current script
+					# settings. I want to clear it our so that there is no
+					# overlap between presets
+					self.instance.mode_manager._next_settings_update = {}
 					await self.instance.mode_manager.update_next_settings(preset_data['settings'])
 
 				if 'commands' in preset_data:

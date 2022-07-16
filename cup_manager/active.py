@@ -219,7 +219,7 @@ class ActiveCupManager:
 				self.cup_name = new_cup_name
 
 			self.cup_edition_num = await self._lookup_previous_edition() + 1
-			await self.instance.chat(f'$ff0Set edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use "//cup edition" if this is incorrect', player)
+			await self.instance.chat(f'$ff0Set edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use $<$fff//cup edition$> if this is incorrect', player)
 
 			if new_cup_preset_on:
 				await self.app.setup.command_setup(player, Namespace(**{'preset': new_cup_preset_on}))
@@ -274,7 +274,7 @@ class ActiveCupManager:
 			self.cup_map_count_target = data.map_count
 			await self.instance.chat(f'$ff0Number of cup maps set to: $<$fff{str(self.cup_map_count_target)}$>', player)
 		else:
-			await self.instance.chat(f'$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
+			await self.instance.chat(f'$f00No cup is currently active. Start a cup using $<$fff//cup on$> and then run this command', player)
 
 
 	async def _command_edition(self, player, data, **kwargs) -> None:
@@ -283,7 +283,7 @@ class ActiveCupManager:
 			await self._save_cup_info()
 			await self.instance.chat(f'$ff0Cup edition set to: $<$fff{str(self.cup_edition_num)}$>', player)
 		else:
-			await self.instance.chat(f'$f00No cup is currently active. Start a cup using "//cup on" and then run this command', player)
+			await self.instance.chat(f'$f00No cup is currently active. Start a cup using $<$fff//cup on$> and then run this command', player)
 
 
 	async def _save_cup_info(self) -> None:
