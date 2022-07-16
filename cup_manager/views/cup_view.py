@@ -52,7 +52,7 @@ class CupView(ManualListView):
 
 	async def get_data(self) -> 'list[dict[str, any]]':
 		items = []
-		cups_data = await self.app.active.get_data_cup_infos() # type: list[CupInfo]
+		cups_data = await self.app.active.get_data_cup_info() # type: list[CupInfo]
 		for cup_data in cups_data:
 			items.append({
 				# For display

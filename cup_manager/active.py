@@ -32,8 +32,8 @@ class ActiveCupManager:
 		self.cup_edition_num = 0
 		self.cup_map_count_target = 0
 		self.cup_start_time = 0
-		self._view_cache_cup_info = {}
-		self._view_cache_cup_maps = {}
+		self._view_cache_cup_info = []	# type: list[CupInfo]
+		self._view_cache_cup_maps = {}	# type: dict[int, list[int]]
 
 
 	@property
@@ -127,12 +127,14 @@ class ActiveCupManager:
 				podium_text.append(f'$0cf{str(player_score.placement)}. $fff{style.style_strip(player_score.nickname)} $fff[$aaa{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
 			if not self.cup_active:
 				podium_prefix = 'Final'
+				player_prefix = ''
 			else:
 				podium_prefix = 'Current'
+				player_prefix = 'are '
 			await self.instance.chat(f'$z$s$0cf{podium_prefix} {self.cup_name_fmt} standings: ' + ', '.join(podium_text))
 
 			for player_score in scores:
-				await self.instance.chat(f"$ff0You are placed $<$fff{str(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
+				await self.instance.chat(f"$ff0You {player_prefix}placed $<$fff{str(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
 
 
 	async def _tm_signals_warmup_start(self) -> None:
@@ -246,6 +248,7 @@ class ActiveCupManager:
 			if len(self.match_start_times) < 1:
 				await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} has been canceled')
 				await CupInfo.execute(CupInfo.delete().where(CupInfo.cup_start_time.in_([self.cup_start_time])))
+				await self._invalidate_view_cache_cup_info()
 			elif len(self.match_start_times) == 1:
 				await self.instance.chat(f'$ff0You have designated this as the only map of the {self.cup_name_fmt}', player)
 			else:
@@ -288,7 +291,7 @@ class ActiveCupManager:
 
 	async def _save_cup_info(self) -> None:
 		logger.info("Saving cup info")
-		cup_query = await CupInfo.execute(CupInfo.select().where(CupInfo.cup_start_time.in_([self.cup_start_time])))
+		cup_query = await self.get_data_specific_cup_info(self.cup_start_time)
 		save_cup_name = self.cup_name
 		save_key_name = self.cup_key_name
 		save_edition = self.cup_edition_num
@@ -296,7 +299,7 @@ class ActiveCupManager:
 			save_cup_name = 'Cup'
 			# Use a silly key name so we never get overlap on the edition lookup for anonymous cups
 			save_key_name = 'unnamed_cup_' + str(uuid.uuid4())
-		if len(cup_query) > 0:
+		if cup_query:
 			logger.info("Info already exists, updating")
 			await CupInfo.execute(
 				CupInfo.update(
@@ -317,6 +320,7 @@ class ActiveCupManager:
 					cup_edition=save_edition
 				)
 			)
+		await self._invalidate_view_cache_cup_info()
 
 
 	async def _lookup_previous_edition(self) -> int:
@@ -340,6 +344,11 @@ class ActiveCupManager:
 		return await self.app.results.get_current_match_start_time() in self.match_start_times
 
 
+	async def _invalidate_view_cache_cup_info(self) -> None:
+		self._view_cache_cup_info = []
+		logger.info("_invalidate_view_cache_cup_info")
+
+
 	async def open_view_cups(self, player) -> None:
 		view = CupView(self.app, player)
 		await view.display(player=player)
@@ -356,18 +365,21 @@ class ActiveCupManager:
 		await view.display(player=player.login)
 
 
-	async def get_data_cup_infos(self) -> 'list[CupInfo]':
-		# TODO: Add view cache
-		cups_query = await CupInfo.execute(CupInfo.select().order_by(CupInfo.cup_start_time.desc()))
-		return list(cups_query)
+	async def get_data_cup_info(self) -> 'list[CupInfo]':
+		if not self._view_cache_cup_info:
+			cups_query = await CupInfo.execute(CupInfo.select().order_by(CupInfo.cup_start_time.desc()))
+			if len(cups_query) > 0:
+				self._view_cache_cup_info = list(cups_query)
+		return self._view_cache_cup_info
 
 
-	async def get_data_cup_info(self, cup_start_time: int) -> CupInfo:
-		# TODO: Add view cache
-		cups_query = await CupInfo.execute(CupInfo.select().where(CupInfo.cup_start_time.in_([cup_start_time])))
-		if len(cups_query) > 0:
-			return cups_query[0]
-		return None
+	async def get_data_specific_cup_info(self, cup_start_time: int) -> CupInfo:
+		all_cups = await self.get_data_cup_info()
+		for cup_info in all_cups:
+			if cup_info.cup_start_time == cup_start_time:
+				return cup_info
+		else:
+			return None
 
 
 	async def get_data_cup_match_times(self, cup_start_time: int) -> 'list[int]':
@@ -377,10 +389,12 @@ class ActiveCupManager:
 
 
 	async def determine_cup_score_sorting(self, matches: 'list[int]') -> ScoreSortingPresets:
+		if not matches:
+			return ScoreSortingPresets.UNDEFINED
 		matches.sort(reverse=True)
 		score_sorting = ScoreSortingPresets.UNDEFINED
-		all_match_data = await self.app.results.get_data_matches()	# type: list[MatchInfo]
-		for match_data in all_match_data:
+		matches_data = await self.app.results.get_data_specific_matches(matches)	# type: list[MatchInfo]
+		for match_data in matches_data:
 			if match_data.map_start_time == matches[0]:
 				score_sorting = ScoreSortingPresets.get_preset(match_data.mode_script)
 				logger.info(f"update score sorting to {str(score_sorting)} from map with id {str(matches[0])}")

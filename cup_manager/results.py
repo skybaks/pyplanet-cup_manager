@@ -357,7 +357,7 @@ class ResultsCupManager:
 			)
 
 			if hasattr(view, 'cup_start_time'):
-				cup_info = await self.app.active.get_data_cup_info(view.cup_start_time)	# type: CupInfo
+				cup_info = await self.app.active.get_data_specific_cup_info(view.cup_start_time)	# type: CupInfo
 				text_view.cup_name = cup_info.cup_name
 				text_view.cup_edition = 'Edition #' + str(cup_info.cup_edition)
 
