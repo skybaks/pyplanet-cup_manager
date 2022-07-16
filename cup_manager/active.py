@@ -33,7 +33,7 @@ class ActiveCupManager:
 		self.cup_map_count_target = 0
 		self.cup_start_time = 0
 		self._view_cache_cup_info = []	# type: list[CupInfo]
-		self._view_cache_cup_maps = {}	# type: dict[int, list[int]]
+		self._view_cache_cup_maps = {}	# type: list[CupMatch]
 
 
 	@property
@@ -95,8 +95,8 @@ class ActiveCupManager:
 		if self.cup_start_time > 0 and selected_match not in self.match_start_times:
 			self.match_start_times.append(selected_match)
 			self.score_sorting = await self.determine_cup_score_sorting(self.match_start_times)
-			map_query = await CupMatch.execute(CupMatch.select().where((CupMatch.cup_start_time == self.cup_start_time) & (CupMatch.map_start_time == selected_match)))
-			if len(map_query) == 0:
+			map_query = await self.get_data_cup_match_times(self.cup_start_time)
+			if selected_match not in map_query:
 				try:
 					logger.info(f"adding cup map with id {str(selected_match)}")
 					await CupMatch.execute(CupMatch.insert(
@@ -105,6 +105,7 @@ class ActiveCupManager:
 					))
 				except:
 					logger.error(f"Error adding cup map to database with id {str(selected_match)}")
+				await self._invalidate_view_cache_cup_maps()
 			else:
 				logger.info("map already exists")
 
@@ -117,6 +118,7 @@ class ActiveCupManager:
 				await CupMatch.execute(CupMatch.delete().where((CupMatch.cup_start_time == self.cup_start_time) & (CupMatch.map_start_time == selected_match)))
 			except:
 				logger.error(f"Error deleting selected match with id {str(selected_match)} from cup with id {str(self.cup_start_time)}")
+			await self._invalidate_view_cache_cup_maps()
 
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
@@ -349,6 +351,11 @@ class ActiveCupManager:
 		logger.info("_invalidate_view_cache_cup_info")
 
 
+	async def _invalidate_view_cache_cup_maps(self) -> None:
+		self._view_cache_cup_maps = []
+		logger.info("_invalidate_view_cache_cup_maps")
+
+
 	async def open_view_cups(self, player) -> None:
 		view = CupView(self.app, player)
 		await view.display(player=player)
@@ -383,9 +390,11 @@ class ActiveCupManager:
 
 
 	async def get_data_cup_match_times(self, cup_start_time: int) -> 'list[int]':
-		# TODO: Add view cache
-		cup_maps_query = await CupMatch.execute(CupMatch.select().where(CupMatch.cup_start_time.in_([cup_start_time])))
-		return [int(map_time.map_start_time) for map_time in list(cup_maps_query)]
+		if not self._view_cache_cup_maps:
+			cup_maps_query = await CupMatch.execute(CupMatch.select().order_by(CupMatch.cup_start_time.desc()))
+			if len(cup_maps_query) > 0:
+				self._view_cache_cup_maps = list(cup_maps_query)
+		return [int(map_time.map_start_time) for map_time in self._view_cache_cup_maps if map_time.cup_start_time == cup_start_time]
 
 
 	async def determine_cup_score_sorting(self, matches: 'list[int]') -> ScoreSortingPresets:
