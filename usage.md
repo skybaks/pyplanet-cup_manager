@@ -5,7 +5,7 @@
     * [Set up Pyplanet](./usage.md#set-up-pyplanet)
     * [Get the plugin code](./usage.md#get-the-plugin-code)
     * [Install the plugin](./usage.md#install-the-plugin)
-    * [Set up a local.py](./usage.md#set-up-a-local.py)
+    * [Set up a local py file](./usage.md#set-up-a-local-py-file)
 * [Running a cup as server admin](./usage.md#running-a-cup-as-server-admin)
     * [Admin quick reference](./usage.md#admin-quick-reference)
     * [Set up before the cup map starts](./usage.md#set-up-before-the-cup-map-starts)
@@ -18,6 +18,9 @@
         * [Add or remove maps from the active cup](./usage.md#add-or-remove-maps-from-the-active-cup)
         * [Notify the cup logic of cup end](./usage.md#notify-the-cup-logic-of-cup-end)
         * [Reset the mode script and settings](./usage.md#reset-the-mode-script-and-settings)
+    * [After the cup](./usage.md#after-the-cup)
+        * [Export the cup results](./usage.md#export-the-cup-results)
+        * [Pay planets to the winners](./usage.md#pay-planets-to-the-winners)
 * [Plugin operations as a player](./usage.md#plugin-operations-as-a-player)
 
 # Setting up with a dedicated server
@@ -68,7 +71,7 @@ Then you will need to add the plugin to your "settings\apps.py". Add the followi
 'apps.cup_manager.cup_manager',
 ```
 
-## Set up a local.py
+## Set up a local py file
 
 > This is optional but you should try to set one up if you want to utilize full functionality of the plugin.
 
@@ -124,7 +127,7 @@ Quick reference of all commands that *might* be relevant to a cup admin. Read be
 
 -- After Cup --
 /cup results
-//cup matches
+/cup matches
 ```
 
 ## Set up before the cup map starts
@@ -229,8 +232,37 @@ With the TimeAttack preset so that the map immediately following the cup will re
 
 ## After the cup
 
-tbd
+### Export the cup results
+
+After the cup is over you can use the export window to get the cup results in a variety of formats. If you ran the cup using the `//cup on` command then you can get to the results window using the command:
+
+```
+/cup results
+```
+
+From the results window click the "Export" button, then modify the settings as you desire copy the text to your clipboard.
+
+If you did not use the `//cup on` command to run the cup you can still access cup results. Use the command:
+
+```
+/cup matches
+```
+
+To open a view of all previous matches. Use the leftmost checkboxes to select all cup maps then click the "Sum Sel."
+button to view the summed results for all the selected maps. From there you can click the "Export" button and follow
+the same steps as above to export the results via your clipboard.
+
+### Pay planets to the winners
+
+If you are in a game that supports paying players planets and you have defined some payout schemes in your local.py
+file, you can pay players based on the cup results. Follow the instructions above to get to the cup results either using `/cup results` or `/cup matches`, then click the button "Payout" to open the payout window.
 
 # Plugin operations as a player
 
-tbd
+## Player quick reference
+
+```
+/cup results
+/cup cups
+/cup matches
+```
