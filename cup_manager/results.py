@@ -5,7 +5,6 @@ from peewee import *
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.apps.core.shootmania import callbacks as sm_signals
-from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
 
 from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
@@ -26,18 +25,11 @@ class ResultsCupManager:
 		self._match_players_scored = []
 		self._match_teams_scored = []
 		self._match_info_created = False
-		self._setting_match_history_amount = None
 		self._view_cache_matches = []
 		self._view_cache_scores = {}
 		self._view_cache_team_scores = {}
 		self._match_start_notify_list = []
 		self._scores_update_notify_list = []
-
-		self._setting_match_history_amount = Setting(
-			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
-			description='Set this number to the number of previous matches you want to save in the database.',
-			default=100
-		)
 
 		MatchesView.set_get_data_method(self.get_data_matches)
 
@@ -47,8 +39,6 @@ class ResultsCupManager:
 		self.context.signals.listen(mp_signals.map.map_start, self._mp_signals_map_map_start)
 		self.context.signals.listen(mp_signals.map.map_end, self._mp_signals_map_map_end)
 		self.context.signals.listen(sm_signals.base.scores, self._tm_signals_scores)
-
-		await self.context.setting.register(self._setting_match_history_amount)
 
 		await self.instance.permission_manager.register('results_cup', 'Handle match results from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
@@ -279,7 +269,6 @@ class ResultsCupManager:
 			self._match_teams_scored = []
 			self._match_info_created = False
 
-			await self._prune_match_history()
 			match_data = await self.get_data_matches()
 			for match in match_data:
 				if match.map_start_time == ended_map_start_time:
@@ -291,24 +280,6 @@ class ResultsCupManager:
 
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
-
-
-	async def _prune_match_history(self):
-		# TODO: Logic to not prune matches that are part of a cup
-		match_data = await self.get_data_matches()
-		map_times = [time.map_start_time for time in match_data]
-		map_times.sort()
-		match_limit = await self._setting_match_history_amount.get_value()
-
-		while len(map_times) > match_limit:
-			oldest_time = map_times[0]
-			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
-			await MatchInfo.execute(MatchInfo.delete().where(MatchInfo.map_start_time == oldest_time))
-			await TeamScore.execute(TeamScore.delete().where(TeamScore.map_start_time == oldest_time))
-			await self._invalidate_view_cache_scores(oldest_time)
-			await self._invalidate_view_cache_matches()
-			await self._invalidate_view_cache_team_scores(oldest_time)
-			map_times.pop(0)
 
 
 	async def _command_matches(self, player, data, **kwargs):
