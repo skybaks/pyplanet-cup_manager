@@ -9,12 +9,15 @@
 * [Running a cup as server admin](./usage.md#running-a-cup-as-server-admin)
     * [Admin quick reference](./usage.md#admin-quick-reference)
     * [Set up before the cup map starts](./usage.md#set-up-before-the-cup-map-starts)
-        * [Choose the mode script and settings preset](./usage.md#choose-the-mode-script-and-settings-preset)
         * [Start the cup logic](./usage.md#start-the-cup-logic)
+            * [Update the cup edition](./usage.md#update-the-cup-edition)
+            * [Update the cup map count](./usage.md#update-the-cup-map-count)
+        * [Choose the mode script and settings preset](./usage.md#choose-the-mode-script-and-settings-preset)
         * [Set the number of maps](./usage.md#set-the-number-of-maps)
     * [During the cup](./usage.md#during-the-cup)
-        * [Reset the mode script and settings](./usage.md#reset-the-mode-script-and-settings)
+        * [Add or remove maps from the active cup](./usage.md#add-or-remove-maps-from-the-active-cup)
         * [Notify the cup logic of cup end](./usage.md#notify-the-cup-logic-of-cup-end)
+        * [Reset the mode script and settings](./usage.md#reset-the-mode-script-and-settings)
 * [Plugin operations as a player](./usage.md#plugin-operations-as-a-player)
 
 # Setting up with a dedicated server
@@ -67,7 +70,7 @@ Then you will need to add the plugin to your "settings\apps.py". Add the followi
 
 ## Set up a local.py
 
-> This is optional.
+> This is optional but you should try to set one up if you want to utilize full functionality of the plugin.
 
 A "local.py" is an optional settings file which Pyplanet can load to provide additional custom information to plugins.
 This plugin opts to use the format of a local.py file rather than your server database to store information about mode
@@ -77,28 +80,50 @@ host in this format.
 If you do not already have a local.py file in your Pyplanet settings folder then you can copy the one from the settings
 folder in cup_manager. [This one is provided as an example](./settings/local.py).
 
-`CUP_MANAGER_PRESETS` defines the script and setting presets which are available from the command `//cup setup <preset>`.
+**`CUP_MANAGER_PRESETS` defines the script and setting presets which are available from the command `//cup setup <preset>`.**
+This is a python dictionary of preset entries where the key value is the preset lookup name.
+|Preset Subfield|Value Type|Required|Usage|
+|---------------|----------|--------|-----|
+|aliases|list[str]|Yes|Define an optional list of additional names which can be used to trigger the preset|
+|script|dict[str,str]|Yes|Set the mode script to load with this preset on a per game basis where the key value is the short identifier for the game. valid game identifiers are 'tm' for maniaplanet, 'sm' for shootmania, and 'tmnext' for tm2020|
+|settings|dict[str,Any]|Yes|Define the script settings to be applied when the mode script loads|
 
-`CUP_MANAGER_PAYOUTS` defines the payment schemes that are available to admins from the "Payout" button on a match results
-screen.
+**`CUP_MANAGER_PAYOUTS` defines the payment schemes that are available to admins from the "Payout" button on a match results screen.**
+This is a python dictionary where the key value should be a meaningful name and the value should be a list[int]
+of the number of planets to pay each player ordered from first to last.
 
-TODO: `CUP_MANAGER_NAMES`
+**`CUP_MANAGER_NAMES` defines the name and associated default settings for a given cup.**
+By defining cup default settings here you can greatly increase the level of automation from the plugin. The key is the
+lookup name for the cup which is what you will pass into the `//cup on <cup_name>` command.
+|Cup Subfield|Value Type|Required|Usage|
+|------------|----------|--------|-----|
+|name|str|Yes|The verbose name for the cup which will be used in ingame chat messages and saved in the cup results|
+|preset_on|str|Optional|Include this subfield if you would like to have `//cup set <preset>` called automatically for you when you start the cup. The value should match a key name or alias name of on of your defined presets|
+|preset_off|str|Optional|Include this subfield if you would like to have `//cup setup <preset>` called automatically for you when you end the cup. The value should match a key name or alias name of on of your defined presets|
+|map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
 
 # Running a cup as server admin
 
 ## Admin quick reference
 
+Quick reference of all commands that *might* be relevant to a cup admin. Read below for more specific usage information.
+
 ```
--- Setup Cup --
-//cup setup <cup_settings_preset>
-//cup on <cup_key_name>
+-- Before Cup --
+//cup on <cup_name>
+//cup edition <edition_number>
 //cup mapcount <map_count>
+//cup setup <cup_settings_preset>
+
+-- During Cup --
+//cup edit
 
 -- Last Cup Map --
-//cup setup <ta_settings_preset>
 //cup off
+//cup setup <ta_settings_preset>
 
 -- After Cup --
+/cup results
 //cup matches
 ```
 
@@ -106,22 +131,7 @@ TODO: `CUP_MANAGER_NAMES`
 
 The expected use cases for this plugin are competitions in Rounds or Laps modes. The server is most likely starting in
 TimeAttack mode before the cup. This is good because Pyplanet and the dedicated server provide the most consistent
-results from the "setup" command.
-
-### Choose the mode script and settings preset
-
-If you know the name of the preset you want, run the command:
-
-```
-//cup setup <preset_name>
-```
-
-If you dont remember the name of the preset, run this command instead and you will be able to pick from all the
-defined presets:
-
-```
-//cup setup
-```
+results from the "setup" command when you switch from one mode script to another.
 
 ### Start the cup logic
 
@@ -141,23 +151,72 @@ If you dont have any named cups defined you can run an anonymous cup by simply e
 //cup on
 ```
 
-TODO: decide on how the edition will be implemented
+#### Update the cup edition
 
-### Set the number of maps
-
-For a multi-map cup (more than one map), you can define the number of maps in the cup. Then with the cup logic
-active, you can see a nice message printed at the start of each map that says something like "Map X of Y". If you are
-not running a multilap cup (one cup map), you can skip running this command.
+The plugin will automatically look up the edition of the last time you ran a cup with this key name and set the current
+edition to 1 + last edition. Sometimes that isnt correct so you can change that with the following command.
 
 ```
-//cup mapcount <number_of_maps>
+//cup edition <edition_number>
+```
+
+#### Update the cup map count
+
+If you know how many maps will be in your cup you can set the cup map count. This enables the plugin to print out
+informational messages at the start of each cup map that say "map X of Y". Additionally, when the final map is reached
+the plugin will automatically end the cup for you by running the internal eqivalent of the `//cup off` command.
+
+```
+//cup mapcount <map_count>
+```
+
+If you dont want to deal with the auto-end logic then you can set the map count to 0 and the cup will run until you
+stop it.
+
+### Choose the mode script and settings preset
+
+> This step is not necessary if you are using the `//cup on` command with a defined "preset_on" field in the local.py
+
+If you are not using the `//cup on` command, or there is no preset linked automatically to your cup, or you want to use a
+different preset than the cup default, you can change that using this setup command.
+
+```
+//cup setup <preset_name>
+```
+
+If you dont remember the name of the preset, run this command instead and you will be able to pick from all the
+defined presets:
+
+```
+//cup setup
 ```
 
 ## During the cup
 
-While the cup is running there is not really any actions you need to take **until you reach the final map**.
+### Add or remove maps from the active cup
+
+If for any reason there was some problem and you need to include or exclude a scored map from the cup results you can using this command:
+
+```
+//cup edit
+```
+
+This will open a window showing the scored maps that are currently included in the cup. From the far left column you
+can click to add or remove maps.
+
+### Notify the cup logic of cup end
+
+> This step is not necessary if you told the plugin your map count
+
+If you are not using a defined map count you will manually need to tell the plugin when the cup has reached the final map.
+
+```
+//cup off
+```
 
 ### Reset the mode script and settings
+
+> This step is not necessary if you are using `//cup on` with a defined "preset_off" field
 
 After the cup is over you want to immediately switch back to the mode the server was playing before the cup started.
 This is most likely TimeAttack. On the final cup map run the command:
@@ -168,18 +227,10 @@ This is most likely TimeAttack. On the final cup map run the command:
 
 With the TimeAttack preset so that the map immediately following the cup will return to TimeAttack mode.
 
-### Notify the cup logic of cup end
-
-On the final map of the cup you want to tell the cup logic. At any time while the final map is playing, run the
-following command:
-
-```
-//cup off
-```
-
 ## After the cup
 
-tbh
+tbd
 
 # Plugin operations as a player
+
 tbd
