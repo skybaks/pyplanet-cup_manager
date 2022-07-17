@@ -127,7 +127,7 @@ class ActiveCupManager:
 			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
 			podium_text = []
 			for player_score in scores[0:10]:
-				podium_text.append(f'$0cf{str(player_score.placement)}. $fff{style.style_strip(player_score.nickname)} $fff[$aaa{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
+				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[$aaa{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
 			if not self.cup_active:
 				podium_prefix = 'Final'
 				player_prefix = ''

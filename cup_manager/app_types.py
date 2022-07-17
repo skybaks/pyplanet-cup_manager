@@ -112,11 +112,11 @@ class TeamPlayerScore:
 		if sorting == ScoreSortingPresets.TIMEATTACK:
 			score_str = str(self.player_score_str)
 		elif sorting == ScoreSortingPresets.LAPS:
-			score_str = str(self.player_score2_str) + ', ' + str(self.player_score_str)
+			score_str = str(self.player_score2_str) + ',' + str(self.player_score_str)
 		elif sorting == ScoreSortingPresets.ROUNDS:
 			score_str = str(self.player_score_str)
 		else:
-			score_str = str(self.team_score) + ', ' + str(self.player_score_str)
+			score_str = str(self.team_score) + ',' + str(self.player_score_str)
 		return score_str
 
 
