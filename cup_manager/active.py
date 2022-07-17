@@ -163,6 +163,7 @@ class ActiveCupManager:
 				else:
 					await self.instance.chat(f'$z$s$0cfStarting {self.cup_name_fmt} map $<$fff{str(current_map_num)}$>')
 
+			if current_map_num > 1:
 				# If not map 1 then dump out player diffs
 				scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
 				for score_index in range(0, len(scores)-1):

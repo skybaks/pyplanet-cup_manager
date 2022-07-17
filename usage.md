@@ -22,6 +22,7 @@
         * [Export the cup results](./usage.md#export-the-cup-results)
         * [Pay planets to the winners](./usage.md#pay-planets-to-the-winners)
 * [Plugin operations as a player](./usage.md#plugin-operations-as-a-player)
+    * [Player quick reference](./usage.md#player-quick-reference)
 
 # Setting up with a dedicated server
 
