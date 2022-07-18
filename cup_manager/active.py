@@ -10,7 +10,7 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import AddRemoveCupMatchesView, CupView, CupMapsView, ResultsView
+from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 
@@ -383,7 +383,7 @@ class ActiveCupManager:
 
 	async def open_view_results(self, player, maps_query: 'list[int]', cup_start_time: int) -> None:
 		score_sorting = await self.determine_cup_score_sorting(maps_query)
-		view = ResultsView(self.app, player, maps_query, score_sorting, cup_start_time)
+		view = CupResultsView(self.app, player, maps_query, score_sorting, cup_start_time)
 		await view.display(player=player.login)
 
 

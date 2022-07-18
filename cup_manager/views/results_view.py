@@ -14,14 +14,13 @@ class ResultsView(ManualListView):
 
 	external_buttons = []
 
-	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreSortingPresets, cup_start_time: int=0):
+	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreSortingPresets):
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
 		self.player = player
 		self.scores_query = scores_query
 		self.scores_sorting = scores_sorting
-		self.cup_start_time = cup_start_time
 
 
 	@classmethod
@@ -119,20 +118,13 @@ class ResultsView(ManualListView):
 		return fields
 
 
-	async def get_buttons(self):
-		buttons = [
-			{
-				'title': '',	# back symbol (font awesome)
-				'width': 7,
-				'action': self._action_back,
-			},
-		]
+	async def get_buttons(self) -> 'list[dict[str, any]]':
+		buttons = []
 		for extern_button in self.external_buttons:
 			if (iscoroutinefunction(extern_button['visible']) and await extern_button['visible'](player=self.player, view=self)) \
 					or (isfunction(extern_button['visible']) and extern_button['visible'](player=self.player, view=self)) \
 					or (extern_button['visible']):
 				buttons.append(extern_button)
-
 		return buttons
 
 
@@ -151,6 +143,22 @@ class ResultsView(ManualListView):
 				'team_score_str': highlight + str(player_score.team_score_str),
 			})
 		return items
+
+
+class CupResultsView(ResultsView):
+	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreSortingPresets, cup_start_time: int):
+		super().__init__(app, player, scores_query, scores_sorting)
+		self.cup_start_time = cup_start_time
+
+
+	async def get_buttons(self) -> 'list[dict[str, any]]':
+		buttons = await super().get_buttons()
+		buttons.insert(0, {
+			'title': '',	# back symbol (font awesome)
+			'width': 7,
+			'action': self._action_back,
+		})
+		return buttons
 
 
 	async def _action_back(self, player, values, **kwargs) -> None:
