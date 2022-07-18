@@ -159,4 +159,11 @@ CUP_MANAGER_NAMES = {
 		'map_count': 1,
 	},
 
+	'nafc': {
+		'name': 'NA Fun Cup',
+
+		'preset_off': 'timeattack',
+
+	}
+
 }
