@@ -6,6 +6,7 @@ from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.apps.core.shootmania import callbacks as sm_signals
 from pyplanet.contrib.command import Command
+from pyplanet.utils import style
 
 from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
 from .views import MatchHistoryView, TextResultsView, MatchesView, ResultsView
@@ -329,7 +330,7 @@ class ResultsCupManager:
 
 			if hasattr(view, 'cup_start_time'):
 				cup_info = await self.app.active.get_data_specific_cup_info(view.cup_start_time)	# type: CupInfo
-				text_view.cup_name = cup_info.cup_name
+				text_view.cup_name = style.style_strip(cup_info.cup_name)
 				text_view.cup_edition = 'Edition #' + str(cup_info.cup_edition)
 
 			await text_view.display(player=player)

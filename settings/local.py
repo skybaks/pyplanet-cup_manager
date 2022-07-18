@@ -120,36 +120,43 @@ CUP_MANAGER_NAMES = {
 	'mxlc': {
 		'name': 'ManiaExchange Lagoon Cup',
 		'preset_on': 'mxlc',
-		'preset_off': 'ta',
+		'preset_off': 'timeattack',
 		'map_count': 1,
 	},
 
 	'hec': {
 		'name': 'Hypeboys Endurance Cup',
 		'preset_on': 'laps50',
-		'preset_off': 'ta',
+		'preset_off': 'timeattack',
 		'map_count': 1,
 	},
 
 	'nac': {
 		'name': 'North America Cup',
 		'preset_on': 'nac',
-		'preset_off': 'ta',
+		'preset_off': 'timeattack',
 		'map_count': 1,
 	},
 
 	'tec': {
 		'name': 'Expedition Cup',
 		'preset_on': 'rounds180',
-		'preset_off': 'ta',
+		'preset_off': 'timeattack',
 		'map_count': 5,
 	},
 
-	'test': {
-		'name': 'Testing Cup',
-		'preset_on': 'test',
-		'preset_off': 'timeattack3',
-		'map_count': 2,
-	}
+	'tmic': {
+		'name': 'TM2 Island Cup',
+		'preset_on': 'rounds480',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'tmrc': {
+		'name': 'TMOne Retro Cup',
+		'preset_on': 'rounds480',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
 
 }

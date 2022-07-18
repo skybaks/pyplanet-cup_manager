@@ -40,7 +40,7 @@ class ActiveCupManager:
 	@property
 	def cup_name_fmt(self) -> str:
 		if self.cup_name:
-			return '$<$fff' + style.style_strip(self.cup_name) + '$>'
+			return '$<$fff' + self.cup_name + '$>'
 		else:
 			return 'cup'
 
