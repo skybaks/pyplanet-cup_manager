@@ -228,6 +228,7 @@ class ActiveCupManager:
 			self.cup_map_count_target = 0
 			self.cup_start_time = int(datetime.now().timestamp())
 
+			self.cup_key_name = ''
 			self.cup_name = ''
 			if new_cup_name:
 				self.cup_key_name = data.cup_alias
@@ -246,6 +247,7 @@ class ActiveCupManager:
 			await self._save_cup_info()
 			await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
 		elif new_cup_name:
+			self.cup_key_name = ''
 			self.cup_name = ''
 			if new_cup_name:
 				self.cup_key_name = data.cup_alias
