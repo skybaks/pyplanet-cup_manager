@@ -10,7 +10,7 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import MatchesView, CupView, CupMapsView, ResultsView
+from .views import AddRemoveCupMatchesView, CupView, CupMapsView, ResultsView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 
@@ -285,7 +285,7 @@ class ActiveCupManager:
 
 
 	async def _command_edit(self, player, data, **kwargs) -> None:
-		view = MatchesView(self, player)
+		view = AddRemoveCupMatchesView(self, player)
 		await view.display(player=player.login)
 
 

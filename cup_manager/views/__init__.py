@@ -2,8 +2,7 @@ from .match_history_view import MatchHistoryView
 from .textbox_view import TextboxView, TextResultsView
 from .single_instance_view import SingleInstanceView
 from .options_view import OptionsView, PayoutsView, PresetsView
-from .matches_view import MatchesView
-from .cup_view import CupView, CupMapsView
+from .cup_view import CupView, CupMapsView, AddRemoveCupMatchesView
 from .results_view import ResultsView
 
 __all__ = [
@@ -14,8 +13,8 @@ __all__ = [
 	'OptionsView',
 	'PayoutsView',
 	'PresetsView',
-	'MatchesView',
 	'CupView',
 	'CupMapsView',
+	'AddRemoveCupMatchesView',
 	'ResultsView',
 ]
