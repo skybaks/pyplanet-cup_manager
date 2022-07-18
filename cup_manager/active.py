@@ -222,17 +222,24 @@ class ActiveCupManager:
 
 		self.cup_host = player
 
-		if not self.cup_active:
+		if not self.cup_active and await self._current_match_in_cup():
 			self.cup_active = True
-			self.match_start_times = []
 			self.cup_map_count_target = 0
-			self.cup_start_time = int(datetime.now().timestamp())
+			await self.instance.chat(f'$ff0Cup reactivated and map count reset to $<$fff{str(self.cup_map_count_target)}$>. Use $<$fff//cup edit$> to add/remove maps from scoring, use $<$fff//cup mapcount$> to set the actual map count, and use $<$fff//cup off$> to manually end the cup while the final map is being played', player)
 
+		elif not self.cup_active or new_cup_name:
 			self.cup_key_name = ''
 			self.cup_name = ''
 			if new_cup_name:
 				self.cup_key_name = data.cup_alias
 				self.cup_name = new_cup_name
+
+			if not self.cup_active:
+				self.cup_active = True
+				self.match_start_times = []
+				self.cup_map_count_target = 0
+				self.cup_start_time = int(datetime.now().timestamp())
+				await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
 
 			self.cup_edition_num = await self._lookup_previous_edition() + 1
 			await self.instance.chat(f'$ff0Set edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use $<$fff//cup edition$> if this is incorrect', player)
@@ -245,25 +252,7 @@ class ActiveCupManager:
 				await self.instance.chat(f'$ff0Set map count to $<$fff{str(self.cup_map_count_target)}$>. Use $<$fff//cup mapcount$> if this is incorrect', player)
 
 			await self._save_cup_info()
-			await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
-		elif new_cup_name:
-			self.cup_key_name = ''
-			self.cup_name = ''
-			if new_cup_name:
-				self.cup_key_name = data.cup_alias
-				self.cup_name = new_cup_name
 
-			self.cup_edition_num = await self._lookup_previous_edition() + 1
-			await self.instance.chat(f'$ff0Set edition to $<$fff{str(self.cup_edition_num)}$> based on previous cups. Use $<$fff//cup edition$> if this is incorrect', player)
-
-			if new_cup_preset_on:
-				await self.app.setup.command_setup(player, Namespace(**{'preset': new_cup_preset_on}))
-
-			if new_cup_map_count_target > 0:
-				self.cup_map_count_target = new_cup_map_count_target
-				await self.instance.chat(f'$ff0Set map count to $<$fff{str(self.cup_map_count_target)}$>. Use $<$fff//cup mapcount$> if this is incorrect', player)
-
-			await self._save_cup_info()
 		else:
 			await self.instance.chat(f'$f00A cup is already active. Use $<$fff//cup edit$> to change cup maps or $<$fff//cup on cup_name:str$> to edit cup name', player)
 

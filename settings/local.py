@@ -164,6 +164,6 @@ CUP_MANAGER_NAMES = {
 
 		'preset_off': 'timeattack',
 
-	}
+	},
 
 }
