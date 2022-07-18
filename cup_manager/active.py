@@ -239,6 +239,8 @@ class ActiveCupManager:
 				self.match_start_times = []
 				self.cup_map_count_target = 0
 				self.cup_start_time = int(datetime.now().timestamp())
+				async with self.cached_scores_lock:
+					self.cached_scores = []
 				await self.instance.chat(f'$z$s$0cfThe {self.cup_name_fmt} will start on the next map')
 
 			self.cup_edition_num = await self._lookup_previous_edition() + 1
