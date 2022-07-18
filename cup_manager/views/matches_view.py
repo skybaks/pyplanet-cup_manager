@@ -60,17 +60,30 @@ class MatchesView(ManualListView):
 
 
 	async def get_data(self) -> list:
+		sel_str_true = '$f55 Remove from Cup'
+		sel_str_false = '$0cf Add to Cup'
+
 		items = []
 		if self.get_data_method:
 			matches = await self.get_data_method()	# type: list[MatchInfo]
-			selected_matches = await self.app.get_selected_matches()	# type: list[int]
+			selected_matches = list(await self.app.get_selected_matches())	# type: list[int]
 			for match_info in matches:
 				items.append({
 					'selected': match_info.map_start_time in selected_matches,
 					'map_start_time': match_info.map_start_time,
-					'selected_str': '$f55 Remove from Cup' if match_info.map_start_time in selected_matches else '$0cf Add to Cup',
+					'selected_str': sel_str_true if match_info.map_start_time in selected_matches else sel_str_false,
 					'match_time_str': datetime.fromtimestamp(match_info.map_start_time).strftime("%c"),
 					'map_name_str': match_info.map_name,
+				})
+				if match_info.map_start_time in selected_matches:
+					selected_matches.remove(match_info.map_start_time)
+			for match_start_time in selected_matches:
+				items.insert(0, {
+					'selected': True,
+					'map_start_time': match_start_time,
+					'selected_str': sel_str_true,
+					'match_time_str': datetime.fromtimestamp(match_start_time).strftime("%c"),
+					'map_name_str': 'No score data for this map yet',
 				})
 		return items
 
