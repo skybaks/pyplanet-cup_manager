@@ -70,7 +70,7 @@ class ResultsView(ManualListView):
 			},
 		]
 
-		if TeamPlayerScore.score2_relevant(self.scores_sorting):
+		if TeamPlayerScore.score_team_relevant(self.scores_sorting):
 			fields += [
 				{
 					'name': 'Team',
@@ -93,7 +93,7 @@ class ResultsView(ManualListView):
 			},
 		]
 
-		if TeamPlayerScore.score_team_relevant(self.scores_sorting):
+		if TeamPlayerScore.score2_relevant(self.scores_sorting):
 			fields += [
 					{
 						'name': 'Score2',
@@ -164,3 +164,20 @@ class CupResultsView(ResultsView):
 	async def _action_back(self, player, values, **kwargs) -> None:
 		await self.close(player=player)
 		await self.app.active.open_view_cup_maps(player, self.cup_start_time)
+
+
+
+class GeneralResultsView(ResultsView):
+	async def get_buttons(self) -> 'list[dict[str, any]]':
+		buttons = await super().get_buttons()
+		buttons.insert(0, {
+			'title': '',	# back symbol (font awesome)
+			'width': 7,
+			'action': self._action_back,
+		})
+		return buttons
+
+
+	async def _action_back(self, player, values, **kwargs) -> None:
+		await self.close(player=player)
+		await self.app.results.open_view_match_history(player)

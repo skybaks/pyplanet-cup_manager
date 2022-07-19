@@ -9,7 +9,7 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
 from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
-from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView
+from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,6 @@ class ResultsCupManager:
 				admin=True, perms='cup:results_cup', description='Display saved match history.'),
 		)
 
-		MatchHistoryView.add_button(self._button_export, 'Export', True, 25)
 		ResultsView.add_button('Export', self._button_export, True)
 
 		await self._handle_map_update('OnStart')
@@ -284,11 +283,7 @@ class ResultsCupManager:
 
 
 	async def _command_matches(self, player, data, **kwargs):
-		if await self.get_data_matches():
-			view = MatchHistoryView(self.app, player)
-			await view.display(player=player.login)
-		else:
-			await self.instance.chat('$f00No matches found', player)
+		await self.open_view_match_history(player)
 
 
 	async def _invalidate_view_cache_matches(self):
@@ -344,6 +339,19 @@ class ResultsCupManager:
 	async def register_scores_update_notify(self, notify_method) -> None:
 		if notify_method not in self._scores_update_notify_list:
 			self._scores_update_notify_list.append(notify_method)
+
+
+	async def open_view_match_history(self, player) -> None:
+		if await self.get_data_matches():
+			view = MatchHistoryView(self.app, player)
+			await view.display(player=player.login)
+		else:
+			await self.instance.chat('$f00No matches found', player)
+
+
+	async def open_view_match_results(self, player, scores_query, scores_sorting) -> None:
+		view = GeneralResultsView(self.app, player, scores_query, scores_sorting)
+		await view.display(player=player)
 
 
 	async def get_current_match_start_time(self) -> int:
