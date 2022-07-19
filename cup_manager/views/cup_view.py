@@ -4,6 +4,7 @@ from datetime import datetime
 from pyplanet.views.generics.list import ManualListView
 
 from ..models import CupInfo, MatchInfo
+from ..app_types import ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class CupView(ManualListView):
 				'index': 'cup_name',
 				'sorting': True,
 				'searching': True,
-				'width': 70,
+				'width': 50,
 				'type': 'label',
 				'action': self._action_select_cup,
 			},
@@ -35,7 +36,7 @@ class CupView(ManualListView):
 				'index': 'cup_edition',
 				'sorting': True,
 				'searching': True,
-				'width': 60,
+				'width': 30,
 				'type': 'label',
 			},
 			{
@@ -43,9 +44,17 @@ class CupView(ManualListView):
 				'index': 'cup_start_time_str',
 				'sorting': True,
 				'searching': True,
-				'width': 40,
+				'width': 50,
 				'type': 'label',
-			}
+			},
+			{
+				'name': 'Map(s)',
+				'index': 'maps_str',
+				'sorting': True,
+				'searching': True,
+				'width': 30,
+				'type': 'label',
+			},
 		]
 		return fields
 
@@ -54,11 +63,13 @@ class CupView(ManualListView):
 		items = []
 		cups_data = await self.app.active.get_data_cup_info() # type: list[CupInfo]
 		for cup_data in cups_data:
+			map_start_times = await self.app.active.get_data_cup_match_times(cup_data.cup_start_time)	# type: list[int]
 			items.append({
 				# For display
 				'cup_name': cup_data.cup_name,
 				'cup_edition': f'Edition #{str(cup_data.cup_edition)}',
 				'cup_start_time_str': datetime.fromtimestamp(cup_data.cup_start_time).strftime("%c"),
+				'maps_str': str(len(map_start_times)),
 				# For row reference
 				'cup_start_time': cup_data.cup_start_time,
 			})

@@ -417,13 +417,11 @@ class ActiveCupManager:
 			return ScoreSortingPresets.UNDEFINED
 		matches.sort(reverse=True)
 		score_sorting = ScoreSortingPresets.UNDEFINED
-		matches_data = await self.app.results.get_data_specific_matches(matches)	# type: list[MatchInfo]
-		for match_data in matches_data:
-			if match_data.map_start_time == matches[0]:
-				score_sorting = ScoreSortingPresets.get_preset(match_data.mode_script)
-				logger.info(f"update score sorting to {str(score_sorting)} from map with id {str(matches[0])}")
-				break
+		matches_data = await self.app.results.get_data_specific_matches([matches[0]])	# type: list[MatchInfo]
+		if len(matches_data) > 0:
+			score_sorting = ScoreSortingPresets.get_preset(matches_data[0].mode_script)
+			logger.info(f"score sorting is {str(score_sorting)} from map with id {str(matches[0])}")
 		else:
 			score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
-			logger.info(f"no scores entry for map with id {str(matches[0])}. update sorting based on current script to {str(score_sorting)}")
+			logger.info(f"no scores entry for map with id {str(matches[0])}. return sorting based on current script to {str(score_sorting)}")
 		return score_sorting

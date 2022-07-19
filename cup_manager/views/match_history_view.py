@@ -46,7 +46,7 @@ class MatchHistoryView(ManualListView):
 				'action': self._action_view_match
 			},
 			{
-				'name': 'Start Time',
+				'name': 'Date',
 				'index': 'map_start_time_str',
 				'sorting': False,
 				'searching': False,
