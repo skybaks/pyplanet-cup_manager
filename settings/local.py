@@ -152,8 +152,15 @@ CUP_MANAGER_NAMES = {
 		'map_count': 1,
 	},
 
-	'tmrc': {
-		'name': 'TMOne Retro Cup',
+	'tmac': {
+		'name': 'TMOne Alpine Cup',
+		'preset_on': 'rounds480',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'tmsc': {
+		'name': 'TMOne Speed Cup',
 		'preset_on': 'rounds480',
 		'preset_off': 'timeattack',
 		'map_count': 1,
