@@ -142,7 +142,7 @@ CUP_MANAGER_NAMES = {
 		'name': 'Expedition Cup',
 		'preset_on': 'rounds180',
 		'preset_off': 'timeattack',
-		'map_count': 5,
+		'map_count': 6,
 	},
 
 	'tmic': {
