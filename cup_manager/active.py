@@ -99,7 +99,7 @@ class ActiveCupManager:
 			map_query = await self.get_data_cup_match_times(self.cup_start_time)
 			if selected_match not in map_query:
 				try:
-					logger.info(f"adding cup map with id {str(selected_match)}")
+					logger.debug(f"adding cup map with id {str(selected_match)}")
 					await CupMatch.execute(CupMatch.insert(
 						cup_start_time=self.cup_start_time,
 						map_start_time=selected_match
@@ -108,14 +108,14 @@ class ActiveCupManager:
 					logger.error(f"Error adding cup map to database with id {str(selected_match)}")
 				await self._invalidate_view_cache_cup_maps()
 			else:
-				logger.info("map already exists")
+				logger.debug("map already exists")
 
 
 	async def remove_selected_match(self, selected_match: int) -> None:
 		if self.cup_start_time > 0 and selected_match in self.match_start_times:
 			self.match_start_times.remove(selected_match)
 			try:
-				logger.info(f"removing cup match with id {str(selected_match)}")
+				logger.debug(f"removing cup match with id {str(selected_match)}")
 				await CupMatch.execute(CupMatch.delete().where((CupMatch.cup_start_time == self.cup_start_time) & (CupMatch.map_start_time == selected_match)))
 			except:
 				logger.error(f"Error deleting selected match with id {str(selected_match)} from cup with id {str(self.cup_start_time)}")
@@ -152,7 +152,7 @@ class ActiveCupManager:
 
 	async def _notify_match_start(self, match_start_time: int, **kwargs) -> None:
 		if self.cup_active and match_start_time not in self.match_start_times:
-			logger.info("Match start from active " + str(match_start_time))
+			logger.debug("Match start from active " + str(match_start_time))
 			await self.add_selected_match(match_start_time)
 			current_map_num = len(self.match_start_times)
 			if self.cup_map_count_target > 1:
@@ -307,7 +307,7 @@ class ActiveCupManager:
 
 
 	async def _save_cup_info(self) -> None:
-		logger.info("Saving cup info")
+		logger.debug("Saving cup info")
 		cup_query = await self.get_data_specific_cup_info(self.cup_start_time)
 		save_cup_name = self.cup_name
 		save_key_name = self.cup_key_name
@@ -317,7 +317,7 @@ class ActiveCupManager:
 			# Use a silly key name so we never get overlap on the edition lookup for anonymous cups
 			save_key_name = 'unnamed_cup_' + str(uuid.uuid4())
 		if cup_query:
-			logger.info("Info already exists, updating")
+			logger.debug("Info already exists, updating")
 			await CupInfo.execute(
 				CupInfo.update(
 					cup_key=save_key_name,
@@ -328,7 +328,7 @@ class ActiveCupManager:
 				)
 			)
 		else:
-			logger.info("no existing entry, creating")
+			logger.debug("no existing entry, creating")
 			await CupInfo.execute(
 				CupInfo.insert(
 					cup_start_time=self.cup_start_time,
@@ -343,7 +343,7 @@ class ActiveCupManager:
 	async def _lookup_previous_edition(self) -> int:
 		previous_edition_num = 0
 		if self.cup_key_name:
-			logger.info(f"looking up previous edition from key name: {str(self.cup_key_name)}")
+			logger.debug(f"looking up previous edition from key name: {str(self.cup_key_name)}")
 			cup_query = await CupInfo.execute(
 				CupInfo.select().where(
 					(CupInfo.cup_key == self.cup_key_name) & (CupInfo.cup_start_time != self.cup_start_time)
@@ -353,7 +353,7 @@ class ActiveCupManager:
 			)
 			if len(cup_query) > 0:
 				previous_edition_num =  cup_query[0].cup_edition
-		logger.info(f"found previous edition as {str(previous_edition_num)} for key {str(self.cup_key_name)}")
+		logger.debug(f"found previous edition as {str(previous_edition_num)} for key {str(self.cup_key_name)}")
 		return previous_edition_num
 
 
@@ -363,12 +363,12 @@ class ActiveCupManager:
 
 	async def _invalidate_view_cache_cup_info(self) -> None:
 		self._view_cache_cup_info = []
-		logger.info("_invalidate_view_cache_cup_info")
+		logger.debug("_invalidate_view_cache_cup_info")
 
 
 	async def _invalidate_view_cache_cup_maps(self) -> None:
 		self._view_cache_cup_maps = []
-		logger.info("_invalidate_view_cache_cup_maps")
+		logger.debug("_invalidate_view_cache_cup_maps")
 
 
 	async def open_view_cups(self, player) -> None:
@@ -420,8 +420,8 @@ class ActiveCupManager:
 		matches_data = await self.app.results.get_data_specific_matches([matches[0]])	# type: list[MatchInfo]
 		if len(matches_data) > 0:
 			score_sorting = ScoreSortingPresets.get_preset(matches_data[0].mode_script)
-			logger.info(f"score sorting is {str(score_sorting)} from map with id {str(matches[0])}")
+			logger.debug(f"score sorting is {str(score_sorting)} from map with id {str(matches[0])}")
 		else:
 			score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
-			logger.info(f"no scores entry for map with id {str(matches[0])}. return sorting based on current script to {str(score_sorting)}")
+			logger.debug(f"no scores entry for map with id {str(matches[0])}. return sorting based on current script to {str(score_sorting)}")
 		return score_sorting

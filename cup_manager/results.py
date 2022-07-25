@@ -78,7 +78,7 @@ class ResultsCupManager:
 		if self._scores_update_notify_list:
 			for score_notify in self._scores_update_notify_list:
 				await score_notify(match_start_time=self._match_start_time)
-		logger.info("Update TM scores complete in _tm_signals_scores")
+		logger.debug("Update TM scores complete in _tm_signals_scores")
 
 
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
