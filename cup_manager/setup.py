@@ -115,6 +115,9 @@ class SetupCupManager:
 
 
 	async def command_setup(self, player, data, **kwargs) -> None:
+		if not await self.instance.permission_manager.has_permission(player, 'cup:setup_cup'):
+			return
+
 		if data.preset:
 			cmd_preset = data.preset.lower()
 			presets = await self.get_presets()
@@ -131,15 +134,19 @@ class SetupCupManager:
 					await self.instance.mode_manager.set_next_script(preset_data['script'][self.instance.game.game])
 
 				if 'settings' in preset_data:
+					# HACK: There is not a method to clear current script
+					# settings. I want to clear it our so that there is no
+					# overlap between presets
+					self.instance.mode_manager._next_settings_update = {}
 					await self.instance.mode_manager.update_next_settings(preset_data['settings'])
 
 				if 'commands' in preset_data:
 					for command in preset_data['commands']:
 						await self.instance.gbx.script(*command, encode_json=False, response_id=False)
 
-				await self.app.instance.chat(f"$i$fffSet next script settings to preset '{selected_preset}'", player)
+				await self.app.instance.chat(f"$ff0Set next script settings to preset: $<$fff{selected_preset}$>", player)
 			else:
-				await self.app.instance.chat(f"$i$f00Unknown preset name '{data.preset}'.\nAvailable presets are: {', '.join(presets.keys())}", player)
+				await self.app.instance.chat(f"$f00Unknown preset name $<$fff'{data.preset}'$>\nAvailable presets are: $<$fff{', '.join(presets.keys())}$>", player)
 		else:
 			view = PresetsView(self)
 			await view.display(player=player)
@@ -160,5 +167,5 @@ class SetupCupManager:
 					pointsrepartition_actual = getpointsrepartition_response['pointsrepartition']
 
 					if pointsrepartition_actual != pointsrepartition_desired:
-						logger.debug('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
+						logger.info('Current PointsRepartition is not equal to S_PointsRepartition. Performing correction...')
 						await self.instance.gbx.script(*(['Trackmania.SetPointsRepartition'] + [str(point) for point in pointsrepartition_desired]), encode_json=False, response_id=False)

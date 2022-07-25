@@ -13,7 +13,7 @@ CUP_MANAGER_PRESETS = {
 		'aliases': [ 'smurfscup', 'sc' ],
 		'script': {
 			'tm': 'Rounds.Script.txt',
-			'tmnext': 'Trackmania/TM_Rounds_Online.Script.txt',
+			'tmnext': 'Trackmania/TurboRounds.Script.txt',
 		},
 		'settings': {
 			'S_FinishTimeout': 10,
@@ -45,7 +45,7 @@ CUP_MANAGER_PRESETS = {
 		'aliases': [ 'mxlc', 'mxvc', 'nac' ],
 		'script': {
 			'tm': 'Rounds.Script.txt',
-			'tmnext': 'Trackmania/TM_Rounds_Online.Script.txt',
+			'tmnext': 'Trackmania/TurboRounds.Script.txt',
 		},
 		'settings': {
 			'S_FinishTimeout': 10,
@@ -84,8 +84,22 @@ CUP_MANAGER_PRESETS = {
 		},
 	},
 
+	'rounds480nadeo': {
+		'aliases': [ 'tmac', 'tmsc', 'tmic', 'rs' ],
+		'script': {
+			'tm': 'Rounds.Script.txt',
+			'tmnext': 'Trackmania/TurboRounds.Script.txt',
+		},
+		'settings': {
+			'S_FinishTimeout': 35,
+			'S_PointsLimit': 480,
+			'S_WarmUpNb': 1,
+			'S_WarmUpDuration': 600,
+			'S_PointsRepartition': '50,45,41,38,36,34,32,30,28,26,24,22,20,18,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,1,1',
+		},
+	},
+    
 }
-
 
 # Use this to define planet reward payouts. Admins can select from these payout
 # schemes from the match results view.
@@ -110,5 +124,67 @@ CUP_MANAGER_PAYOUTS = {
 		400,
 		200,
 	],
+
+}
+
+
+# Use this to define the name and alias of cup.
+CUP_MANAGER_NAMES = {
+
+	'mxlc': {
+		'name': 'ManiaExchange Lagoon Cup',
+		'preset_on': 'mxlc',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'hec': {
+		'name': 'Hypeboys Endurance Cup',
+		'preset_on': 'laps50',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'nac': {
+		'name': 'North America Cup',
+		'preset_on': 'nac',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'tec': {
+		'name': 'Expedition Cup',
+		'preset_on': 'rounds180',
+		'preset_off': 'timeattack',
+		'map_count': 6,
+	},
+
+	'tmic': {
+		'name': 'TM2 Island Cup',
+		'preset_on': 'rounds480nadeo',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'tmac': {
+		'name': 'TMOne Alpine Cup',
+		'preset_on': 'rounds480nadeo',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'tmsc': {
+		'name': 'TMOne Speed Cup',
+		'preset_on': 'rounds480nadeo',
+		'preset_off': 'timeattack',
+		'map_count': 1,
+	},
+
+	'nafc': {
+		'name': 'NA Fun Cup',
+
+		'preset_off': 'timeattack',
+
+	},
 
 }

@@ -1,16 +1,16 @@
 import logging
-import datetime
+from datetime import datetime
 from peewee import *
 
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.apps.core.shootmania import callbacks as sm_signals
-from pyplanet.contrib.setting import Setting
 from pyplanet.contrib.command import Command
+from pyplanet.utils import style
 
-from .models import PlayerScore, TeamScore, MatchInfo
-from .views import MatchHistoryView, TextResultsView
-from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
+from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
+from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView
+from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 
@@ -26,25 +26,20 @@ class ResultsCupManager:
 		self._match_players_scored = []
 		self._match_teams_scored = []
 		self._match_info_created = False
-		self._setting_match_history_amount = None
 		self._view_cache_matches = []
 		self._view_cache_scores = {}
 		self._view_cache_team_scores = {}
+		self._match_start_notify_list = []
+		self._scores_update_notify_list = []
 
-		self._setting_match_history_amount = Setting(
-			'match_history_amount', 'Amount of Saved Matches', Setting.CAT_BEHAVIOUR, type=int,
-			description='Set this number to the number of previous matches you want to save in the database.',
-			default=100
-		)
+		AddRemoveCupMatchesView.set_get_data_method(self.get_data_matches)
 
 
 	async def on_start(self) -> None:
 		self.context.signals.listen(tm_signals.scores, self._tm_signals_scores)
 		self.context.signals.listen(mp_signals.map.map_start, self._mp_signals_map_map_start)
 		self.context.signals.listen(mp_signals.map.map_end, self._mp_signals_map_map_end)
-		self.context.signals.listen(sm_signals.base.scores, self._sm_signals_scores)
-
-		await self.context.setting.register(self._setting_match_history_amount)
+		self.context.signals.listen(sm_signals.base.scores, self._tm_signals_scores)
 
 		await self.instance.permission_manager.register('results_cup', 'Handle match results from cup_manager', app=self.app, min_level=2, namespace=self.app.namespace)
 
@@ -55,7 +50,7 @@ class ResultsCupManager:
 				admin=True, perms='cup:results_cup', description='Display saved match history.'),
 		)
 
-		MatchHistoryView.add_button(self._button_export, 'Export', True, 25)
+		ResultsView.add_button('Export', self._button_export, True)
 
 		await self._handle_map_update('OnStart')
 
@@ -76,16 +71,14 @@ class ResultsCupManager:
 		if section == 'PreEndRound':
 			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
 			return
-		await self._handle_player_score_update(players)
-
-
-	async def _sm_signals_scores(self, players, teams, winner_team, use_teams, winner_player, section, **kwargs):
-		if section == 'PreEndRound':
-			# PreEndRound score callback shows round_points before they are added to match_points. For simplicity I only care about match_points.
-			return
 		if use_teams:
 			await self._handle_team_score_update(teams)
 		await self._handle_player_score_update(players)
+
+		if self._scores_update_notify_list:
+			for score_notify in self._scores_update_notify_list:
+				await score_notify(match_start_time=self._match_start_time)
+		logger.debug("Update TM scores complete in _tm_signals_scores")
 
 
 	async def _mp_signals_map_map_start(self, time, count, restarted, map, **kwargs):
@@ -258,11 +251,14 @@ class ResultsCupManager:
 
 	async def _handle_map_update(self, section: str):
 		if section == 'OnStart' or section == 'MapStart':
-			self._match_start_time = int(datetime.datetime.now().timestamp())
+			self._match_start_time = int(datetime.now().timestamp())
 			self._match_map_name = self.instance.map_manager.current_map.name
 			self._match_players_scored = []
 			self._match_teams_scored = []
 			self._match_info_created = False
+			if self._match_start_notify_list:
+				for notify_method in self._match_start_notify_list:
+					await notify_method(match_start_time=self._match_start_time)
 
 		elif section == 'MapEnd':
 			ended_map_start_time = self._match_start_time
@@ -273,43 +269,21 @@ class ResultsCupManager:
 			self._match_teams_scored = []
 			self._match_info_created = False
 
-			await self._prune_match_history()
 			match_data = await self.get_data_matches()
 			for match in match_data:
 				if match.map_start_time == ended_map_start_time:
-					score_data = await self.get_data_scores(match.map_start_time, match.mode_script)
-					await self.instance.chat(f'$i$fffSaved {str(len(score_data))} record(s) from map $<{ended_map_map_name}$>.')
+					score_data = await self.get_data_scores(match.map_start_time, ScoreSortingPresets.get_preset(match.mode_script))
+					await self.instance.chat(f'$ff0Saved $<$fff{str(len(score_data))}$> record(s) from map $<$fff{ended_map_map_name}$>')
 					break
 			else:
-				await self.instance.chat(f'$i$fffNo records saved from map $<{ended_map_map_name}$>.')
+				await self.instance.chat(f'$ff0No records saved from map $<$fff{ended_map_map_name}$>')
 
 		else:
 			logger.error('Unexpected section reached in _handle_map_update: \"' + section + '\"')
 
 
-	async def _prune_match_history(self):
-		match_data = await self.get_data_matches()
-		map_times = [time.map_start_time for time in match_data]
-		map_times.sort()
-		match_limit = await self._setting_match_history_amount.get_value()
-
-		while len(map_times) > match_limit:
-			oldest_time = map_times[0]
-			await PlayerScore.execute(PlayerScore.delete().where(PlayerScore.map_start_time == oldest_time))
-			await MatchInfo.execute(MatchInfo.delete().where(MatchInfo.map_start_time == oldest_time))
-			await TeamScore.execute(TeamScore.delete().where(TeamScore.map_start_time == oldest_time))
-			await self._invalidate_view_cache_scores(oldest_time)
-			await self._invalidate_view_cache_matches()
-			await self._invalidate_view_cache_team_scores(oldest_time)
-			map_times.pop(0)
-
-
 	async def _command_matches(self, player, data, **kwargs):
-		if await self.get_data_matches():
-			view = MatchHistoryView(self, player)
-			await view.display(player=player.login)
-		else:
-			await self.instance.chat('$i$f00No matches found.', player)
+		await self.open_view_match_history(player)
 
 
 	async def _invalidate_view_cache_matches(self):
@@ -330,9 +304,9 @@ class ResultsCupManager:
 			del self._view_cache_team_scores[map_start_time]
 
 
-	async def _button_export(self, player, values, view, **kwargs):
+	async def _button_export(self, player, values, view: any, **kwargs):
 		if view.scores_query:
-			scores_data = await self.get_data_scores(view.scores_query, view.scores_mode_script)
+			scores_data = await self.get_data_scores(view.scores_query, view.scores_sorting)
 
 			match_info = []
 			all_match_data = await self.get_data_matches()
@@ -340,16 +314,69 @@ class ResultsCupManager:
 				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
 					match_info.append(match_data_info)
 
-			text_view = TextResultsView(self, player, scores_data, match_info, view.results_view_show_score2, view.team_score_mode)
+			text_view = TextResultsView(
+				self,
+				player,
+				scores_data,
+				match_info,
+				TeamPlayerScore.score2_relevant(view.scores_sorting),
+				TeamPlayerScore.score_team_relevant(view.scores_sorting)
+			)
+
+			if hasattr(view, 'cup_start_time'):
+				cup_info = await self.app.active.get_data_specific_cup_info(view.cup_start_time)	# type: CupInfo
+				text_view.cup_name = style.style_strip(cup_info.cup_name)
+				text_view.cup_edition = 'Edition #' + str(cup_info.cup_edition)
+
 			await text_view.display(player=player)
+
+
+	async def register_match_start_notify(self, notify_method) -> None:
+		if notify_method not in self._match_start_notify_list:
+			self._match_start_notify_list.append(notify_method)
+
+
+	async def register_scores_update_notify(self, notify_method) -> None:
+		if notify_method not in self._scores_update_notify_list:
+			self._scores_update_notify_list.append(notify_method)
+
+
+	async def open_view_match_history(self, player) -> None:
+		if await self.get_data_matches():
+			view = MatchHistoryView(self.app, player)
+			await view.display(player=player.login)
+		else:
+			await self.instance.chat('$f00No matches found', player)
+
+
+	async def open_view_match_results(self, player, scores_query, scores_sorting) -> None:
+		view = GeneralResultsView(self.app, player, scores_query, scores_sorting)
+		await view.display(player=player)
+
+
+	async def get_current_match_start_time(self) -> int:
+		return self._match_start_time
 
 
 	async def get_data_matches(self) -> 'list[MatchInfo]':
 		if not self._view_cache_matches:
 			map_history_query = await MatchInfo.execute(MatchInfo.select().order_by(MatchInfo.map_start_time.desc()))
 			if len(map_history_query) > 0:
-				self._view_cache_matches = list(map_history_query)
+				self._view_cache_matches = list(map_history_query)	# type: list[MatchInfo]
 		return self._view_cache_matches
+
+
+	async def get_data_specific_matches(self, matches: any) -> 'list[MatchInfo]':
+		lookup_matches = []
+		if isinstance(matches, int):
+			lookup_matches.append(matches)
+		elif isinstance(matches, list):
+			lookup_matches = matches
+		else:
+			logger.error(f"Unexpected type in get_data_specific_matches: {str(matches)}")
+
+		all_matches = await self.get_data_matches()
+		return [match for match in all_matches if match.map_start_time in lookup_matches]
 
 
 	async def get_data_player_scores(self, map_start_time: int) -> 'list[PlayerScore]':
@@ -372,12 +399,14 @@ class ResultsCupManager:
 		return self._view_cache_team_scores[map_start_time]
 
 
-	async def get_data_scores(self, map_start_time, mode_script: str) -> 'list[TeamPlayerScore]':
+	async def get_data_scores(self, map_start_time: any, sorting: ScoreSortingPresets) -> 'list[TeamPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
 			lookup_matches.append(map_start_time)
 		elif isinstance(map_start_time, list):
 			lookup_matches = map_start_time
+		else:
+			logger.error("Unexpected type in get_data_scores: " + str(map_start_time))
 
 		score_by_login = {}
 		for start_time in lookup_matches:
@@ -408,18 +437,23 @@ class ResultsCupManager:
 				score_by_login[player_score.login]['score2'] += player_score.score2
 				score_by_login[player_score.login]['count'] += 1
 
-		scores = []
+		scores = []	# type: list[TeamPlayerScore]
 		for login, score_data in score_by_login.items():
-			new_score = TeamPlayerScore(login, score_data['nickname'], score_data['country'], score_data['team'], score_data['team_name'], score_data['team_score'], score_data['score'], score_data['score2'])
-			new_score.player_score_is_time = 'timeattack'in mode_script.lower() or 'laps' in mode_script.lower()
+			new_score = TeamPlayerScore(
+				login,
+				score_data['nickname'],
+				score_data['country'],
+				score_data['team'],
+				score_data['team_name'],
+				score_data['team_score'],
+				score_data['score'],
+				score_data['score2']
+			)
+			new_score.player_score_is_time = sorting in [ScoreSortingPresets.TIMEATTACK, ScoreSortingPresets.LAPS]
 			new_score.count = score_data['count']
 			scores.append(new_score)
 
-		if 'timeattack'in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, x.player_score))
-		elif 'laps' in mode_script.lower():
-			scores = sorted(scores, key=lambda x: (-x.count, -x.player_score2, x.player_score))
-		else:
-			scores = sorted(scores, key=lambda x: (x.team_score, -x.player_score2, x.player_score), reverse=True)
+		scores = TeamPlayerScore.sort_scores(scores, sorting)
+		scores = TeamPlayerScore.update_placements(scores, sorting)
 
 		return scores

@@ -1,9 +1,11 @@
+from difflib import Match
 import logging
 
 from pyplanet.conf import settings
 from pyplanet.contrib.command import Command
 
-from .views import MatchHistoryView, PayoutsView
+from .views import MatchHistoryView, PayoutsView, ResultsView
+from .app_types import ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ class PayoutCupManager:
 		if self.instance.game.game not in ['tm','sm'] or 'transactions' not in self.instance.apps.apps:
 			return
 
-		MatchHistoryView.add_button(self._button_payout, 'Payout', self._check_payout_permissions, 25)
+		ResultsView.add_button('Payout', self._button_payout, self._check_payout_permissions)
 
 
 	async def get_payouts(self) -> dict:
@@ -60,13 +62,13 @@ class PayoutCupManager:
 				await self.instance.apps.apps['transactions'].pay_to_player(player=player, data=payment)
 
 
-	async def _button_payout(self, player, values, view, **kwargs):
+	async def _button_payout(self, player, values, view: MatchHistoryView, **kwargs):
 		if not await self._check_payout_permissions(player=player):
 			logger.error(f"{player.login} does not have permission 'transactions:pay'")
 			return
 
 		if view.scores_query:
-			scores_data = await self.app.results.get_data_scores(view.scores_query, view.scores_mode_script)
+			scores_data = await self.app.results.get_data_scores(view.scores_query, view.scores_sorting)
 			payout_view = PayoutsView(self, scores_data)
 			await payout_view.display(player=player)
 
