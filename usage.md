@@ -13,7 +13,6 @@
             * [Update the cup edition](./usage.md#update-the-cup-edition)
             * [Update the cup map count](./usage.md#update-the-cup-map-count)
         * [Choose the mode script and settings preset](./usage.md#choose-the-mode-script-and-settings-preset)
-        * [Set the number of maps](./usage.md#set-the-number-of-maps)
     * [During the cup](./usage.md#during-the-cup)
         * [Add or remove maps from the active cup](./usage.md#add-or-remove-maps-from-the-active-cup)
         * [Notify the cup logic of cup end](./usage.md#notify-the-cup-logic-of-cup-end)
