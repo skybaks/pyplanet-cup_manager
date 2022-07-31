@@ -312,6 +312,8 @@ class ActiveCupManager:
 		save_cup_name = self.cup_name
 		save_key_name = self.cup_key_name
 		save_edition = self.cup_edition_num
+		save_host_login = self.cup_host.login if self.cup_host else ''
+		save_host_nickname = self.cup_host.nickname if self.cup_host else ''
 		if not self.cup_name:
 			save_cup_name = 'Cup'
 			# Use a silly key name so we never get overlap on the edition lookup for anonymous cups
@@ -322,7 +324,9 @@ class ActiveCupManager:
 				CupInfo.update(
 					cup_key=save_key_name,
 					cup_name=save_cup_name,
-					cup_edition=save_edition
+					cup_edition=save_edition,
+					cup_host_login=save_host_login,
+					cup_host_nickname=save_host_nickname
 				).where(
 					CupInfo.cup_start_time == self.cup_start_time
 				)
@@ -334,7 +338,9 @@ class ActiveCupManager:
 					cup_start_time=self.cup_start_time,
 					cup_key=save_key_name,
 					cup_name=save_cup_name,
-					cup_edition=save_edition
+					cup_edition=save_edition,
+					cup_host_login=save_host_login,
+					cup_host_nickname=save_host_nickname
 				)
 			)
 		await self._invalidate_view_cache_cup_info()
