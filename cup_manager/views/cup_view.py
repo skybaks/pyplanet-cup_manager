@@ -40,6 +40,14 @@ class CupView(ManualListView):
 				'type': 'label',
 			},
 			{
+				'name': 'Host',
+				'index': 'host_str',
+				'sorting': True,
+				'searching': True,
+				'width': 40,
+				'type': 'label',
+			},
+			{
 				'name': 'Date',
 				'index': 'cup_start_time_str',
 				'sorting': True,
@@ -52,7 +60,7 @@ class CupView(ManualListView):
 				'index': 'maps_str',
 				'sorting': True,
 				'searching': True,
-				'width': 30,
+				'width': 20,
 				'type': 'label',
 			},
 		]
@@ -70,6 +78,7 @@ class CupView(ManualListView):
 				'cup_edition': f'Edition #{str(cup_data.cup_edition)}',
 				'cup_start_time_str': datetime.fromtimestamp(cup_data.cup_start_time).strftime("%c"),
 				'maps_str': str(len(map_start_times)),
+				'host_str': str(cup_data.cup_host_nickname if cup_data.cup_host_nickname else ''),
 				# For row reference
 				'cup_start_time': cup_data.cup_start_time,
 			})

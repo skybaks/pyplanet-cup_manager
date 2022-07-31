@@ -23,6 +23,16 @@ class CupInfo(TimedModel):
 	Edition number of the cup
 	"""
 
+	cup_host_login = CharField(max_length=150, null=True)
+	"""
+	Login of the cup host for this edition
+	"""
+
+	cup_host_nickname = CharField(max_length=150, null=True)
+	"""
+	Nickname of the cup host for this edition
+	"""
+
 	class Meta:
 		db_table = 'cup_manager_cupinfo_v1'
 
