@@ -218,15 +218,23 @@ class ActiveCupManager:
 		new_cup_name = None
 		new_cup_preset_on = None
 		new_cup_map_count_target = 0
+		new_cup_key_name = ''
 
 		if data.cup_alias:
 			cup_names = await self.get_cup_names()
-			if data.cup_alias in cup_names:
-				new_cup_name = cup_names[data.cup_alias]['name']
-				if 'preset_on' in cup_names[data.cup_alias]:
-					new_cup_preset_on = cup_names[data.cup_alias]['preset_on']
-				if 'map_count' in cup_names[data.cup_alias]:
-					new_cup_map_count_target = cup_names[data.cup_alias]['map_count']
+			for lookup_name in cup_names.keys():
+				if lookup_name.lower() == data.cup_alias.lower():
+					new_cup_key_name = lookup_name
+					new_cup_name = cup_names[new_cup_key_name]['name']
+					if 'preset_on' in cup_names[new_cup_key_name]:
+						new_cup_preset_on = cup_names[new_cup_key_name]['preset_on']
+					if 'map_count' in cup_names[new_cup_key_name]:
+						new_cup_map_count_target = cup_names[new_cup_key_name]['map_count']
+					break
+			else:
+				logger.error(f"Cup key name \"{data.cup_alias}\" not found using //cup on command")
+				await self.instance.chat(f"$f00Cup key name not found. Configured names are: {', '.join([f'$<$fff{kname}$>' for kname in cup_names.keys()])}", player.login)
+				return
 
 		self.cup_host = player
 
@@ -236,10 +244,9 @@ class ActiveCupManager:
 			await self.instance.chat(f'$ff0Cup reactivated and map count reset to $<$fff{str(self.cup_map_count_target)}$>. Use $<$fff//cup edit$> to add/remove maps from scoring, use $<$fff//cup mapcount$> to set the actual map count, and use $<$fff//cup off$> to manually end the cup while the final map is being played', player)
 
 		elif not self.cup_active or new_cup_name:
-			self.cup_key_name = ''
+			self.cup_key_name = new_cup_key_name
 			self.cup_name = ''
 			if new_cup_name:
-				self.cup_key_name = data.cup_alias
 				self.cup_name = new_cup_name
 
 			if not self.cup_active:
