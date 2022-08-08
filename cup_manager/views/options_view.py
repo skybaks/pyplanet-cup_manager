@@ -293,17 +293,14 @@ class PayoutsView(OptionsView):
 	async def get_info_data(self) -> 'list[dict]':
 		info_data = []
 		if self.selected_option and 'name' in self.selected_option:
-			payouts = await self.app.get_payouts()
-			selected_payout = payouts[self.selected_option['name']]
-			place_index = 1
-			for planet_amount, score in zip(selected_payout, self.score_data):
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[tuple[TeamPlayerScore, int]]
+			for player_score, pay_amount in payout_score:
 				info_data.append({
-					'place': place_index,
-					'planets': planet_amount,
-					'login': score.login,
-					'nickname': score.nickname,
+					'place': player_score.placement,
+					'planets': pay_amount,
+					'login': player_score.login,
+					'nickname': player_score.nickname,
 				})
-				place_index += 1
 		frame = DataFrame(info_data)
 		self.info_data_count = len(frame)
 		frame = await self.apply_pagination(frame, self.info_data_page, self.num_info_data_per_page)
@@ -312,16 +309,12 @@ class PayoutsView(OptionsView):
 
 	async def button_pressed(self, player, *args, **kwargs):
 		if self.selected_option and 'name' in self.selected_option:
-			payouts = await self.app.get_payouts()
-			selected_payout = payouts[self.selected_option['name']]
-			payout_data = []
-			total_planets = 0
-			for planet_amount, score in zip(selected_payout, self.score_data):
-				total_planets += planet_amount
-				payout_data.append(Namespace(**{'amount': planet_amount, 'login': score.login}))
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[tuple[TeamPlayerScore, int]]
+			total_planets = sum([x[1] for x in payout_score])
+			payout_data = [Namespace(**{'amount': payout_item[1], 'login': payout_item[0].login}) for payout_item in payout_score]
 		cancel = bool(await ask_confirmation(
 			player=player,
-			message=f'The selected payout "{self.selected_option["name"]}" will pay {str(len(payout_data))} players a total of {str(total_planets)} planets.\nAre you sure?',
+			message=f'The selected payout "{self.selected_option["name"]}" will pay {str(len(payout_score))} players a total of {str(total_planets)} planets.\nAre you sure?',
 			buttons=[{'name': 'Confirm'}, {'name': 'Cancel'}]
 		))
 		if not cancel:

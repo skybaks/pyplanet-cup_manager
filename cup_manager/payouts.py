@@ -1,11 +1,11 @@
-from difflib import Match
 import logging
+from math import trunc
 
 from pyplanet.conf import settings
 from pyplanet.contrib.command import Command
 
 from .views import MatchHistoryView, PayoutsView, ResultsView
-from .app_types import ScoreSortingPresets
+from .app_types import TeamPlayerScore
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class PayoutCupManager:
 		ResultsView.add_button('Payout', self._button_payout, self._check_payout_permissions)
 
 
-	async def get_payouts(self) -> dict:
+	async def get_payouts(self) -> 'dict[str, list[int]]':
 		payouts = {}
 		try:
 			payouts = settings.CUP_MANAGER_PAYOUTS
@@ -60,6 +60,37 @@ class PayoutCupManager:
 			for payment in payment_data:
 				logger.debug(f"Attempting to pay {payment.login} {str(payment.amount)}")
 				await self.instance.apps.apps['transactions'].pay_to_player(player=player, data=payment)
+
+
+	async def get_data_payout_score(self, payout_key: str, sorted_results: 'list[TeamPlayerScore]') -> 'list[tuple[TeamPlayerScore, int]]':
+		payouts = await self.get_payouts()
+		selected_payout = []	# type: list[int]
+		if payout_key in payouts:
+			selected_payout = payouts[payout_key]
+		payout_score = []
+		score_ties = TeamPlayerScore.get_ties(sorted_results)
+		for player_score in sorted_results:
+			if 0 <= player_score.placement-1 < len(selected_payout):
+				if player_score.login in score_ties:
+					tied_players_count = len(score_ties[player_score.login]) + 1
+					tied_payment_pool = 0
+					for index in range(0, tied_players_count):
+						if player_score.placement - 1 + index < len(selected_payout):
+							tied_payment_pool += selected_payout[player_score.placement-1+index]
+						else:
+							break
+					payout_score.append((
+						player_score,
+						max(int(tied_payment_pool / tied_players_count), 1)
+					))
+				else:
+					payout_score.append((
+						player_score,
+						selected_payout[player_score.placement-1]
+					))
+			else:
+				break
+		return payout_score
 
 
 	async def _button_payout(self, player, values, view: MatchHistoryView, **kwargs):
