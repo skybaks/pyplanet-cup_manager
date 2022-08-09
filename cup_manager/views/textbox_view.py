@@ -25,6 +25,7 @@ class TextboxView(SingleInstanceView):
 		self.player = player
 		self.cup_name = '$(var.cup_name)'
 		self.cup_edition = '$(var.cup_edition)'
+		self.payout_key = ''
 
 		self.subscribe('textbox_button_close', self.close)
 		self.subscribe('textbox_copy_success', self.copy_success)
@@ -48,6 +49,7 @@ class TextboxView(SingleInstanceView):
 		context['buttons'] = buttons
 		context['cup_name'] = self.cup_name
 		context['cup_edition'] = self.cup_edition
+		context['payout_key'] = self.payout_key
 		return context
 
 
@@ -76,6 +78,7 @@ class TextboxView(SingleInstanceView):
 	async def entry_submit(self, player, action, values, *args, **kwargs):
 		self.cup_name = values['textbox_cupname']
 		self.cup_edition = values['textbox_cupedition']
+		self.payout_key = values['textbox_payoutkey']
 		await self.refresh(player=player)
 
 
@@ -158,6 +161,9 @@ class TextResultsView(TextboxView):
 		if self._instance_data:
 			instance_data = [item for item in self._instance_data if item.team_score > 0 or item.player_score > 0 or item.player_score2 > 0] if self.exclude_zero_points else self._instance_data
 			if instance_data:
+
+				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data)	#type: list[tuple[TeamPlayerScore, int]]
+
 				if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
 
 					placements = [str(item.placement) for item in instance_data]
@@ -166,11 +172,17 @@ class TextResultsView(TextboxView):
 					score2s = [str(item.player_score2_str) for item in instance_data]
 					nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in instance_data]
 					countries = [str(item.country) for item in instance_data]
+					payouts = []
+					if len(payout_scores) > 0:
+						payouts = [str(payout_item[1]) for payout_item in payout_scores]
+					while len(payouts) < len(instance_data):
+						payouts.append('')
 
 					index_justify = min(4, len(max(placements, key=len)))
 					team_score_justify = min(15, len(max(team_scores, key=len)))
 					score_justify = min(15, len(max(scores, key=len)))
 					score2_justify = min(15, len(max(score2s, key=len)))
+					payout_justify = min(7, len(max(payouts, key=len)))
 
 					if self._export_format == self.ExportFormat.DISCORD:
 						text += f'**{self.cup_name}** - {self.cup_edition} - {str(len(instance_data))} Players\n'
@@ -206,8 +218,10 @@ class TextResultsView(TextboxView):
 						text += 'Full results:\n'
 
 					text += "```\n"
-					for placement, nickname, team_score, score, score2 in zip(placements, nicknames, team_scores, scores, score2s):
+					for placement, nickname, team_score, score, score2, payout in zip(placements, nicknames, team_scores, scores, score2s, payouts):
 						text += str(placement.rjust(index_justify)) + '  '
+						if payout_scores:
+							text += str(payout.rjust(payout_justify)) + '  '
 						if self._show_team_score:
 							text += str(team_score.rjust(team_score_justify)) + '  '
 						if self._show_score2:
@@ -247,6 +261,12 @@ class TextResultsView(TextboxView):
 						text += '"' + style.style_strip(item.nickname, style.STRIP_ALL) + '",'
 						text += '"' + str(item.login) + '",'
 						text += '"' + str(item.country) + '"'
+						if len(payout_scores) > 0:
+							payout_item = next((pay_item for pay_item in payout_scores if pay_item[0].login == item.login), None)
+							if payout_item:
+								text += ',"' + str(payout_item[1]) + '"'
+							else:
+								text += ',"0"'
 						text += '\n'
 				else:
 					text = f"Export format not implemented: {str(self._export_format)}"

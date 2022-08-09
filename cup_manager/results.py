@@ -315,7 +315,7 @@ class ResultsCupManager:
 					match_info.append(match_data_info)
 
 			text_view = TextResultsView(
-				self,
+				self.app,
 				player,
 				scores_data,
 				match_info,
