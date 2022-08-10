@@ -15,13 +15,11 @@
 
     <label pos="2 -3.5" size="15 5" text="Format:" textprefix="$fff" textsize="1.3" valign="center2" halign="left"/>
     {% for button in buttons %}
-      <label pos="{{ button.left }} -3.5" size="{{ button.width }} 4.9" text="{{ button.title }}" textsize="1.3" valign="center2" halign="center" action="{{ id }}__textbox_buttons_{{ loop.index0 }}"
+      <label pos="{{ button.left }} -3.5" size="{{ button.width }} 4.9" text="{{ button.title }}" textsize="1.3" textprefix="$fff" valign="center2" halign="center" action="{{ id }}__textbox_buttons_{{ loop.index0 }}"
         {% if button.selected %}
-          textprefix="$o$fff"
           focusareacolor1="7a75"
           focusareacolor2="7a77"
         {% else %}
-          textprefix="$fff"
           focusareacolor1="7775"
           focusareacolor2="7777"
         {% endif %}

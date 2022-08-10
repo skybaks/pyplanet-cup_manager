@@ -244,32 +244,37 @@ class TextResultsView(TextboxView):
 
 					text += "```"
 				elif self._export_format == self.ExportFormat.CSV:
+					csv_lines = []
 					if self.include_match_info:
 						sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x.map_start_time)
 						for match_info in sorted_match_info_list:
-							text += '"' + str(datetime.datetime.fromtimestamp(match_info.map_start_time).strftime("%c")) + '",'
-							text += '"' + str(match_info.mode_script) + '",'
-							text += '"' + str(style.style_strip(match_info.map_name, style.STRIP_ALL)) + '",'
-							text += '"' + str(match_info.map_uid) + '",'
-							text += '"' + str(match_info.mx_id) + '"'
-							text += '\n'
+							csv_match = [
+								str(datetime.datetime.fromtimestamp(match_info.map_start_time).strftime("%c")),
+								str(match_info.mode_script),
+								str(style.style_strip(match_info.map_name, style.STRIP_ALL)),
+								str(match_info.map_uid),
+								str(match_info.mx_id),
+							]
+							csv_lines.append(','.join([f'"{x}"' for x in csv_match]))
 					for item in instance_data:
-						text += '"' + str(item.placement) + '",'
+						csv_item = []
+						csv_item.append(str(item.placement))
 						if self._show_team_score:
-							text += '"' + str(item.team_score_str) + '",'
-						text += '"' + str(item.player_score_str) + '",'
+							csv_item.append(str(item.team_score_str))
+						csv_item.append(str(item.player_score_str))
 						if self._show_score2:
-							text += '"' + str(item.player_score2_str) + '",'
-						text += '"' + style.style_strip(item.nickname, style.STRIP_ALL) + '",'
-						text += '"' + str(item.login) + '",'
-						text += '"' + str(item.country) + '"'
+							csv_item.append(str(item.player_score2_str))
+						csv_item.append(style.style_strip(item.nickname, style.STRIP_ALL))
+						csv_item.append(str(item.login))
+						csv_item.append(str(item.country))
 						if len(payout_scores) > 0:
 							payout_item = next((pay_item for pay_item in payout_scores if pay_item[0].login == item.login), None)
 							if payout_item:
-								text += ',"' + str(payout_item[1]) + '"'
+								csv_item.append(str(payout_item[1]))
 							else:
-								text += ',"0"'
-						text += '\n'
+								csv_item.append("0")
+						csv_lines.append(','.join([f'"{x}"' for x in csv_item]))
+					text = '\n'.join(csv_lines)
 				else:
 					text = f"Export format not implemented: {str(self._export_format)}"
 					logger.error(text)
