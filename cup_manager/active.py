@@ -79,13 +79,21 @@ class ActiveCupManager:
 		await self.app.results.register_scores_update_notify(self._notify_scores_update)
 
 
-	async def get_cup_names(self) -> 'dict[str, dict]':
+	async def get_cup_settings(self) -> 'dict[str, dict]':
 		cup_names = {}
 		try:
 			cup_names = settings.CUP_MANAGER_NAMES
 		except:
 			logger.error('Error reading CUP_MANAGER_NAMES from local.py')
 		return cup_names
+
+
+	async def get_specific_cup_settings(self, lookup_name: str) -> 'tuple[str, dict[str, any]]':
+		all_settings = await self.get_cup_settings()
+		for settings_key in all_settings.keys():
+			if settings_key.lower() == lookup_name.lower():
+				return (settings_key, all_settings[settings_key])
+		return ('', {})
 
 
 	async def get_selected_matches(self) -> 'list[int]':
@@ -221,19 +229,18 @@ class ActiveCupManager:
 		new_cup_key_name = ''
 
 		if data.cup_alias:
-			cup_names = await self.get_cup_names()
-			for lookup_name in cup_names.keys():
-				if lookup_name.lower() == data.cup_alias.lower():
-					new_cup_key_name = lookup_name
-					new_cup_name = cup_names[new_cup_key_name]['name']
-					if 'preset_on' in cup_names[new_cup_key_name]:
-						new_cup_preset_on = cup_names[new_cup_key_name]['preset_on']
-					if 'map_count' in cup_names[new_cup_key_name]:
-						new_cup_map_count_target = cup_names[new_cup_key_name]['map_count']
-					break
+			lookup_name, cup_settings = await self.get_specific_cup_settings(data.cup_alias)
+			if lookup_name:
+				new_cup_key_name = lookup_name
+				new_cup_name = cup_settings['name']
+				if 'preset_on' in cup_settings:
+					new_cup_preset_on = cup_settings['preset_on']
+				if 'map_count' in cup_settings:
+					new_cup_map_count_target = cup_settings['map_count']
 			else:
 				logger.error(f"Cup key name \"{data.cup_alias}\" not found using //cup on command")
-				await self.instance.chat(f"$f00Cup key name not found. Configured names are: {', '.join([f'$<$fff{kname}$>' for kname in cup_names.keys()])}", player.login)
+				cup_names = (await self.get_cup_settings()).keys()
+				await self.instance.chat(f"$f00Cup key name not found. Configured names are: {', '.join([f'$<$fff{kname}$>' for kname in cup_names])}", player.login)
 				return
 
 		self.cup_host = player
@@ -286,9 +293,9 @@ class ActiveCupManager:
 			else:
 				await self.instance.chat(f'$z$s$0cfThis is the final map of the {self.cup_name_fmt}')
 
-			cup_names = await self.get_cup_names()
-			if self.cup_key_name in cup_names and 'preset_off' in cup_names[self.cup_key_name]:
-				await self.app.setup.command_setup(player, Namespace(**{'preset': cup_names[self.cup_key_name]['preset_off']}))
+			key_name, cup_settings = await self.get_specific_cup_settings(self.cup_key_name)
+			if 'preset_off' in cup_settings:
+				await self.app.setup.command_setup(player, Namespace(**{'preset': cup_settings['preset_off']}))
 
 
 	async def _command_results(self, player, data, **kwargs) -> None:
