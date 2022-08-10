@@ -143,6 +143,7 @@ CUP_MANAGER_NAMES = {
 		'preset_on': 'laps50',
 		'preset_off': 'timeattack',
 		'map_count': 1,
+		'payout': 'hec',
 	},
 
 	'nac': {

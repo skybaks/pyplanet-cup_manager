@@ -4,6 +4,7 @@ from math import trunc
 from pyplanet.conf import settings
 from pyplanet.contrib.command import Command
 
+from .models import CupInfo
 from .views import MatchHistoryView, PayoutsView, ResultsView
 from .app_types import TeamPlayerScore
 
@@ -101,6 +102,13 @@ class PayoutCupManager:
 		if view.scores_query:
 			scores_data = await self.app.results.get_data_scores(view.scores_query, view.scores_sorting)
 			payout_view = PayoutsView(self, scores_data)
+
+			if hasattr(view, 'cup_start_time'):
+				cup_info = await self.app.active.get_data_specific_cup_info(view.cup_start_time)	# type: CupInfo
+				cup_keyname, cup_settings = await self.app.active.get_specific_cup_settings(cup_info.cup_key)
+				if 'payout' in cup_settings:
+					payout_view.selected_option = {'name': cup_settings['payout'], 'selected': True}
+
 			await payout_view.display(player=player)
 
 
