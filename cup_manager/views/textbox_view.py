@@ -182,7 +182,7 @@ class TextResultsView(TextboxView):
 					team_score_justify = min(15, len(max(team_scores, key=len)))
 					score_justify = min(15, len(max(scores, key=len)))
 					score2_justify = min(15, len(max(score2s, key=len)))
-					payout_justify = min(7, len(max(payouts, key=len)))
+					nickname_payout_justify = min(30, len(max(nicknames[0:min(len(payout_scores), len(nicknames))], key=len))) if len(payout_scores) > 0 else 0
 
 					if self._export_format == self.ExportFormat.DISCORD:
 						text += f'**{self.cup_name}** - {self.cup_edition} - {str(len(instance_data))} Players\n'
@@ -220,20 +220,19 @@ class TextResultsView(TextboxView):
 					text += "```\n"
 					for placement, nickname, team_score, score, score2, payout in zip(placements, nicknames, team_scores, scores, score2s, payouts):
 						text += str(placement.rjust(index_justify)) + '  '
-						if payout_scores:
-							text += str(payout.rjust(payout_justify)) + '  '
 						if self._show_team_score:
 							text += str(team_score.rjust(team_score_justify)) + '  '
 						if self._show_score2:
 							text += str(score2.rjust(score2_justify)) + '  '
 						text += str(score.rjust(score_justify)) + '  '
-						text += str(nickname) + '\n'
+						text += str(nickname)
+						if payout:
+							text += str(' ' * max(nickname_payout_justify - len(nickname), 0)) + '  ' + str(payout)
+						text += '\n'
 
 					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
 						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
 						spec_justify = index_justify + score_justify + 4
-						if payout_scores:
-							spec_justify += payout_justify + 2
 						if self._show_team_score:
 							spec_justify += team_score_justify + 2
 						if self._show_score2:
