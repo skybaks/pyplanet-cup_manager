@@ -232,6 +232,8 @@ class TextResultsView(TextboxView):
 					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
 						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
 						spec_justify = index_justify + score_justify + 4
+						if payout_scores:
+							spec_justify += payout_justify + 2
 						if self._show_team_score:
 							spec_justify += team_score_justify + 2
 						if self._show_score2:
