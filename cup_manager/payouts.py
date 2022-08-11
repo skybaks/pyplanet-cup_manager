@@ -7,6 +7,7 @@ from pyplanet.contrib.command import Command
 from .models import CupInfo
 from .views import MatchHistoryView, PayoutsView, ResultsView
 from .app_types import TeamPlayerScore, PaymentScore
+from .utils import placements
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class PayoutCupManager:
 			for payment in payment_data:
 				logger.debug(f"Attempting to pay {payment.login} {str(payment.amount)}")
 				await self.instance.apps.apps['transactions'].pay_to_player(player=player, data=payment)
-				await self.instance.chat(f"$ff0You won $<$fff{str(payment.amount)}$> planets for placing $<$fff{payment.score.placement}$>", payment.login)
+				await self.instance.chat(f"$ff0You won $<$fff{str(payment.amount)}$> planets for placing $<$fff{placements.pretty_placement(payment.score.placement)}$>", payment.login)
 
 
 	async def get_data_payout_score(self, payout_key: str, sorted_results: 'list[TeamPlayerScore]') -> 'list[PaymentScore]':

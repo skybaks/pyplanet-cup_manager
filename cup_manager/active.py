@@ -13,6 +13,7 @@ from pyplanet.utils import style
 from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
+from .utils import placements
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,7 @@ class ActiveCupManager:
 				placed_text = 'placed'
 				if player_score.login in score_ties:
 					placed_text = 'tied for'
-				await self.instance.chat(f"$ff0You {player_prefix}{placed_text} $<$fff{str(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
+				await self.instance.chat(f"$ff0You {player_prefix}{placed_text} $<$fff{placements.pretty_placement(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
 
 
 	async def _tm_signals_warmup_start(self) -> None:
@@ -213,7 +214,7 @@ class ActiveCupManager:
 						prev_score = next((s for s in self.cached_scores if s.login == new_score.login), None)	# type: TeamPlayerScore
 						if prev_score and new_score.placement < prev_score.placement:
 							await self.instance.chat(
-								f"$ff0You gained $<$fff{str(prev_score.placement - new_score.placement)}$> positions in the {self.cup_name_fmt}. $fff[{str(prev_score.placement)} ➙ {str(new_score.placement)}]",
+								f"$ff0You gained $<$fff{str(prev_score.placement - new_score.placement)}$> positions in the {self.cup_name_fmt}. $fff[{placements.pretty_placement(prev_score.placement)} ➙ {placements.pretty_placement(new_score.placement)}]",
 								new_score.login
 							)
 						elif prev_score and new_score.placement > prev_score.placement:
