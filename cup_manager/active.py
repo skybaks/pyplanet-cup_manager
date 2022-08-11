@@ -184,7 +184,7 @@ class ActiveCupManager:
 					current_score = scores[score_index]
 					if current_score.login in score_ties and len(score_ties[current_score.login]) > 0:
 						await self.instance.chat(
-							f"$ff0You are tied with {', '.join([f'$<$fff{style.style_strip(tie_score.nickname)}$>' for tie_score in score_ties[current_score.login]])} in the {self.cup_name_fmt}",
+							f"$ff0You are tied with {placements.pretty_list([f'$<$fff{style.style_strip(tie_score.nickname)}$>' for tie_score in score_ties[current_score.login]])} in the {self.cup_name_fmt}",
 							current_score.login
 						)
 					elif score_index-1 >= 0:
