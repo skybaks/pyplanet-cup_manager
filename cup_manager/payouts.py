@@ -6,7 +6,7 @@ from pyplanet.contrib.command import Command
 
 from .models import CupInfo
 from .views import MatchHistoryView, PayoutsView, ResultsView
-from .app_types import TeamPlayerScore
+from .app_types import TeamPlayerScore, PaymentScore
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class PayoutCupManager:
 		return payouts
 
 
-	async def pay_players(self, player, payment_data) -> None:
+	async def pay_players(self, player, payment_data: 'list[PaymentScore]') -> None:
 		if not await self._check_payout_permissions(player=player):
 			logger.error(f"{player.login} does not have permission 'transactions:pay'")
 			return
@@ -61,14 +61,15 @@ class PayoutCupManager:
 			for payment in payment_data:
 				logger.debug(f"Attempting to pay {payment.login} {str(payment.amount)}")
 				await self.instance.apps.apps['transactions'].pay_to_player(player=player, data=payment)
+				await self.instance.chat(f"$ff0You won $<$fff{str(payment.amount)}$> planets for placing $<$fff{payment.score.placement}$>", payment.login)
 
 
-	async def get_data_payout_score(self, payout_key: str, sorted_results: 'list[TeamPlayerScore]') -> 'list[tuple[TeamPlayerScore, int]]':
+	async def get_data_payout_score(self, payout_key: str, sorted_results: 'list[TeamPlayerScore]') -> 'list[PaymentScore]':
 		payouts = await self.get_payouts()
 		selected_payout = []	# type: list[int]
 		if payout_key in payouts:
 			selected_payout = payouts[payout_key]
-		payout_score = []
+		payout_score = []	# type: list[PaymentScore]
 		score_ties = TeamPlayerScore.get_ties(sorted_results)
 		for player_score in sorted_results:
 			if 0 <= player_score.placement-1 < len(selected_payout):
@@ -80,12 +81,12 @@ class PayoutCupManager:
 							tied_payment_pool += selected_payout[player_score.placement-1+index]
 						else:
 							break
-					payout_score.append((
+					payout_score.append(PaymentScore(
 						player_score,
 						max(int(tied_payment_pool / tied_players_count), 1)
 					))
 				else:
-					payout_score.append((
+					payout_score.append(PaymentScore(
 						player_score,
 						selected_payout[player_score.placement-1]
 					))

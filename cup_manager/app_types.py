@@ -1,6 +1,9 @@
 from enum import Enum
+import logging
+
 from pyplanet.utils import times
 
+logger = logging.getLogger(__name__)
 
 class ScoreSortingPresets(Enum):
 	UNDEFINED = -1
@@ -219,3 +222,27 @@ class TeamPlayerScore:
 		return sorting in [
 			ScoreSortingPresets.UNDEFINED
 		]
+
+
+class PaymentScore:
+	score = None
+	payment = 0
+
+
+	def __init__(self, score: TeamPlayerScore, payment: int) -> None:
+		self.score = score
+		self.payment = payment
+
+
+	def __repr__(self) -> str:
+		return f'<PaymentScore payment:{str(self.payment)} score:{str(self.score)}>'
+
+
+	@property
+	def amount(self) -> int:
+		return self.payment
+
+
+	@property
+	def login(self) -> str:
+		return self.score.login

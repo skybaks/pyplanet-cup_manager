@@ -7,7 +7,7 @@ from enum import Enum
 from pyplanet.utils import style
 
 from ..utils import country_codes, markdown
-from ..app_types import TeamPlayerScore
+from ..app_types import TeamPlayerScore, PaymentScore
 from .single_instance_view import SingleInstanceView
 
 logger = logging.getLogger(__name__)
@@ -162,7 +162,7 @@ class TextResultsView(TextboxView):
 			instance_data = [item for item in self._instance_data if item.team_score > 0 or item.player_score > 0 or item.player_score2 > 0] if self.exclude_zero_points else self._instance_data
 			if instance_data:
 
-				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data)	#type: list[tuple[TeamPlayerScore, int]]
+				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data)	#type: list[PaymentScore]
 
 				if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
 
@@ -174,7 +174,7 @@ class TextResultsView(TextboxView):
 					countries = [str(item.country) for item in instance_data]
 					payouts = []
 					if len(payout_scores) > 0:
-						payouts = [str(payout_item[1]) for payout_item in payout_scores]
+						payouts = [str(payout_item.payment) for payout_item in payout_scores]
 					while len(payouts) < len(instance_data):
 						payouts.append('')
 
@@ -267,7 +267,7 @@ class TextResultsView(TextboxView):
 						csv_item.append(str(item.login))
 						csv_item.append(str(item.country))
 						if len(payout_scores) > 0:
-							payout_item = next((pay_item for pay_item in payout_scores if pay_item[0].login == item.login), None)
+							payout_item = next((pay_item for pay_item in payout_scores if pay_item.score.login == item.login), None)
 							if payout_item:
 								csv_item.append(str(payout_item[1]))
 							else:

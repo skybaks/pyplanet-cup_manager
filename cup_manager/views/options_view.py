@@ -7,7 +7,7 @@ from argparse import Namespace
 from pyplanet.views.generics import ask_confirmation
 
 from .single_instance_view import SingleInstanceView
-from ..app_types import TeamPlayerScore
+from ..app_types import PaymentScore, TeamPlayerScore
 
 logger = logging.getLogger(__name__)
 
@@ -293,13 +293,13 @@ class PayoutsView(OptionsView):
 	async def get_info_data(self) -> 'list[dict]':
 		info_data = []
 		if self.selected_option and 'name' in self.selected_option:
-			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[tuple[TeamPlayerScore, int]]
-			for player_score, pay_amount in payout_score:
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[PaymentScore]
+			for payout_item in payout_score:
 				info_data.append({
-					'place': player_score.placement,
-					'planets': pay_amount,
-					'login': player_score.login,
-					'nickname': player_score.nickname,
+					'place': payout_item.score.placement,
+					'planets': payout_item.payment,
+					'login': payout_item.score.login,
+					'nickname': payout_item.score.nickname,
 				})
 		frame = DataFrame(info_data)
 		self.info_data_count = len(frame)
@@ -309,9 +309,8 @@ class PayoutsView(OptionsView):
 
 	async def button_pressed(self, player, *args, **kwargs):
 		if self.selected_option and 'name' in self.selected_option:
-			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[tuple[TeamPlayerScore, int]]
-			total_planets = sum([x[1] for x in payout_score])
-			payout_data = [Namespace(**{'amount': payout_item[1], 'login': payout_item[0].login}) for payout_item in payout_score]
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[PaymentScore]
+			total_planets = sum([x.payment for x in payout_score])
 		cancel = bool(await ask_confirmation(
 			player=player,
 			message=f'The selected payout "{self.selected_option["name"]}" will pay {str(len(payout_score))} players a total of {str(total_planets)} planets.\nAre you sure?',
@@ -319,7 +318,7 @@ class PayoutsView(OptionsView):
 		))
 		if not cancel:
 			await self.close(player=player)
-			await self.app.pay_players(player, payout_data)
+			await self.app.pay_players(player, payout_score)
 
 
 class PresetsView(OptionsView):
