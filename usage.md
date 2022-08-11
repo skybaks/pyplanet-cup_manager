@@ -104,6 +104,7 @@ lookup name for the cup which is what you will pass into the `//cup on <cup_name
 |preset_on|str|Optional|Include this subfield if you would like to have `//cup set <preset>` called automatically for you when you start the cup. The value should match a key name or alias name of on of your defined presets|
 |preset_off|str|Optional|Include this subfield if you would like to have `//cup setup <preset>` called automatically for you when you end the cup. The value should match a key name or alias name of on of your defined presets|
 |map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
+|payout|str|Optional|This is used to link a certain payout scheme to your cup. This linkage will be used to default the selection on the payout and export windows.|
 
 # Running a cup as server admin
 

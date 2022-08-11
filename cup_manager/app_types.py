@@ -1,6 +1,9 @@
 from enum import Enum
+import logging
+
 from pyplanet.utils import times
 
+logger = logging.getLogger(__name__)
 
 class ScoreSortingPresets(Enum):
 	UNDEFINED = -1
@@ -197,6 +200,17 @@ class TeamPlayerScore:
 
 
 	@staticmethod
+	def get_ties(input_scores: 'list[TeamPlayerScore]') -> 'dict[str, list[TeamPlayerScore]]':
+		all_ties = {}	# type: dict[str, list[TeamPlayerScore]]
+		for player_score in input_scores:
+			tied_scores = [s for s in input_scores if s.placement == player_score.placement \
+				and s.login != player_score.login]
+			if len(tied_scores) > 0:
+				all_ties[player_score.login] = tied_scores
+		return all_ties
+
+
+	@staticmethod
 	def score2_relevant(sorting: ScoreSortingPresets) -> bool:
 		return sorting in [
 			ScoreSortingPresets.LAPS
@@ -208,3 +222,27 @@ class TeamPlayerScore:
 		return sorting in [
 			ScoreSortingPresets.UNDEFINED
 		]
+
+
+class PaymentScore:
+	score = None
+	payment = 0
+
+
+	def __init__(self, score: TeamPlayerScore, payment: int) -> None:
+		self.score = score
+		self.payment = payment
+
+
+	def __repr__(self) -> str:
+		return f'<PaymentScore payment:{str(self.payment)} score:{str(self.score)}>'
+
+
+	@property
+	def amount(self) -> int:
+		return self.payment
+
+
+	@property
+	def login(self) -> str:
+		return self.score.login

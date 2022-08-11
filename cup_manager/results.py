@@ -315,7 +315,7 @@ class ResultsCupManager:
 					match_info.append(match_data_info)
 
 			text_view = TextResultsView(
-				self,
+				self.app,
 				player,
 				scores_data,
 				match_info,
@@ -327,6 +327,9 @@ class ResultsCupManager:
 				cup_info = await self.app.active.get_data_specific_cup_info(view.cup_start_time)	# type: CupInfo
 				text_view.cup_name = style.style_strip(cup_info.cup_name)
 				text_view.cup_edition = 'Edition #' + str(cup_info.cup_edition)
+				cup_keyname, cup_settings = await self.app.active.get_specific_cup_settings(cup_info.cup_key)
+				if 'payout' in cup_settings:
+					text_view.payout_key = cup_settings['payout']
 
 			await text_view.display(player=player)
 
