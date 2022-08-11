@@ -13,6 +13,7 @@ from pyplanet.utils import style
 from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView
 from .app_types import ScoreSortingPresets, TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
+from .utils import placements
 
 logger = logging.getLogger(__name__)
 
@@ -135,8 +136,10 @@ class ActiveCupManager:
 			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
 			score_ties = TeamPlayerScore.get_ties(scores)
 			podium_text = []
-			for player_score in scores[0:10]:
-				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[$aaa{player_score.relevant_score_str(self.score_sorting)}$fff]$0cf')
+			for player_score in scores:
+				if player_score.placement > 10:
+					break
+				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[{player_score.relevant_score_str(self.score_sorting, "$aaa")}$fff]$0cf')
 			if not self.cup_active:
 				podium_prefix = 'Final'
 				player_prefix = ''
@@ -149,7 +152,7 @@ class ActiveCupManager:
 				placed_text = 'placed'
 				if player_score.login in score_ties:
 					placed_text = 'tied for'
-				await self.instance.chat(f"$ff0You {player_prefix}{placed_text} $<$fff{str(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
+				await self.instance.chat(f"$ff0You {player_prefix}{placed_text} $<$fff{placements.pretty_placement(player_score.placement)}$> in the {self.cup_name_fmt}", player_score.login)
 
 
 	async def _tm_signals_warmup_start(self) -> None:
@@ -183,7 +186,7 @@ class ActiveCupManager:
 					current_score = scores[score_index]
 					if current_score.login in score_ties and len(score_ties[current_score.login]) > 0:
 						await self.instance.chat(
-							f"$ff0You are tied with {', '.join([f'$<$fff{style.style_strip(tie_score.nickname)}$>' for tie_score in score_ties[current_score.login]])} in the {self.cup_name_fmt}",
+							f"$ff0You are tied with {placements.pretty_list([f'$<$fff{style.style_strip(tie_score.nickname)}$>' for tie_score in score_ties[current_score.login]])} in the {self.cup_name_fmt}",
 							current_score.login
 						)
 					elif score_index-1 >= 0:
@@ -213,7 +216,7 @@ class ActiveCupManager:
 						prev_score = next((s for s in self.cached_scores if s.login == new_score.login), None)	# type: TeamPlayerScore
 						if prev_score and new_score.placement < prev_score.placement:
 							await self.instance.chat(
-								f"$ff0You gained $<$fff{str(prev_score.placement - new_score.placement)}$> positions in the {self.cup_name_fmt}. $fff[{str(prev_score.placement)} ➙ {str(new_score.placement)}]",
+								f"$ff0You gained $<$fff{str(prev_score.placement - new_score.placement)}$> positions in the {self.cup_name_fmt}. $fff[{placements.pretty_placement(prev_score.placement)} ➙ {placements.pretty_placement(new_score.placement)}]",
 								new_score.login
 							)
 						elif prev_score and new_score.placement > prev_score.placement:

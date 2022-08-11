@@ -110,17 +110,17 @@ class TeamPlayerScore:
 		return times.format_time(int(self.player_score2)) if self.player_score2_is_time else str(self.player_score2)
 
 
-	def relevant_score_str(self, sorting: ScoreSortingPresets) -> str:
-		score_str = ''
+	def relevant_score_str(self, sorting: ScoreSortingPresets, item_format: str) -> str:
+		score_items = []
 		if sorting == ScoreSortingPresets.TIMEATTACK:
-			score_str = str(self.player_score_str)
+			score_items = [str(self.player_score_str)]
 		elif sorting == ScoreSortingPresets.LAPS:
-			score_str = str(self.player_score2_str) + ',' + str(self.player_score_str)
+			score_items = [str(self.player_score2_str), str(self.player_score_str)]
 		elif sorting == ScoreSortingPresets.ROUNDS:
-			score_str = str(self.player_score_str)
+			score_items = [str(self.player_score_str)]
 		else:
-			score_str = str(self.team_score) + ',' + str(self.player_score_str)
-		return score_str
+			score_items = [str(self.team_score), str(self.player_score_str)]
+		return ','.join([f'$<{item_format}{score_item}$>' for score_item in score_items] if item_format else score_items)
 
 
 	@staticmethod
