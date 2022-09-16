@@ -1,7 +1,6 @@
 import logging
 import math
 import re
-from pandas import DataFrame
 from argparse import Namespace
 
 from pyplanet.views.generics import ask_confirmation
@@ -130,7 +129,7 @@ class OptionsView(SingleInstanceView):
 
 
 	@staticmethod
-	async def apply_pagination(frame: DataFrame, page: int, num_per_page: int) -> DataFrame:
+	async def apply_pagination(frame, page: int, num_per_page: int) -> any:
 		return frame[(page - 1) * num_per_page:page * num_per_page]
 
 
@@ -276,10 +275,10 @@ class PayoutsView(OptionsView):
 				'name': key,
 				'selected': self.selected_option and self.selected_option['name'] == key,
 			})
-		frame = DataFrame(options)
+		frame = options
 		self.option_count = len(frame)
 		frame = await self.apply_pagination(frame, self.option_page, self.num_option_per_page)
-		self.displayed_option_data = frame.to_dict('records')
+		self.displayed_option_data = frame
 		return self.displayed_option_data
 
 
@@ -301,10 +300,10 @@ class PayoutsView(OptionsView):
 					'login': payout_item.score.login,
 					'nickname': payout_item.score.nickname,
 				})
-		frame = DataFrame(info_data)
+		frame = info_data
 		self.info_data_count = len(frame)
 		frame = await self.apply_pagination(frame, self.info_data_page, self.num_info_data_per_page)
-		return frame.to_dict('records')
+		return frame
 
 
 	async def button_pressed(self, player, *args, **kwargs):
@@ -406,10 +405,10 @@ class PresetsView(OptionsView):
 
 				options.append(new_option)
 
-		frame = DataFrame(options)
+		frame = options
 		self.option_count = len(frame)
 		frame = await self.apply_pagination(frame, self.option_page, self.num_option_per_page)
-		self.displayed_option_data = frame.to_dict('records')
+		self.displayed_option_data = frame
 		return self.displayed_option_data
 
 
@@ -428,10 +427,10 @@ class PresetsView(OptionsView):
 			if 'settings' in selected_preset and selected_preset['settings']:
 				for key, data in selected_preset['settings'].items():
 					info_data.append({'name': key, 'value': data})
-		frame = DataFrame(info_data)
+		frame = info_data
 		self.info_data_count = len(frame)
 		frame = await self.apply_pagination(frame, self.info_data_page, self.num_info_data_per_page)
-		return frame.to_dict('records')
+		return frame
 
 
 	async def button_pressed(self, player, *args, **kwargs):
