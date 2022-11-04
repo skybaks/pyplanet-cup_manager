@@ -42,11 +42,14 @@ class TextboxView(SingleInstanceView):
 			button['left'] = (left + (button['width'] / 2))
 			left += button['width'] + 1.5
 
+		output_options = await self.get_output_options()
+
 		context['title'] = self.title
 		context['icon_style'] = self.icon_style
 		context['icon_substyle'] = self.icon_substyle
 		context['text_body'] = await self.get_text_data()
 		context['buttons'] = buttons
+		context['output_options'] = output_options
 		context['cup_name'] = self.cup_name
 		context['cup_edition'] = self.cup_edition
 		context['payout_key'] = self.payout_key
@@ -85,6 +88,11 @@ class TextboxView(SingleInstanceView):
 	async def get_buttons(self) -> list:
 		buttons = []
 		return buttons
+
+
+	async def get_output_options(self) -> list:
+		options = []
+		return options
 
 
 	async def get_text_data(self) -> str:
@@ -154,6 +162,57 @@ class TextResultsView(TextboxView):
 			},
 		]
 		return buttons
+
+
+	async def get_output_options(self) -> list:
+		options = await super().get_output_options()
+		options.append({
+			'title': 'Name',
+			'id': 'cupname',
+			'type': 'textbox',
+			'enabled': True,
+			'value': self.cup_name,
+		})
+		options.append({
+			'title': 'Edition',
+			'id': 'cupedition',
+			'type': 'textbox',
+			'enabled': True,
+			'value': self.cup_edition,
+		})
+		options.append({
+			'title': 'Payout Key',
+			'id': 'payoutkey',
+			'type': 'textbox',
+			'enabled': True,
+			'value': self.payout_key,
+		})
+		options.append({
+			'title': 'Exclude players with zero points',
+			'id': 'excludeplayers',
+			'type': 'checkbox',
+			'enabled': True,
+			'value': self.exclude_zero_points,
+		})
+
+		if self._export_format in [ self.ExportFormat.DISCORD, self.ExportFormat.MARKDOWN ]:
+			options.append({
+				'title': 'Show excluded players as "Spec"',
+				'id': 'excludeplayers_asspec',
+				'type': 'checkbox',
+				'enabled': self.exclude_zero_points,
+				'value': self.exclude_zero_points_as_spec,
+			})
+
+		if self._export_format == self.ExportFormat.CSV:
+			options.append({
+				'title': 'Include match and map information',
+				'id': 'include_match_info',
+				'type': 'checkbox',
+				'enabled': True,
+				'value': self.include_match_info,
+			})
+		return options
 
 
 	async def get_text_data(self) -> str:
