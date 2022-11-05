@@ -18,11 +18,11 @@ class SingleInstanceView(TemplateView):
 		login = player.login if isinstance(player, Player) else player
 		if not player:
 			raise Exception('No player/login given to display to')
-		player = player if isinstance(player, Player) else await self.manager.player_manager.get_player(login=login, lock=False)
+		player = player if isinstance(player, Player) else await self.app.instance.player_manager.get_player(login=login, lock=False)
 
 		other_view = player.attributes.get(self.tag, None)
 		if other_view and isinstance(other_view, str):
-			other_manialink = self.manager.instance.ui_manager.get_manialink_by_id(other_view)
+			other_manialink = self.app.instance.ui_manager.get_manialink_by_id(other_view)
 			if isinstance(other_manialink, SingleInstanceView):
 				await other_manialink.close(player)
 		player.attributes.set(self.tag, self.id)

@@ -42,11 +42,14 @@ class TextboxView(SingleInstanceView):
 			button['left'] = (left + (button['width'] / 2))
 			left += button['width'] + 1.5
 
+		output_options = await self.get_output_options()
+
 		context['title'] = self.title
 		context['icon_style'] = self.icon_style
 		context['icon_substyle'] = self.icon_substyle
 		context['text_body'] = await self.get_text_data()
 		context['buttons'] = buttons
+		context['output_options'] = output_options
 		context['cup_name'] = self.cup_name
 		context['cup_edition'] = self.cup_edition
 		context['payout_key'] = self.payout_key
@@ -87,16 +90,29 @@ class TextboxView(SingleInstanceView):
 		return buttons
 
 
+	async def get_output_options(self) -> list:
+		options = []
+		return options
+
+
 	async def get_text_data(self) -> str:
 		return ''
 
 
+class ExportFormat(Enum):
+	DISCORD = 1
+	MARKDOWN = 2
+	CSV = 3
+
+
+class CsvExportInformation(Enum):
+	BOTH_MAP_AND_MATCH = 0
+	MATCH_ONLY = 1
+	MAP_ONLY = 2
+
+
 class TextResultsView(TextboxView):
 
-	class ExportFormat(Enum):
-		DISCORD = 1
-		MARKDOWN = 2
-		CSV = 3
 
 	title = 'Export Results'
 	icon_style = 'Icons128x128_1'
@@ -104,32 +120,24 @@ class TextResultsView(TextboxView):
 	_export_format = ExportFormat.DISCORD
 
 
-	def __init__(self, app, player, input_data: 'list[TeamPlayerScore]', match_data, show_score2=False, show_team_score=False):
+	def __init__(self, app, player, input_data: 'list[TeamPlayerScore]', match_data, show_score2: bool=False, show_team_score: bool=False, score_names: 'dict[str,str]'={}):
 		super().__init__(app, player)
 		self._instance_data = input_data
 		self._instance_match_data = match_data
 		self._show_score2 = show_score2
 		self._show_team_score = show_team_score
+		self.score_names = score_names
 		self.exclude_zero_points = True
 		self.exclude_zero_points_as_spec = True
-		self.include_match_info = True
+		self.csv_export_info = CsvExportInformation.BOTH_MAP_AND_MATCH
+		self.include_table_header = True
 
-		self.subscribe('textbox_checkbox_include_match_info', self.toggle_include_match_info)
 		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
 		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
-
-
-	async def get_context_data(self):
-		context = await super().get_context_data()
-		context.update({
-			'export_format_discord': self._export_format == self.ExportFormat.DISCORD,
-			'export_format_markdown': self._export_format == self.ExportFormat.MARKDOWN,
-			'export_format_csv': self._export_format == self.ExportFormat.CSV,
-			'exclude_zero_points': self.exclude_zero_points,
-			'exclude_zero_points_as_spec': self.exclude_zero_points_as_spec,
-			'include_match_info': self.include_match_info,
-		})
-		return context
+		self.subscribe('textbox_checkbox_include_tableheader', self.toggle_include_tableheader)
+		self.subscribe('textbox_checkbox_include_bothmatchmap', self.toggle_include_bothmatchmap)
+		self.subscribe('textbox_checkbox_include_onlymatch', self.toggle_include_onlymatch)
+		self.subscribe('textbox_checkbox_include_onlymap', self.toggle_include_onlymap)
 
 
 	async def get_buttons(self) -> list:
@@ -138,22 +146,94 @@ class TextResultsView(TextboxView):
 				'title': 'Discord',
 				'width': 20,
 				'action': self._action_set_discord,
-				'selected': self._export_format == self.ExportFormat.DISCORD,
+				'selected': self._export_format == ExportFormat.DISCORD,
 			},
 			{
 				'title': 'Markdown',
 				'width': 20,
 				'action': self._action_set_markdown,
-				'selected': self._export_format == self.ExportFormat.MARKDOWN,
+				'selected': self._export_format == ExportFormat.MARKDOWN,
 			},
 			{
 				'title': 'CSV',
 				'width': 20,
 				'action': self._action_set_csv,
-				'selected': self._export_format == self.ExportFormat.CSV,
+				'selected': self._export_format == ExportFormat.CSV,
 			},
 		]
 		return buttons
+
+
+	async def get_output_options(self) -> list:
+		options = await super().get_output_options()
+		options.append({
+			'title': 'Name',
+			'id': 'cupname',
+			'type': 'textbox',
+			'enabled': True,
+			'value': self.cup_name,
+		})
+		options.append({
+			'title': 'Edition',
+			'id': 'cupedition',
+			'type': 'textbox',
+			'enabled': True,
+			'value': self.cup_edition,
+		})
+		options.append({
+			'title': 'Payout Key',
+			'id': 'payoutkey',
+			'type': 'textbox',
+			'enabled': True,
+			'value': self.payout_key,
+		})
+		options.append({
+			'title': 'Exclude players with zero points',
+			'id': 'excludeplayers',
+			'type': 'checkbox',
+			'enabled': True,
+			'value': self.exclude_zero_points,
+		})
+
+		if self._export_format in [ ExportFormat.DISCORD, ExportFormat.MARKDOWN ]:
+			options.append({
+				'title': 'Show excluded players as "Spec"',
+				'id': 'excludeplayers_asspec',
+				'type': 'checkbox',
+				'enabled': self.exclude_zero_points,
+				'value': self.exclude_zero_points_as_spec,
+			})
+			options.append({
+				'title': 'Score table header',
+				'id': 'include_tableheader',
+				'type': 'checkbox',
+				'enabled': True,
+				'value': self.include_table_header,
+			})
+
+		if self._export_format == ExportFormat.CSV:
+			options.append({
+				'title': 'Both match and map information',
+				'id': 'include_bothmatchmap',
+				'type': 'checkbox',
+				'enabled': True,
+				'value': self.csv_export_info == CsvExportInformation.BOTH_MAP_AND_MATCH,
+			})
+			options.append({
+				'title': 'Only match information',
+				'id': 'include_onlymatch',
+				'type': 'checkbox',
+				'enabled': True,
+				'value': self.csv_export_info == CsvExportInformation.MATCH_ONLY,
+			})
+			options.append({
+				'title': 'Only map information',
+				'id': 'include_onlymap',
+				'type': 'checkbox',
+				'enabled': True,
+				'value': self.csv_export_info == CsvExportInformation.MAP_ONLY,
+			})
+		return options
 
 
 	async def get_text_data(self) -> str:
@@ -163,28 +243,67 @@ class TextResultsView(TextboxView):
 			if instance_data:
 
 				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data)	#type: list[PaymentScore]
+				payouts = []
+				if len(payout_scores) > 0:
+					payouts = [str(payout_item.payment) for payout_item in payout_scores]
+				show_payouts = len(payouts) > 0
 
-				if self._export_format in [ self.ExportFormat.MARKDOWN, self.ExportFormat.DISCORD ]:
+				if self._export_format in [ ExportFormat.MARKDOWN, ExportFormat.DISCORD ]:
 
-					placements = [str(item.placement) for item in instance_data]
-					team_scores = [str(item.team_score_str) for item in instance_data]
-					scores = [str(item.player_score_str) for item in instance_data]
-					score2s = [str(item.player_score2_str) for item in instance_data]
-					nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in instance_data]
-					countries = [str(item.country) for item in instance_data]
-					payouts = []
-					if len(payout_scores) > 0:
-						payouts = [str(payout_item.payment) for payout_item in payout_scores]
-					while len(payouts) < len(instance_data):
-						payouts.append('')
+					placements = []	# type: list[str]
+					team_scores = []	# type: list[str]
+					scores = []	# type: list[str]
+					score2s = []	# type: list[str]
+					nicknames = []	# type: list[str]
+					countries = []	# type: list[str]
+					for item in instance_data:
+						placements.append(str(item.placement))
+						team_scores.append(str(item.team_score_str))
+						scores.append(str(item.player_score_str))
+						score2s.append(str(item.player_score2_str))
+						nicknames.append(style.style_strip(item.nickname, style.STRIP_ALL))
+						countries.append(str(item.country))
 
-					index_justify = min(4, len(max(placements, key=len)))
-					team_score_justify = min(15, len(max(team_scores, key=len)))
-					score_justify = min(15, len(max(scores, key=len)))
-					score2_justify = min(15, len(max(score2s, key=len)))
-					nickname_payout_justify = min(30, len(max(nicknames[0:min(len(payout_scores), len(nicknames))], key=len))) if len(payout_scores) > 0 else 0
+					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
+						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
+						for excluded_player in excluded_players:
+							placements.append('Spec')
+							nicknames.append(style.style_strip(excluded_player.nickname, style.STRIP_ALL))
 
-					if self._export_format == self.ExportFormat.DISCORD:
+					table_data = []	# type: list[list[str]]
+					table_header = []	# type: list[dict[str,str]]
+
+					table_data.append(placements)
+					table_header.append({
+						'name': '#',
+						'title_just': 'right',
+					})
+					if self._show_team_score:
+						table_data.append(team_scores)
+						table_header.append({
+							'name': self.score_names['team_score'] if 'team_score' in self.score_names else 'Team Score',
+						})
+					if self._show_score2:
+						table_data.append(score2s)
+						table_header.append({
+							'name': self.score_names['player_score2'] if 'player_score2' in self.score_names else 'Score',
+						})
+					table_data.append(scores)
+					table_header.append({
+						'name': self.score_names['player_score'] if 'player_score' in self.score_names else 'Score',
+					})
+					table_data.append(nicknames)
+					table_header.append({
+						'name': 'Player',
+						'data_just': 'left',
+					})
+					if show_payouts:
+						table_data.append(payouts)
+						table_header.append({
+							'name': 'Payout'
+						})
+
+					if self._export_format == ExportFormat.DISCORD:
 						text += f'**{self.cup_name}** - {self.cup_edition} - {str(len(instance_data))} Players\n'
 
 						sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x.map_start_time)
@@ -217,34 +336,12 @@ class TextResultsView(TextboxView):
 						text += '\n'
 						text += 'Full results:\n'
 
-					text += "```\n"
-					for placement, nickname, team_score, score, score2, payout in zip(placements, nicknames, team_scores, scores, score2s, payouts):
-						text += str(placement.rjust(index_justify)) + '  '
-						if self._show_team_score:
-							text += str(team_score.rjust(team_score_justify)) + '  '
-						if self._show_score2:
-							text += str(score2.rjust(score2_justify)) + '  '
-						text += str(score.rjust(score_justify)) + '  '
-						text += str(nickname)
-						if payout:
-							text += str(' ' * max(nickname_payout_justify - len(nickname), 0)) + '  ' + str(payout)
-						text += '\n'
+					text += markdown.create_table(table_data, table_header, include_header=self.include_table_header)
 
-					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
-						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
-						spec_justify = index_justify + score_justify + 4
-						if self._show_team_score:
-							spec_justify += team_score_justify + 2
-						if self._show_score2:
-							spec_justify += score2_justify + 2
-						for excluded_player in excluded_players:
-							text += str('Spec'.ljust(spec_justify))
-							text += str(style.style_strip(excluded_player.nickname, style.STRIP_ALL)) + '\n'
-
-					text += "```"
-				elif self._export_format == self.ExportFormat.CSV:
+				elif self._export_format == ExportFormat.CSV:
 					csv_lines = []
-					if self.include_match_info:
+
+					if self.csv_export_info in [ CsvExportInformation.BOTH_MAP_AND_MATCH, CsvExportInformation.MAP_ONLY ]:
 						sorted_match_info_list = sorted(self._instance_match_data, key=lambda x: x.map_start_time)
 						for match_info in sorted_match_info_list:
 							csv_match = [
@@ -255,24 +352,25 @@ class TextResultsView(TextboxView):
 								str(match_info.mx_id),
 							]
 							csv_lines.append(','.join([f'"{x}"' for x in csv_match]))
-					for item in instance_data:
-						csv_item = []
-						csv_item.append(str(item.placement))
-						if self._show_team_score:
-							csv_item.append(str(item.team_score_str))
-						csv_item.append(str(item.player_score_str))
-						if self._show_score2:
-							csv_item.append(str(item.player_score2_str))
-						csv_item.append(style.style_strip(item.nickname, style.STRIP_ALL))
-						csv_item.append(str(item.login))
-						csv_item.append(str(item.country))
-						if len(payout_scores) > 0:
-							payout_item = next((pay_item for pay_item in payout_scores if pay_item.score.login == item.login), None)
-							if payout_item:
-								csv_item.append(str(payout_item[1]))
-							else:
-								csv_item.append("0")
-						csv_lines.append(','.join([f'"{x}"' for x in csv_item]))
+
+					if self.csv_export_info in [ CsvExportInformation.BOTH_MAP_AND_MATCH, CsvExportInformation.MATCH_ONLY ]:
+						filled_payouts = list(payouts)
+						if len(filled_payouts) < len(instance_data):
+							filled_payouts += [ "0" ] * (len(instance_data) - len(filled_payouts))
+						for item, payout in zip(instance_data, filled_payouts):
+							csv_item = []
+							csv_item.append(str(item.placement))
+							if self._show_team_score:
+								csv_item.append(str(item.team_score_str))
+							csv_item.append(str(item.player_score_str))
+							if self._show_score2:
+								csv_item.append(str(item.player_score2_str))
+							csv_item.append(style.style_strip(item.nickname, style.STRIP_ALL))
+							csv_item.append(str(item.login))
+							csv_item.append(str(item.country))
+							if show_payouts:
+								csv_item.append(payout)
+							csv_lines.append(','.join([f'"{x}"' for x in csv_item]))
 					text = '\n'.join(csv_lines)
 				else:
 					text = f"Export format not implemented: {str(self._export_format)}"
@@ -281,20 +379,20 @@ class TextResultsView(TextboxView):
 
 
 	async def _action_set_markdown(self, player, *args, **kwargs):
-		if self._export_format != self.ExportFormat.MARKDOWN:
-			self._export_format = self.ExportFormat.MARKDOWN
+		if self._export_format != ExportFormat.MARKDOWN:
+			self._export_format = ExportFormat.MARKDOWN
 			await self.refresh(player=player)
 
 
 	async def _action_set_csv(self, player, *args, **kwargs):
-		if self._export_format != self.ExportFormat.CSV:
-			self._export_format = self.ExportFormat.CSV
+		if self._export_format != ExportFormat.CSV:
+			self._export_format = ExportFormat.CSV
 			await self.refresh(player=player)
 
 
 	async def _action_set_discord(self, player, *args, **kwargs):
-		if self._export_format != self.ExportFormat.DISCORD:
-			self._export_format = self.ExportFormat.DISCORD
+		if self._export_format != ExportFormat.DISCORD:
+			self._export_format = ExportFormat.DISCORD
 			await self.refresh(player=player)
 
 
@@ -308,6 +406,24 @@ class TextResultsView(TextboxView):
 		await self.refresh(player=player)
 
 
-	async def toggle_include_match_info(self, player, *args, **kwargs):
-		self.include_match_info = not self.include_match_info
+	async def toggle_include_tableheader(self, player, *args, **kwargs):
+		self.include_table_header = not self.include_table_header
 		await self.refresh(player=player)
+
+
+	async def toggle_include_bothmatchmap(self, player, *args, **kwargs):
+		if self.csv_export_info != CsvExportInformation.BOTH_MAP_AND_MATCH:
+			self.csv_export_info = CsvExportInformation.BOTH_MAP_AND_MATCH
+			await self.refresh(player=player)
+
+
+	async def toggle_include_onlymatch(self, player, *args, **kwargs):
+		if self.csv_export_info != CsvExportInformation.MATCH_ONLY:
+			self.csv_export_info = CsvExportInformation.MATCH_ONLY
+			await self.refresh(player=player)
+
+
+	async def toggle_include_onlymap(self, player, *args, **kwargs):
+		if self.csv_export_info != CsvExportInformation.MAP_ONLY:
+			self.csv_export_info = CsvExportInformation.MAP_ONLY
+			await self.refresh(player=player)
