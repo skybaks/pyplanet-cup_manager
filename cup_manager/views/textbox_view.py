@@ -129,9 +129,11 @@ class TextResultsView(TextboxView):
 		self.exclude_zero_points = True
 		self.exclude_zero_points_as_spec = True
 		self.csv_export_info = CsvExportInformation.BOTH_MAP_AND_MATCH
+		self.include_table_header = False
 
 		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
 		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
+		self.subscribe('textbox_checkbox_include_tableheader', self.toggle_include_tableheader)
 		self.subscribe('textbox_checkbox_include_bothmatchmap', self.toggle_include_bothmatchmap)
 		self.subscribe('textbox_checkbox_include_onlymatch', self.toggle_include_onlymatch)
 		self.subscribe('textbox_checkbox_include_onlymap', self.toggle_include_onlymap)
@@ -205,7 +207,7 @@ class TextResultsView(TextboxView):
 				'id': 'include_tableheader',
 				'type': 'checkbox',
 				'enabled': True,
-				'value': False,
+				'value': self.include_table_header,
 			})
 
 		if self._export_format == ExportFormat.CSV:
@@ -240,26 +242,64 @@ class TextResultsView(TextboxView):
 			if instance_data:
 
 				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data)	#type: list[PaymentScore]
+				payouts = []
+				if len(payout_scores) > 0:
+					payouts = [str(payout_item.payment) for payout_item in payout_scores]
+				show_payouts = len(payouts) > 0
 
 				if self._export_format in [ ExportFormat.MARKDOWN, ExportFormat.DISCORD ]:
 
-					placements = [str(item.placement) for item in instance_data]
-					team_scores = [str(item.team_score_str) for item in instance_data]
-					scores = [str(item.player_score_str) for item in instance_data]
-					score2s = [str(item.player_score2_str) for item in instance_data]
-					nicknames = [style.style_strip(item.nickname, style.STRIP_ALL) for item in instance_data]
-					countries = [str(item.country) for item in instance_data]
-					payouts = []
-					if len(payout_scores) > 0:
-						payouts = [str(payout_item.payment) for payout_item in payout_scores]
-					while len(payouts) < len(instance_data):
-						payouts.append('')
+					placements = []	# type: list[str]
+					team_scores = []	# type: list[str]
+					scores = []	# type: list[str]
+					score2s = []	# type: list[str]
+					nicknames = []	# type: list[str]
+					countries = []	# type: list[str]
+					for item in instance_data:
+						placements.append(str(item.placement))
+						team_scores.append(str(item.team_score_str))
+						scores.append(str(item.player_score_str))
+						score2s.append(str(item.player_score2_str))
+						nicknames.append(style.style_strip(item.nickname, style.STRIP_ALL))
+						countries.append(str(item.country))
 
-					index_justify = min(4, len(max(placements, key=len)))
-					team_score_justify = min(15, len(max(team_scores, key=len)))
-					score_justify = min(15, len(max(scores, key=len)))
-					score2_justify = min(15, len(max(score2s, key=len)))
-					nickname_payout_justify = min(30, len(max(nicknames[0:min(len(payout_scores), len(nicknames))], key=len))) if len(payout_scores) > 0 else 0
+					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
+						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
+						for excluded_player in excluded_players:
+							placements.append('Spec')
+							nicknames.append(style.style_strip(excluded_player.nickname, style.STRIP_ALL))
+
+					table_data = []	# type: list[list[str]]
+					table_header = []	# type: list[dict[str,str]]
+
+					table_data.append(placements)
+					table_header.append({
+						'name': 'Place',
+					})
+					if self._show_team_score:
+						table_data.append(team_scores)
+						table_header.append({
+							'name': 'Team Score',
+						})
+					if self._show_score2:
+						table_data.append(score2s)
+						table_header.append({
+							'name': 'Score 2',
+						})
+					table_data.append(scores)
+					table_header.append({
+						'name': 'Score',
+					})
+					table_data.append(nicknames)
+					table_header.append({
+						'name': 'Player',
+						'data_just': 'left',
+					})
+					if show_payouts:
+						table_data.append(payouts)
+						table_header.append({
+							'name': 'Payout'
+						})
 
 					if self._export_format == ExportFormat.DISCORD:
 						text += f'**{self.cup_name}** - {self.cup_edition} - {str(len(instance_data))} Players\n'
@@ -294,31 +334,8 @@ class TextResultsView(TextboxView):
 						text += '\n'
 						text += 'Full results:\n'
 
-					text += "```\n"
-					for placement, nickname, team_score, score, score2, payout in zip(placements, nicknames, team_scores, scores, score2s, payouts):
-						text += str(placement.rjust(index_justify)) + '  '
-						if self._show_team_score:
-							text += str(team_score.rjust(team_score_justify)) + '  '
-						if self._show_score2:
-							text += str(score2.rjust(score2_justify)) + '  '
-						text += str(score.rjust(score_justify)) + '  '
-						text += str(nickname)
-						if payout:
-							text += str(' ' * max(nickname_payout_justify - len(nickname), 0)) + '  ' + str(payout)
-						text += '\n'
+					text += markdown.create_table(table_data, table_header, include_header=self.include_table_header)
 
-					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
-						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
-						spec_justify = index_justify + score_justify + 4
-						if self._show_team_score:
-							spec_justify += team_score_justify + 2
-						if self._show_score2:
-							spec_justify += score2_justify + 2
-						for excluded_player in excluded_players:
-							text += str('Spec'.ljust(spec_justify))
-							text += str(style.style_strip(excluded_player.nickname, style.STRIP_ALL)) + '\n'
-
-					text += "```"
 				elif self._export_format == ExportFormat.CSV:
 					csv_lines = []
 
@@ -335,7 +352,10 @@ class TextResultsView(TextboxView):
 							csv_lines.append(','.join([f'"{x}"' for x in csv_match]))
 
 					if self.csv_export_info in [ CsvExportInformation.BOTH_MAP_AND_MATCH, CsvExportInformation.MATCH_ONLY ]:
-						for item in instance_data:
+						filled_payouts = list(payouts)
+						if len(filled_payouts) < len(instance_data):
+							filled_payouts += [ "0" ] * (len(instance_data) - len(filled_payouts))
+						for item, payout in zip(instance_data, filled_payouts):
 							csv_item = []
 							csv_item.append(str(item.placement))
 							if self._show_team_score:
@@ -346,12 +366,8 @@ class TextResultsView(TextboxView):
 							csv_item.append(style.style_strip(item.nickname, style.STRIP_ALL))
 							csv_item.append(str(item.login))
 							csv_item.append(str(item.country))
-							if len(payout_scores) > 0:
-								payout_item = next((pay_item for pay_item in payout_scores if pay_item.score.login == item.login), None)
-								if payout_item:
-									csv_item.append(str(payout_item[1]))
-								else:
-									csv_item.append("0")
+							if show_payouts:
+								csv_item.append(payout)
 							csv_lines.append(','.join([f'"{x}"' for x in csv_item]))
 					text = '\n'.join(csv_lines)
 				else:
@@ -385,6 +401,11 @@ class TextResultsView(TextboxView):
 
 	async def toggle_excludeplayers_as_spec(self, player, *args, **kwargs):
 		self.exclude_zero_points_as_spec = not self.exclude_zero_points_as_spec
+		await self.refresh(player=player)
+
+
+	async def toggle_include_tableheader(self, player, *args, **kwargs):
+		self.include_table_header = not self.include_table_header
 		await self.refresh(player=player)
 
 
