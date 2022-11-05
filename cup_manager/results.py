@@ -319,8 +319,9 @@ class ResultsCupManager:
 				player,
 				scores_data,
 				match_info,
-				TeamPlayerScore.score2_relevant(view.scores_sorting),
-				TeamPlayerScore.score_team_relevant(view.scores_sorting)
+				show_score2=TeamPlayerScore.score2_relevant(view.scores_sorting),
+				show_team_score=TeamPlayerScore.score_team_relevant(view.scores_sorting),
+				score_names=TeamPlayerScore.get_score_names(view.scores_sorting)
 			)
 
 			if hasattr(view, 'cup_start_time'):

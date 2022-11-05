@@ -224,6 +224,35 @@ class TeamPlayerScore:
 		]
 
 
+	@staticmethod
+	def get_score_names(sorting: ScoreSortingPresets) -> 'dict[str,str]':
+		score_names = {
+			'team_score': 'Team Score',
+			'player_score': 'Score',
+			'player_score2': 'Score',
+		}
+		if sorting == ScoreSortingPresets.TIMEATTACK:
+			score_names.update({
+				#'team_score': 'Team Score',
+				'player_score': 'Finish Time',
+				#'player_score2': 'Score',
+			})
+		elif sorting == ScoreSortingPresets.LAPS:
+			score_names.update({
+				#'team_score': 'Team Score',
+				'player_score': 'Finish Time',
+				'player_score2': 'Laps',
+			})
+		elif sorting == ScoreSortingPresets.ROUNDS:
+			score_names.update({
+				#'team_score': 'Team Score',
+				'player_score': 'Points',
+				#'player_score2': 'Score',
+			})
+
+		return score_names
+
+
 class PaymentScore:
 	score = None
 	payment = 0

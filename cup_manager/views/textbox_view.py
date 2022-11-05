@@ -120,16 +120,17 @@ class TextResultsView(TextboxView):
 	_export_format = ExportFormat.DISCORD
 
 
-	def __init__(self, app, player, input_data: 'list[TeamPlayerScore]', match_data, show_score2=False, show_team_score=False):
+	def __init__(self, app, player, input_data: 'list[TeamPlayerScore]', match_data, show_score2: bool=False, show_team_score: bool=False, score_names: 'dict[str,str]'={}):
 		super().__init__(app, player)
 		self._instance_data = input_data
 		self._instance_match_data = match_data
 		self._show_score2 = show_score2
 		self._show_team_score = show_team_score
+		self.score_names = score_names
 		self.exclude_zero_points = True
 		self.exclude_zero_points_as_spec = True
 		self.csv_export_info = CsvExportInformation.BOTH_MAP_AND_MATCH
-		self.include_table_header = False
+		self.include_table_header = True
 
 		self.subscribe('textbox_checkbox_excludeplayers', self.toggle_excludeplayers)
 		self.subscribe('textbox_checkbox_excludeplayers_asspec', self.toggle_excludeplayers_as_spec)
@@ -274,21 +275,22 @@ class TextResultsView(TextboxView):
 
 					table_data.append(placements)
 					table_header.append({
-						'name': 'Place',
+						'name': '#',
+						'title_just': 'right',
 					})
 					if self._show_team_score:
 						table_data.append(team_scores)
 						table_header.append({
-							'name': 'Team Score',
+							'name': self.score_names['team_score'] if 'team_score' in self.score_names else 'Team Score',
 						})
 					if self._show_score2:
 						table_data.append(score2s)
 						table_header.append({
-							'name': 'Score 2',
+							'name': self.score_names['player_score2'] if 'player_score2' in self.score_names else 'Score',
 						})
 					table_data.append(scores)
 					table_header.append({
-						'name': 'Score',
+						'name': self.score_names['player_score'] if 'player_score' in self.score_names else 'Score',
 					})
 					table_data.append(nicknames)
 					table_header.append({
