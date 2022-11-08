@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 
 from ..app_types import TeamPlayerScore
 
+from pyplanet.utils import times
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,6 +16,11 @@ class ScoreNames:
 
 
 class ScoreModeBase(ABC):
+	"""
+	Score sorting abstract base class, provides no sorting functionality.
+	Sorting: None
+	"""
+
 	name = 'score_mode_base'
 	score1_is_time = False
 	score2_is_time = False
@@ -96,11 +103,11 @@ class ScoreModeBase(ABC):
 		diff_items = []	# type: list[str]
 		if self.use_scoreteam:
 			teamscore_diff = abs(other.team_score - score.team_score)
-			diff_items.append(f"{str(teamscore_diff)} {self.score_names.scoreteam_name}")
+			diff_items.append(times.format_time(teamscore_diff) if score.team_score_is_time else str(teamscore_diff))
 		if self.use_score2:
 			score2_diff = abs(other.player_score2 - score.player_score2)
-			diff_items.append(f"{str(score2_diff)} {self.score_names.score2_name}")
+			diff_items.append(times.format_time(score2_diff) if score.player_score2_is_time else str(score2_diff))
 		if self.use_score1:
 			score1_diff = abs(other.player_score - score.player_score)
-			diff_items.append(f"{str(score1_diff)} {self.score_names.score1_name}")
+			diff_items.append(times.format_time(score1_diff) if score.player_score_is_time else str(score1_diff))
 		return ', '.join(diff_items)

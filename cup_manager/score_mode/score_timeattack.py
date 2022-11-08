@@ -6,24 +6,23 @@ from .score_mode_base import ScoreModeBase
 logger = logging.getLogger(__name__)
 
 
-class ScoreRoundsDefault(ScoreModeBase):
+class ScoreTimeAttackDefault(ScoreModeBase):
 	"""
-	Score sorting for Rounds mode.
-	Sorting: Points descending
+	Score sorting for TimeAttack mode.
+	Sorting: Maps played descending, Summed finish time ascending
 	"""
 
-	name = 'rounds_default'
-	score1_is_time = False
+	name = 'timeattack_default'
+	score1_is_time = True
 	score2_is_time = False
 	scoreteam_is_time = False
 	use_score1 = True
 	use_score2 = False
 	use_scoreteam = False
 
-
 	def __init__(self) -> None:
 		super().__init__()
-		self.score_names.score1_name = 'Points'
+		self.score_names.score1_name = 'Time'
 
 
 	def combine_scores(self, scores: 'list[TeamPlayerScore]', new_scores: 'list[TeamPlayerScore]', **kwargs) -> 'list[TeamPlayerScore]':
@@ -39,13 +38,14 @@ class ScoreRoundsDefault(ScoreModeBase):
 
 
 	def sort_scores(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
-		return sorted(scores, key=lambda x: (-x.player_score))
+		return sorted(scores, key=lambda x: (-x.count, x.player_score))
 
 
 	def update_placements(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
-		for i in range(0, len(scores)):
+		for i in range(len(scores)):
 			if i > 0:
-				if scores[i-1].player_score == scores[i].player_score:
+				if scores[i-1].count == scores[i].count \
+					and scores[i-1].player_score == scores[i].player_score:
 					scores[i].placement = scores[i-1].placement
 				else:
 					scores[i].placement = i+1

@@ -161,7 +161,7 @@ class ScoreRoundsDefaultTest(unittest.TestCase):
 		score1 = TeamPlayerScore('p01', 'player 01', 'France', -1, '', 0, 121, 0)
 		score2 = TeamPlayerScore('p02', 'player 02', 'France', -1, '', 0, 150, 0)
 		diff_str = sorting.diff_scores_str(score1, score2)
-		self.assertEqual('29 Points', diff_str)
+		self.assertEqual('29', diff_str)
 
 
 if __name__ == '__main__':
