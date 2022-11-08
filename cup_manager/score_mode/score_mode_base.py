@@ -22,18 +22,15 @@ class ScoreModeBase(ABC):
 	Sorting: None
 	"""
 
-	name = 'score_mode_base'
-	score1_is_time = False
-	score2_is_time = False
-	scoreteam_is_time = False
-	use_score1 = False
-	use_score2 = False
-	use_scoreteam = False
-	score_names = ScoreNames(score1_name='Score', score2_name='Score', scoreteam_name='Team Score')
-
-
 	def __init__(self) -> None:
-		pass
+		self.name = 'score_mode_base'
+		self.score1_is_time = False
+		self.score2_is_time = False
+		self.scoreteam_is_time = False
+		self.use_score1 = False
+		self.use_score2 = False
+		self.use_scoreteam = False
+		self.score_names = ScoreNames(score1_name='Score', score2_name='Score', scoreteam_name='Team Score')
 
 
 	@abstractmethod

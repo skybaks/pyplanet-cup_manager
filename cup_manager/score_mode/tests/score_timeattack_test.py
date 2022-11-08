@@ -119,7 +119,6 @@ class ScoreTimeAttackDefaultTest(unittest.TestCase):
 		results = sorting.update_score_is_time([score])
 		result_str = sorting.relevant_score_str(results[0])
 		self.assertEqual('0:49.502', result_str)
-		results = sorting.update_score_is_time([score])
 		result_str = sorting.relevant_score_str(results[0], '$fff')
 		self.assertEqual('$<$fff0:49.502$>', result_str)
 

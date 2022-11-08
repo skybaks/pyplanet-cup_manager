@@ -13,17 +13,15 @@ class ScoreRoundsDefault(ScoreModeBase):
 	Sorting: Points descending
 	"""
 
-	name = 'rounds_default'
-	score1_is_time = False
-	score2_is_time = False
-	scoreteam_is_time = False
-	use_score1 = True
-	use_score2 = False
-	use_scoreteam = False
-
-
 	def __init__(self) -> None:
 		super().__init__()
+		self.name = 'rounds_default'
+		self.score1_is_time = False
+		self.score2_is_time = False
+		self.scoreteam_is_time = False
+		self.use_score1 = True
+		self.use_score2 = False
+		self.use_scoreteam = False
 		self.score_names.score1_name = 'Points'
 
 
@@ -33,10 +31,8 @@ class ScoreRoundsDefault(ScoreModeBase):
 			for map_score in map_scores:
 				existing_score = next((x for x in combined_scores if x.login == map_score.login), None)
 				if existing_score:
-					existing_score.count += 1
 					existing_score.player_score += map_score.player_score
 				else:
-					map_score.count = 1
 					combined_scores.append(map_score)
 		return combined_scores
 
