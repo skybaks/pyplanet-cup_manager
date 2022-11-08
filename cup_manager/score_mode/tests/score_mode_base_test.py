@@ -2,6 +2,7 @@ import unittest
 from copy import deepcopy
 
 from ...app_types import TeamPlayerScore
+from ...models import MatchInfo
 from ..score_mode_base import ScoreModeBase
 
 
@@ -32,14 +33,14 @@ def create_results2() -> 'list[TeamPlayerScore]':
 
 
 class ScoreModeBaseImpl(ScoreModeBase):
-	def combine_scores(self, scores: 'list[TeamPlayerScore]', *addl_scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
-		return scores
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]'=None, **kwargs) -> 'list[TeamPlayerScore]':
+		return []
 
 	def sort_scores(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
-		return scores
+		return []
 
 	def update_placements(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
-		return scores
+		return []
 
 
 class ScoreModeBaseTest(unittest.TestCase):
@@ -50,7 +51,7 @@ class ScoreModeBaseTest(unittest.TestCase):
 		results_copy = deepcopy(results)
 		sorting = ScoreModeBaseImpl()
 		results = sorting.sort_scores(results)
-		self.assertEqual(results, results_copy)
+		self.assertNotEqual(results, results_copy)
 
 
 	def test_combine_scores(self):
@@ -58,8 +59,8 @@ class ScoreModeBaseTest(unittest.TestCase):
 		results2 = create_results2()
 		results_copy = deepcopy(results)
 		sorting = ScoreModeBaseImpl()
-		results = sorting.combine_scores(results, results2)
-		self.assertEqual(results, results_copy)
+		results = sorting.combine_scores([results, results2])
+		self.assertNotEqual(results, results_copy)
 
 
 	def test_update_placements(self):
@@ -67,7 +68,7 @@ class ScoreModeBaseTest(unittest.TestCase):
 		results_copy = deepcopy(results)
 		sorting = ScoreModeBaseImpl()
 		results = sorting.update_placements(results)
-		self.assertEqual(results, results_copy)
+		self.assertNotEqual(results, results_copy)
 
 
 	def test_get_ties(self):

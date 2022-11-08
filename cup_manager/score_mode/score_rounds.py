@@ -1,6 +1,7 @@
 import logging
 
 from ..app_types import TeamPlayerScore
+from ..models import MatchInfo
 from .score_mode_base import ScoreModeBase
 
 logger = logging.getLogger(__name__)
@@ -26,16 +27,18 @@ class ScoreRoundsDefault(ScoreModeBase):
 		self.score_names.score1_name = 'Points'
 
 
-	def combine_scores(self, scores: 'list[TeamPlayerScore]', new_scores: 'list[TeamPlayerScore]', **kwargs) -> 'list[TeamPlayerScore]':
-		for new_score in new_scores:
-			for existing_score in scores:
-				if existing_score.login == new_score.login:
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]'=None, **kwargs) -> 'list[TeamPlayerScore]':
+		combined_scores = []	# type: list[TeamPlayerScore]
+		for map_scores in scores:
+			for map_score in map_scores:
+				existing_score = next((x for x in combined_scores if x.login == map_score.login), None)
+				if existing_score:
 					existing_score.count += 1
-					existing_score.player_score += new_score.player_score
-					break
-			else:
-				scores.append(new_score)
-		return scores
+					existing_score.player_score += map_score.player_score
+				else:
+					map_score.count = 1
+					combined_scores.append(map_score)
+		return combined_scores
 
 
 	def sort_scores(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':

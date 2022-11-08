@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from ..app_types import TeamPlayerScore
+from ..models import MatchInfo
 
 from pyplanet.utils import times
 
@@ -36,7 +37,7 @@ class ScoreModeBase(ABC):
 
 
 	@abstractmethod
-	def combine_scores(self, scores: 'list[TeamPlayerScore]', new_scores: 'list[TeamPlayerScore]', **kwargs) -> 'list[TeamPlayerScore]':
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]'=None, **kwargs) -> 'list[TeamPlayerScore]':
 		pass
 
 

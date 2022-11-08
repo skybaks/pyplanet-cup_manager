@@ -29,7 +29,7 @@ class ScoreTimeAttackDefaultTest(unittest.TestCase):
 		results = create_results_ta1()
 		results_copy = deepcopy(results)
 		sorting = ScoreTimeAttackDefault()
-		results = sorting.combine_scores(results, create_results_ta2())
+		results = sorting.combine_scores([results, create_results_ta2()])
 		self.assertNotEqual(results, results_copy)
 		self.assertEqual(6, len(results))
 
@@ -37,7 +37,7 @@ class ScoreTimeAttackDefaultTest(unittest.TestCase):
 	def test_sort_scores(self):
 		results = create_results_ta1()
 		sorting = ScoreTimeAttackDefault()
-		results = sorting.combine_scores(results, create_results_ta2())
+		results = sorting.combine_scores([results, create_results_ta2()])
 		results_copy = deepcopy(results)
 		results = sorting.sort_scores(results)
 		self.assertNotEqual(results, results_copy)
@@ -59,7 +59,7 @@ class ScoreTimeAttackDefaultTest(unittest.TestCase):
 	def test_update_placement(self):
 		results = create_results_ta1()
 		sorting = ScoreTimeAttackDefault()
-		results = sorting.combine_scores(results, create_results_ta2())
+		results = sorting.combine_scores([results, create_results_ta2()])
 		results = sorting.sort_scores(results)
 		results_copy = deepcopy(results)
 		results = sorting.update_placements(results)
@@ -75,7 +75,7 @@ class ScoreTimeAttackDefaultTest(unittest.TestCase):
 
 	def test_get_ties(self):
 		sorting = ScoreTimeAttackDefault()
-		results = sorting.combine_scores(create_results_ta1(), create_results_ta2())
+		results = sorting.combine_scores([create_results_ta1(), create_results_ta2()])
 		results = sorting.sort_scores(results)
 		results = sorting.update_placements(results)
 		ties = sorting.get_ties(results)
