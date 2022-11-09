@@ -109,3 +109,55 @@ class ScoreModeBase(ABC):
 			score1_diff = abs(other.player_score - score.player_score)
 			diff_items.append(times.format_time(score1_diff) if score.player_score_is_time else str(score1_diff))
 		return ', '.join(diff_items)
+
+
+class ScoreModeFallback(ScoreModeBase):
+	"""
+	Score sorting mode for general use.
+	Sorting: Team score descending, Score descending
+	"""
+
+	def __init__(self) -> None:
+		super().__init__()
+		self.name = 'score_mode_fallback'
+		self.score1_is_time = False
+		self.score2_is_time = False
+		self.scoreteam_is_time = False
+		self.use_score1 = True
+		self.use_score2 = False
+		self.use_scoreteam = True
+		self.score_names.score1_name = 'Points'
+		self.score_names.scoreteam_name = 'Points'
+
+
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]' = None, **kwargs) -> 'list[TeamPlayerScore]':
+		combined_scores = []	# type: list[TeamPlayerScore]
+		for map_scores in scores:
+			for map_score in map_scores:
+				existing_score = next((x for x in combined_scores if x.login == map_score.login), None)
+				if existing_score:
+					existing_score.team_score += map_score.team_score
+					existing_score.player_score += map_score.player_score
+				else:
+					combined_scores.append(map_score)
+
+		# Hide team scores if there are no team points
+		self.use_scoreteam = any(s.team_score > 0 for s in combined_scores)
+		return combined_scores
+
+
+	def sort_scores(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
+		return sorted(scores, key=lambda x: (-x.team_score, -x.player_score))
+
+
+	def update_placements(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':
+		for i in range(0, len(scores)):
+			if i > 0:
+				if scores[i-1].team_score == scores[i].team_score \
+					and scores[i-1].player_score == scores[i].player_score:
+					scores[i].placement = scores[i-1].placement
+				else:
+					scores[i].placement = i+1
+			else:
+				scores[i].placement = i+1
+		return scores

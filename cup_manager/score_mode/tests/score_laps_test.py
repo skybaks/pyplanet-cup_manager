@@ -32,6 +32,21 @@ class ScoreLapsDefaultTest(unittest.TestCase):
 		results = sorting.combine_scores([results, create_results_laps2()])
 		self.assertNotEqual(results, results_copy)
 		self.assertEqual(5, len(results))
+		self.assertEqual('p01', results[0].login)
+		self.assertEqual('p02', results[1].login)
+		self.assertEqual('p03', results[2].login)
+		self.assertEqual('p04', results[3].login)
+		self.assertEqual('p05', results[4].login)
+		self.assertEqual(120+90, results[0].player_score2)
+		self.assertEqual(120+90, results[1].player_score2)
+		self.assertEqual(120+90, results[2].player_score2)
+		self.assertEqual(32+65, results[3].player_score2)
+		self.assertEqual(70+0, results[4].player_score2)
+		self.assertEqual(76647+96675, results[0].player_score)
+		self.assertEqual(82749+96675, results[1].player_score)
+		self.assertEqual(79546+92482, results[2].player_score)
+		self.assertEqual(29648+81693, results[3].player_score)
+		self.assertEqual(59497+0, results[4].player_score)
 
 
 	def test_sort_scores(self):
