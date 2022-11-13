@@ -8,6 +8,8 @@ from pyplanet.utils import style
 
 from ..utils import country_codes, markdown
 from ..app_types import TeamPlayerScore, PaymentScore
+from ..score_mode import ScoreModeBase
+from ..models import MatchInfo
 from .single_instance_view import SingleInstanceView
 
 logger = logging.getLogger(__name__)
@@ -120,13 +122,11 @@ class TextResultsView(TextboxView):
 	_export_format = ExportFormat.DISCORD
 
 
-	def __init__(self, app, player, input_data: 'list[TeamPlayerScore]', match_data, show_score2: bool=False, show_team_score: bool=False, score_names: 'dict[str,str]'={}):
+	def __init__(self, app, player, input_data: 'list[TeamPlayerScore]', match_data: 'list[MatchInfo]', score_sorting: ScoreModeBase):
 		super().__init__(app, player)
 		self._instance_data = input_data
 		self._instance_match_data = match_data
-		self._show_score2 = show_score2
-		self._show_team_score = show_team_score
-		self.score_names = score_names
+		self.score_sorting = score_sorting
 		self.exclude_zero_points = True
 		self.exclude_zero_points_as_spec = True
 		self.csv_export_info = CsvExportInformation.BOTH_MAP_AND_MATCH
@@ -242,7 +242,7 @@ class TextResultsView(TextboxView):
 			instance_data = [item for item in self._instance_data if item.team_score > 0 or item.player_score > 0 or item.player_score2 > 0] if self.exclude_zero_points else self._instance_data
 			if instance_data:
 
-				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data)	#type: list[PaymentScore]
+				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data, self.score_sorting)	#type: list[PaymentScore]
 				payouts = []
 				if len(payout_scores) > 0:
 					payouts = [str(payout_item.payment) for payout_item in payout_scores]
@@ -278,30 +278,20 @@ class TextResultsView(TextboxView):
 						'name': '#',
 						'title_just': 'right',
 					})
-					if self._show_team_score:
+					score_names = self.score_sorting.get_score_names()
+					if self.score_sorting.scoreteam_relevant():
 						table_data.append(team_scores)
-						table_header.append({
-							'name': self.score_names['team_score'] if 'team_score' in self.score_names else 'Team Score',
-						})
-					if self._show_score2:
+						table_header.append({'name': score_names.scoreteam_name})
+					if self.score_sorting.score2_relevant():
 						table_data.append(score2s)
-						table_header.append({
-							'name': self.score_names['player_score2'] if 'player_score2' in self.score_names else 'Score',
-						})
+						table_header.append({'name': score_names.score2_name})
 					table_data.append(scores)
-					table_header.append({
-						'name': self.score_names['player_score'] if 'player_score' in self.score_names else 'Score',
-					})
+					table_header.append({'name': score_names.score1_name})
 					table_data.append(nicknames)
-					table_header.append({
-						'name': 'Player',
-						'data_just': 'left',
-					})
+					table_header.append({'name': 'Player', 'data_just': 'left'})
 					if show_payouts:
 						table_data.append(payouts)
-						table_header.append({
-							'name': 'Payout'
-						})
+						table_header.append({'name': 'Payout'})
 
 					if self._export_format == ExportFormat.DISCORD:
 						text += f'**{self.cup_name}** - {self.cup_edition} - {str(len(instance_data))} Players\n'
@@ -360,10 +350,10 @@ class TextResultsView(TextboxView):
 						for item, payout in zip(instance_data, filled_payouts):
 							csv_item = []
 							csv_item.append(str(item.placement))
-							if self._show_team_score:
+							if self.score_sorting.scoreteam_relevant():
 								csv_item.append(str(item.team_score_str))
 							csv_item.append(str(item.player_score_str))
-							if self._show_score2:
+							if self.score_sorting.score2_relevant():
 								csv_item.append(str(item.player_score2_str))
 							csv_item.append(style.style_strip(item.nickname, style.STRIP_ALL))
 							csv_item.append(str(item.login))

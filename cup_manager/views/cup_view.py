@@ -4,7 +4,6 @@ from datetime import datetime
 from pyplanet.views.generics.list import ManualListView
 
 from ..models import CupInfo, MatchInfo
-from ..app_types import ScoreSortingPresets
 
 logger = logging.getLogger(__name__)
 

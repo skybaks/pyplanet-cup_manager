@@ -7,6 +7,7 @@ from pyplanet.views.generics import ask_confirmation
 
 from .single_instance_view import SingleInstanceView
 from ..app_types import PaymentScore, TeamPlayerScore
+from ..score_mode import ScoreModeBase
 
 logger = logging.getLogger(__name__)
 
@@ -211,9 +212,10 @@ class PayoutsView(OptionsView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Coppers'
 
-	def __init__(self, app, score_data: 'list[TeamPlayerScore]') -> None:
+	def __init__(self, app, score_data: 'list[TeamPlayerScore]', score_sorting: ScoreModeBase) -> None:
 		super().__init__(app, 'cup_manager.views.payouts_view_displayed')
 		self.score_data = score_data
+		self.score_sorting = score_sorting
 		self.apply_option_button_name = 'Pay'
 
 
@@ -292,7 +294,7 @@ class PayoutsView(OptionsView):
 	async def get_info_data(self) -> 'list[dict]':
 		info_data = []
 		if self.selected_option and 'name' in self.selected_option:
-			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[PaymentScore]
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data, self.score_sorting)	# type: list[PaymentScore]
 			for payout_item in payout_score:
 				info_data.append({
 					'place': payout_item.score.placement,
@@ -308,7 +310,7 @@ class PayoutsView(OptionsView):
 
 	async def button_pressed(self, player, *args, **kwargs):
 		if self.selected_option and 'name' in self.selected_option:
-			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[PaymentScore]
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data, self.score_sorting)	# type: list[PaymentScore]
 			total_planets = sum([x.payment for x in payout_score])
 		cancel = bool(await ask_confirmation(
 			player=player,

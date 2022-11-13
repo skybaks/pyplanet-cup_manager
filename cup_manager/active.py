@@ -11,9 +11,10 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
 from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView
-from .app_types import ScoreSortingPresets, TeamPlayerScore
+from .app_types import TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 from .utils import placements
+from .score_mode import get_sorting_from_mode, ScoreModeBase
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class ActiveCupManager:
 		self.context = app.context
 		self.cup_active = False
 		self.match_start_times = []
-		self.score_sorting = ScoreSortingPresets.UNDEFINED
+		self.score_sorting = None	# type: ScoreModeBase
 		self.cached_scores_lock = asyncio.Lock()
 		self.cached_scores = []
 		self.cup_key_name = ''
@@ -134,12 +135,12 @@ class ActiveCupManager:
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
 		if await self._current_match_in_cup():
 			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
-			score_ties = TeamPlayerScore.get_ties(scores)
+			score_ties = self.score_sorting.get_ties(scores)
 			podium_text = []
 			for player_score in scores:
 				if player_score.placement > 10:
 					break
-				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[{player_score.relevant_score_str(self.score_sorting, "$aaa")}$fff]$0cf')
+				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[{self.score_sorting.relevant_score_str(player_score, "$aaa")}$fff]$0cf')
 			if not self.cup_active:
 				podium_prefix = 'Final'
 				player_prefix = ''
@@ -181,7 +182,7 @@ class ActiveCupManager:
 			if current_map_num > 1:
 				# If not map 1 then dump out player diffs
 				scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
-				score_ties = TeamPlayerScore.get_ties(scores)
+				score_ties = self.score_sorting.get_ties(scores)
 				for score_index in range(0, len(scores)-1):
 					current_score = scores[score_index]
 					if current_score.login in score_ties and len(score_ties[current_score.login]) > 0:
@@ -192,13 +193,13 @@ class ActiveCupManager:
 					elif score_index-1 >= 0:
 						ahead_score = scores[score_index-1]
 						await self.instance.chat(
-							f"$ff0You are behind $<$fff{style.style_strip(ahead_score.nickname)}$> by $<$fff{TeamPlayerScore.diff_scores_str(current_score, ahead_score, self.score_sorting)}$> in the {self.cup_name_fmt}",
+							f"$ff0You are behind $<$fff{style.style_strip(ahead_score.nickname)}$> by $<$fff{self.score_sorting.diff_scores_str(current_score, ahead_score)}$> in the {self.cup_name_fmt}",
 							current_score.login
 						)
 					elif score_index+1 < len(scores):
 						behind_score = scores[score_index+1]
 						await self.instance.chat(
-							f"$ff0You are leading $<$fff{style.style_strip(behind_score.nickname)}$> by $<$fff{TeamPlayerScore.diff_scores_str(current_score, behind_score, self.score_sorting)}$> in the {self.cup_name_fmt}",
+							f"$ff0You are leading $<$fff{style.style_strip(behind_score.nickname)}$> by $<$fff{self.score_sorting.diff_scores_str(current_score, behind_score)}$> in the {self.cup_name_fmt}",
 							current_score.login
 						)
 
@@ -443,16 +444,16 @@ class ActiveCupManager:
 		return [int(map_time.map_start_time) for map_time in self._view_cache_cup_maps if map_time.cup_start_time == cup_start_time]
 
 
-	async def determine_cup_score_sorting(self, matches: 'list[int]') -> ScoreSortingPresets:
+	async def determine_cup_score_sorting(self, matches: 'list[int]') -> ScoreModeBase:
 		if not matches:
-			return ScoreSortingPresets.UNDEFINED
+			return None
 		matches.sort(reverse=True)
-		score_sorting = ScoreSortingPresets.UNDEFINED
+		score_sorting = None
 		matches_data = await self.app.results.get_data_specific_matches([matches[0]])	# type: list[MatchInfo]
 		if len(matches_data) > 0:
-			score_sorting = ScoreSortingPresets.get_preset(matches_data[0].mode_script)
+			score_sorting = get_sorting_from_mode(matches_data[0].mode_script)
 			logger.debug(f"score sorting is {str(score_sorting)} from map with id {str(matches[0])}")
 		else:
-			score_sorting = ScoreSortingPresets.get_preset(await self.instance.mode_manager.get_current_script())
+			score_sorting = get_sorting_from_mode(await self.instance.mode_manager.get_current_script())
 			logger.debug(f"no scores entry for map with id {str(matches[0])}. return sorting based on current script to {str(score_sorting)}")
 		return score_sorting

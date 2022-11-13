@@ -3,6 +3,8 @@ import logging
 
 from pyplanet.utils import times
 
+from .models import PlayerScore
+
 logger = logging.getLogger(__name__)
 
 class ScoreSortingPresets(Enum):
@@ -126,147 +128,18 @@ class TeamPlayerScore:
 		return times.format_time(int(self.player_score2)) if self.player_score2_is_time else str(self.player_score2)
 
 
-	def relevant_score_str(self, sorting: ScoreSortingPresets, item_format: str) -> str:
-		score_items = []
-		if sorting == ScoreSortingPresets.TIMEATTACK:
-			score_items = [str(self.player_score_str)]
-		elif sorting == ScoreSortingPresets.LAPS:
-			score_items = [str(self.player_score2_str), str(self.player_score_str)]
-		elif sorting == ScoreSortingPresets.ROUNDS:
-			score_items = [str(self.player_score_str)]
-		else:
-			score_items = [str(self.team_score), str(self.player_score_str)]
-		return ','.join([f'$<{item_format}{score_item}$>' for score_item in score_items] if item_format else score_items)
-
-
 	@staticmethod
-	def sort_scores(input_scores: 'list[TeamPlayerScore]', sorting: ScoreSortingPresets=ScoreSortingPresets.UNDEFINED) -> 'list[TeamPlayerScore]':
-		if sorting == ScoreSortingPresets.TIMEATTACK:
-			# 1.	maps	desc	(maps played)
-			# 2.	score	asc		(finish time)
-			sort_method = lambda x: (-x.count, x.player_score)
-		elif sorting == ScoreSortingPresets.LAPS:
-			# 1.	score2	desc	(checkpoint count)
-			# 2.	score	asc		(finish time)
-			sort_method = lambda x: (-x.player_score2, x.player_score)
-		elif sorting == ScoreSortingPresets.ROUNDS:
-			# 1.	score	desc	(player score)
-			sort_method = lambda x: (-x.player_score)
-		else:
-			# 1.	team	desc	(team score)
-			# 3.	score	desc	(score)
-			sort_method = lambda x: (-x.team_score, -x.player_score)
-		return sorted(input_scores, key=sort_method)
-
-
-	@staticmethod
-	def diff_scores_str(score: 'TeamPlayerScore', other: 'TeamPlayerScore', sorting: ScoreSortingPresets) -> str:
-		diff_str = ''
-
-		count_diff = abs(other.count - score.count)
-		score1_diff = abs(other.player_score - score.player_score)
-		score2_diff = abs(other.player_score2 - score.player_score2)
-		team_score_diff = abs(other.team_score - score.team_score)
-
-		if sorting == ScoreSortingPresets.TIMEATTACK:
-			diff_str = times.format_time(score1_diff)
-		elif sorting == ScoreSortingPresets.LAPS:
-			diff_str = str(score2_diff) + ' CP(s), ' + times.format_time(score1_diff)
-		elif sorting == ScoreSortingPresets.ROUNDS:
-			diff_str = str(score1_diff) + ' point(s)'
-		else:
-			diff_str = str(team_score_diff) + ' team point(s), ' + str(score1_diff) + ' point(s)'
-		return diff_str
-
-
-	@staticmethod
-	def update_placements(input_scores: 'list[TeamPlayerScore]', sorting: ScoreSortingPresets=ScoreSortingPresets.UNDEFINED) -> 'list[TeamPlayerScore]':
-		for index in range(0, len(input_scores)):
-			if index > 0:
-
-				if sorting == ScoreSortingPresets.TIMEATTACK:
-					if input_scores[index-1].count == input_scores[index].count \
-							and input_scores[index-1].player_score == input_scores[index].player_score:
-						input_scores[index].placement = input_scores[index-1].placement
-					else:
-						input_scores[index].placement = index + 1
-
-				elif sorting == ScoreSortingPresets.LAPS:
-					if input_scores[index-1].player_score2 == input_scores[index].player_score2 \
-							and input_scores[index-1].player_score == input_scores[index].player_score:
-						input_scores[index].placement = input_scores[index-1].placement
-					else:
-						input_scores[index].placement = index + 1
-
-				elif sorting == ScoreSortingPresets.ROUNDS:
-					if input_scores[index-1].player_score == input_scores[index].player_score:
-						input_scores[index].placement = input_scores[index-1].placement
-					else:
-						input_scores[index].placement = index + 1
-
-				else:
-					if input_scores[index-1].team_score == input_scores[index].team_score \
-							and input_scores[index-1].player_score == input_scores[index].player_score:
-						input_scores[index].placement = input_scores[index-1].placement
-					else:
-						input_scores[index].placement = index + 1
-			else:
-				input_scores[index].placement = 1
-		return input_scores
-
-
-	@staticmethod
-	def get_ties(input_scores: 'list[TeamPlayerScore]') -> 'dict[str, list[TeamPlayerScore]]':
-		all_ties = {}	# type: dict[str, list[TeamPlayerScore]]
-		for player_score in input_scores:
-			tied_scores = [s for s in input_scores if s.placement == player_score.placement \
-				and s.login != player_score.login]
-			if len(tied_scores) > 0:
-				all_ties[player_score.login] = tied_scores
-		return all_ties
-
-
-	@staticmethod
-	def score2_relevant(sorting: ScoreSortingPresets) -> bool:
-		return sorting in [
-			ScoreSortingPresets.LAPS
-		]
-
-
-	@staticmethod
-	def score_team_relevant(sorting: ScoreSortingPresets) -> bool:
-		return sorting in [
-			ScoreSortingPresets.UNDEFINED
-		]
-
-
-	@staticmethod
-	def get_score_names(sorting: ScoreSortingPresets) -> 'dict[str,str]':
-		score_names = {
-			'team_score': 'Team Score',
-			'player_score': 'Score',
-			'player_score2': 'Score',
-		}
-		if sorting == ScoreSortingPresets.TIMEATTACK:
-			score_names.update({
-				#'team_score': 'Team Score',
-				'player_score': 'Finish Time',
-				#'player_score2': 'Score',
-			})
-		elif sorting == ScoreSortingPresets.LAPS:
-			score_names.update({
-				#'team_score': 'Team Score',
-				'player_score': 'Finish Time',
-				'player_score2': 'Laps',
-			})
-		elif sorting == ScoreSortingPresets.ROUNDS:
-			score_names.update({
-				#'team_score': 'Team Score',
-				'player_score': 'Points',
-				#'player_score2': 'Score',
-			})
-
-		return score_names
+	def from_player_score(player_score: PlayerScore) -> 'TeamPlayerScore':
+		return TeamPlayerScore(
+			player_score.login,
+			player_score.nickname,
+			player_score.country,
+			player_score.team,
+			None,
+			0,
+			player_score.score,
+			player_score.score2
+		)
 
 
 class PaymentScore:

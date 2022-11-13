@@ -3,7 +3,8 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
-from ..app_types import ScoreSortingPresets, TeamPlayerScore
+from ..app_types import TeamPlayerScore
+from ..score_mode import ScoreModeBase
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class ResultsView(ManualListView):
 
 	external_buttons = []
 
-	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreSortingPresets):
+	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreModeBase):
 		super().__init__(self)
 		self.app = app
 		self.manager = app.context.ui
@@ -38,9 +39,9 @@ class ResultsView(ManualListView):
 		nickname_width = 105
 		score2_width = 20
 		team_width = 20
-		if TeamPlayerScore.score2_relevant(self.scores_sorting):
+		if self.scores_sorting.score2_relevant():
 			nickname_width -= score2_width
-		if TeamPlayerScore.score_team_relevant(self.scores_sorting):
+		if self.scores_sorting.scoreteam_relevant():
 			nickname_width -= team_width
 
 		fields += [
@@ -70,7 +71,7 @@ class ResultsView(ManualListView):
 			},
 		]
 
-		if TeamPlayerScore.score_team_relevant(self.scores_sorting):
+		if self.scores_sorting.scoreteam_relevant():
 			fields += [
 				{
 					'name': 'Team',
@@ -93,7 +94,7 @@ class ResultsView(ManualListView):
 			},
 		]
 
-		if TeamPlayerScore.score2_relevant(self.scores_sorting):
+		if self.scores_sorting.score2_relevant():
 			fields += [
 					{
 						'name': 'Score2',
@@ -146,7 +147,7 @@ class ResultsView(ManualListView):
 
 
 class CupResultsView(ResultsView):
-	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreSortingPresets, cup_start_time: int):
+	def __init__(self, app: any, player: any, scores_query: 'list[int]', scores_sorting: ScoreModeBase, cup_start_time: int):
 		super().__init__(app, player, scores_query, scores_sorting)
 		self.cup_start_time = cup_start_time
 

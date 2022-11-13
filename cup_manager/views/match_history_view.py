@@ -3,7 +3,7 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
-from ..app_types import ScoreSortingPresets
+from ..score_mode import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class MatchHistoryView(ManualListView):
 
 	async def _action_view_match(self, player, values, instance, **kwargs) -> None:
 		scores_query = [instance['map_start_time']]
-		scores_sorting = ScoreSortingPresets.get_preset(instance['mode_script'])
+		scores_sorting = get_sorting_from_mode(instance['mode_script'])
 		await self.close(player=player)
 		await self.app.results.open_view_match_results(player, scores_query, scores_sorting)
 
@@ -124,7 +124,7 @@ class MatchHistoryView(ManualListView):
 			else:
 				logger.error("No match settings determination made for selected map results")
 
-			scores_sorting = ScoreSortingPresets.get_preset(mode_script)
+			scores_sorting = get_sorting_from_mode(mode_script)
 			await self.close(player=player)
 			await self.app.results.open_view_match_results(player, self.selected_map_times[player.login], scores_sorting)
 

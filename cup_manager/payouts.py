@@ -8,6 +8,7 @@ from .models import CupInfo
 from .views import MatchHistoryView, PayoutsView, ResultsView
 from .app_types import TeamPlayerScore, PaymentScore
 from .utils import placements
+from .score_mode import ScoreModeBase
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +66,13 @@ class PayoutCupManager:
 				await self.instance.chat(f"$ff0You won $<$fff{str(payment.amount)}$> planets for placing $<$fff{placements.pretty_placement(payment.score.placement)}$>", payment.login)
 
 
-	async def get_data_payout_score(self, payout_key: str, sorted_results: 'list[TeamPlayerScore]') -> 'list[PaymentScore]':
+	async def get_data_payout_score(self, payout_key: str, sorted_results: 'list[TeamPlayerScore]', score_sorting: ScoreModeBase) -> 'list[PaymentScore]':
 		payouts = await self.get_payouts()
 		selected_payout = []	# type: list[int]
 		if payout_key in payouts:
 			selected_payout = payouts[payout_key]
 		payout_score = []	# type: list[PaymentScore]
-		score_ties = TeamPlayerScore.get_ties(sorted_results)
+		score_ties = score_sorting.get_ties(sorted_results)
 		for player_score in sorted_results:
 			if 0 <= player_score.placement-1 < len(selected_payout):
 				if player_score.login in score_ties:
@@ -103,7 +104,7 @@ class PayoutCupManager:
 
 		if view.scores_query:
 			scores_data = await self.app.results.get_data_scores(view.scores_query, view.scores_sorting)
-			payout_view = PayoutsView(self, scores_data)
+			payout_view = PayoutsView(self, scores_data, view.scores_sorting)
 
 			if hasattr(view, 'cup_start_time'):
 				cup_info = await self.app.active.get_data_specific_cup_info(view.cup_start_time)	# type: CupInfo
