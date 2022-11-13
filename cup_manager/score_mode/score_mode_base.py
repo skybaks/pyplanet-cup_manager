@@ -34,7 +34,7 @@ class ScoreModeBase(ABC):
 
 
 	@abstractmethod
-	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]'=None, **kwargs) -> 'list[TeamPlayerScore]':
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]'=None, **kwargs) -> 'list[TeamPlayerScore]':
 		pass
 
 
@@ -130,7 +130,7 @@ class ScoreModeFallback(ScoreModeBase):
 		self.score_names.scoreteam_name = 'Points'
 
 
-	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]' = None, **kwargs) -> 'list[TeamPlayerScore]':
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]' = None, **kwargs) -> 'list[TeamPlayerScore]':
 		combined_scores = []	# type: list[TeamPlayerScore]
 		for map_scores in scores:
 			for map_score in map_scores:

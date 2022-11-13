@@ -43,7 +43,7 @@ def create_results3() -> 'list[TeamPlayerScore]':
 
 
 class ScoreModeBaseImpl(ScoreModeBase):
-	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]'=None, **kwargs) -> 'list[TeamPlayerScore]':
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]'=None, **kwargs) -> 'list[TeamPlayerScore]':
 		return []
 
 	def sort_scores(self, scores: 'list[TeamPlayerScore]') -> 'list[TeamPlayerScore]':

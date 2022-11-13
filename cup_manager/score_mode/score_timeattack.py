@@ -25,7 +25,7 @@ class ScoreTimeAttackDefault(ScoreModeBase):
 		self.score_names.score1_name = 'Time'
 
 
-	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]'=None, **kwargs) -> 'list[TeamPlayerScore]':
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]'=None, **kwargs) -> 'list[TeamPlayerScore]':
 		combined_scores = []	# type: list[TeamPlayerScore]
 		for map_scores in scores:
 			for map_score in map_scores:

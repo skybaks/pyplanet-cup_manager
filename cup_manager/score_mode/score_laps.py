@@ -26,7 +26,7 @@ class ScoreLapsDefault(ScoreModeBase):
 		self.score_names.score2_name = 'CP(s)'
 
 
-	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[list[MatchInfo]]' = None, **kwargs) -> 'list[TeamPlayerScore]':
+	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]' = None, **kwargs) -> 'list[TeamPlayerScore]':
 		combined_scores = []	# type: list[TeamPlayerScore]
 		for map_scores in scores:
 			for map_score in map_scores:

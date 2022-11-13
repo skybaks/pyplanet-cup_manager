@@ -369,7 +369,7 @@ class ResultsCupManager:
 		return self._view_cache_matches
 
 
-	async def get_data_specific_matches(self, matches: any) -> 'list[MatchInfo]':
+	async def get_data_specific_matches(self, matches: 'int | list[int]') -> 'list[MatchInfo]':
 		lookup_matches = []
 		if isinstance(matches, int):
 			lookup_matches.append(matches)
@@ -402,7 +402,7 @@ class ResultsCupManager:
 		return self._view_cache_team_scores[map_start_time]
 
 
-	async def get_data_scores(self, map_start_time: any, sorting: ScoreModeBase) -> 'list[TeamPlayerScore]':
+	async def get_data_scores(self, map_start_time: 'int | list[int]', sorting: ScoreModeBase) -> 'list[TeamPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
 			lookup_matches.append(map_start_time)
@@ -410,6 +410,7 @@ class ResultsCupManager:
 			lookup_matches = map_start_time
 		else:
 			logger.error("Unexpected type in get_data_scores: " + str(map_start_time))
+		lookup_matches.sort()
 
 		matches_scores = []	# type: list[list[TeamPlayerScore]]
 		for start_time in lookup_matches:
@@ -428,7 +429,10 @@ class ResultsCupManager:
 				team_player_scores.append(new_score)
 			matches_scores.append(team_player_scores)
 
-		scores = sorting.combine_scores(matches_scores)
+		matches = await self.get_data_specific_matches(lookup_matches)
+		matches = sorted(matches, key=lambda x: (x.map_start_time))
+
+		scores = sorting.combine_scores(matches_scores, matches)
 		scores = sorting.sort_scores(scores)
 		scores = sorting.update_placements(scores)
 		scores = sorting.update_score_is_time(scores)

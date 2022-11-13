@@ -116,15 +116,8 @@ class MatchHistoryView(ManualListView):
 		if self.selected_map_times[player.login]:
 			self.selected_map_times[player.login].sort(reverse=True)
 			matches = await self.app.results.get_data_specific_matches(self.selected_map_times[player.login])
-			mode_script = None
-			for match in matches:
-				if match.map_start_time == self.selected_map_times[player.login][0]:
-					mode_script = match.mode_script
-					break
-			else:
-				logger.error("No match settings determination made for selected map results")
-
-			scores_sorting = get_sorting_from_mode(mode_script)
+			mode_scripts = [match.mode_script for match in matches]
+			scores_sorting = get_sorting_from_mode(mode_scripts)
 			await self.close(player=player)
 			await self.app.results.open_view_match_results(player, self.selected_map_times[player.login], scores_sorting)
 
