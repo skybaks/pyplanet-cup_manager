@@ -14,7 +14,8 @@ from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView
 from .app_types import TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 from .utils import placements
-from .score_mode import get_sorting_from_mode, ScoreModeBase
+from .score_mode import ScoreModeBase
+from .score_mode.mode_logic import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class ActiveCupManager:
 		self.cup_start_time = 0
 		self.cup_host = None
 		self._view_cache_cup_info = []	# type: list[CupInfo]
-		self._view_cache_cup_maps = {}	# type: list[CupMatch]
+		self._view_cache_cup_maps = []	# type: list[CupMatch]
 
 
 	@property
@@ -451,7 +452,7 @@ class ActiveCupManager:
 		score_sorting = None
 		matches_data = await self.app.results.get_data_specific_matches([matches[0]])	# type: list[MatchInfo]
 		if len(matches_data) > 0:
-			score_sorting = get_sorting_from_mode(matches_data[0].mode_script)
+			score_sorting = get_sorting_from_mode(str(matches_data[0].mode_script))
 			logger.debug(f"score sorting is {str(score_sorting)} from map with id {str(matches[0])}")
 		else:
 			score_sorting = get_sorting_from_mode(await self.instance.mode_manager.get_current_script())

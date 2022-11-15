@@ -3,32 +3,35 @@ import logging
 from ..app_types import TeamPlayerScore
 from ..models import MatchInfo
 from .score_base import ScoreModeBase
+from .mode_logic_singular import get_sorting_from_mode_singular
 
-logger = logging.getLogger(__name__)
 
-
-class ScoreRoundsDefault(ScoreModeBase):
+class ScoreModeMixed(ScoreModeBase):
 	"""
-	Score sorting for Rounds mode.
-	Sorting: Points descending
+	Score sorting for mixed mode scripts
+	Sorting: Points for each map placement descending
 	"""
 
 	def __init__(self) -> None:
 		super().__init__()
-		self.name = 'rounds_default'
+		self.name = 'score_mode_mixed'
 		self.score1_is_time = False
 		self.score2_is_time = False
 		self.scoreteam_is_time = False
 		self.use_score1 = True
 		self.use_score2 = False
 		self.use_scoreteam = False
-		self.score_names.score1_name = 'Points'
+		self.score_names.score1_name = 'Placement Points'
 
 
 	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]'=[], **kwargs) -> 'list[TeamPlayerScore]':
 		combined_scores = []	# type: list[TeamPlayerScore]
-		for map_scores in scores:
-			for map_score in map_scores:
+		for map_scores, map_info in zip(scores, maps):
+			map_sorting = get_sorting_from_mode_singular(map_info.mode_script)
+			map_scores_sorted = map_sorting.sort_scores(map_scores)
+			map_scores_sorted = map_sorting.update_placements(map_scores_sorted)
+			for map_score in map_scores_sorted:
+				map_score.player_score = len(map_scores_sorted) - map_score.placement + 1
 				existing_score = next((x for x in combined_scores if x.login == map_score.login), None)
 				if existing_score:
 					existing_score.player_score += map_score.player_score

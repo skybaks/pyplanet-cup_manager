@@ -11,7 +11,8 @@ from pyplanet.utils import style
 from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
 from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
-from .score_mode import get_sorting_from_mode, ScoreModeBase
+from .score_mode import ScoreModeBase
+from .score_mode.mode_logic import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
 
@@ -273,7 +274,7 @@ class ResultsCupManager:
 			match_data = await self.get_data_matches()
 			for match in match_data:
 				if match.map_start_time == ended_map_start_time:
-					score_data = await self.get_data_scores(match.map_start_time, get_sorting_from_mode(match.mode_script))
+					score_data = await self.get_data_scores(match.map_start_time, get_sorting_from_mode(str(match.mode_script)))
 					await self.instance.chat(f'$ff0Saved $<$fff{str(len(score_data))}$> record(s) from map $<$fff{ended_map_map_name}$>')
 					break
 			else:
@@ -305,7 +306,7 @@ class ResultsCupManager:
 			del self._view_cache_team_scores[map_start_time]
 
 
-	async def _button_export(self, player, values, view: any, **kwargs):
+	async def _button_export(self, player, values, view: 'ResultsView | any', **kwargs):
 		if view.scores_query:
 			scores_data = await self.get_data_scores(view.scores_query, view.scores_sorting)
 
