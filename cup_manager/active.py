@@ -415,9 +415,12 @@ class ActiveCupManager:
 
 
 	async def open_view_results(self, player, maps_query: 'list[int]', cup_start_time: int) -> None:
-		score_sorting = await self.determine_cup_score_sorting(maps_query)
-		view = CupResultsView(self.app, player, maps_query, score_sorting, cup_start_time)
-		await view.display(player=player.login)
+		if maps_query:
+			score_sorting = await self.determine_cup_score_sorting(maps_query)
+			view = CupResultsView(self.app, player, maps_query, score_sorting, cup_start_time)
+			await view.display(player=player.login)
+		else:
+			await self.instance.chat(f'$f00No cup results', player)
 
 
 	async def get_data_cup_info(self) -> 'list[CupInfo]':
