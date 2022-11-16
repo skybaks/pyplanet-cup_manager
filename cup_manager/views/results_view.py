@@ -71,10 +71,12 @@ class ResultsView(ManualListView):
 			},
 		]
 
+		score_names = self.scores_sorting.get_score_names()
+
 		if self.scores_sorting.scoreteam_relevant():
 			fields += [
 				{
-					'name': 'Team',
+					'name': score_names.scoreteam_name,
 					'index': 'team_score_str',
 					'sorting': False,
 					'searching': False,
@@ -85,7 +87,7 @@ class ResultsView(ManualListView):
 
 		fields += [
 			{
-				'name': 'Score',
+				'name': score_names.score1_name,
 				'index': 'player_score_str',
 				'sorting': False,
 				'searching': False,
@@ -97,7 +99,7 @@ class ResultsView(ManualListView):
 		if self.scores_sorting.score2_relevant():
 			fields += [
 					{
-						'name': 'Score2',
+						'name': score_names.score2_name,
 						'index': 'player_score2_str',
 						'sorting': False,
 						'searching': False,
