@@ -29,5 +29,4 @@ class MatchInfo(TimedModel):
 	"""
 
 	class Meta:
-		db_table = 'cup_manager_matchinfo_v1'
-
+		db_table = 'cup_manager_matchinfo'

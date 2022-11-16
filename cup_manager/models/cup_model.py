@@ -34,7 +34,7 @@ class CupInfo(TimedModel):
 	"""
 
 	class Meta:
-		db_table = 'cup_manager_cupinfo_v1'
+		db_table = 'cup_manager_cupinfo'
 
 
 class CupMatch(TimedModel):
@@ -49,4 +49,4 @@ class CupMatch(TimedModel):
 	"""
 
 	class Meta:
-		db_table = 'cup_manager_cupmatch_v1'
+		db_table = 'cup_manager_cupmatch'
