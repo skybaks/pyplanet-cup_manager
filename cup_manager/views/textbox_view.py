@@ -239,7 +239,24 @@ class TextResultsView(TextboxView):
 	async def get_text_data(self) -> str:
 		text = ''
 		if self._instance_data:
-			instance_data = [item for item in self._instance_data if item.team_score > 0 or item.player_score > 0 or item.player_score2 > 0] if self.exclude_zero_points else self._instance_data
+
+			instance_data = []	# type: list[TeamPlayerScore]
+			excluded_players = []	#type: list[TeamPlayerScore]
+			if self.exclude_zero_points:
+				def has_nonzero_points(score: TeamPlayerScore) -> bool:
+					return (self.score_sorting.score1_relevant() and score.player_score > 0) \
+						or (self.score_sorting.score2_relevant() and score.player_score2 > 0) \
+						or (self.score_sorting.scoreteam_relevant() and score.team_score > 0)
+				instance_data = list(filter(has_nonzero_points, self._instance_data))
+
+				def has_zero_points(score: TeamPlayerScore) -> bool:
+					return (not self.score_sorting.score1_relevant() or score.player_score <= 0) \
+						and (not self.score_sorting.score2_relevant() or score.player_score2 <= 0) \
+						and (not self.score_sorting.scoreteam_relevant() or score.team_score <= 0)
+				excluded_players = list(filter(has_zero_points, self._instance_data))
+			else:
+				instance_data = self._instance_data
+
 			if instance_data:
 
 				payout_scores = await self.app.payout.get_data_payout_score(self.payout_key, instance_data, self.score_sorting)	#type: list[PaymentScore]
@@ -265,7 +282,6 @@ class TextResultsView(TextboxView):
 						countries.append(str(item.country))
 
 					if self.exclude_zero_points and self.exclude_zero_points_as_spec:
-						excluded_players = [item for item in self._instance_data if item.team_score <= 0 and item.player_score <= 0 and item.player_score2 <= 0]
 						for excluded_player in excluded_players:
 							placements.append('Spec')
 							nicknames.append(style.style_strip(excluded_player.nickname, style.STRIP_ALL))
