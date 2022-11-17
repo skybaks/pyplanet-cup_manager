@@ -28,5 +28,25 @@ class MatchInfo(TimedModel):
 	The unique UID of the map file
 	"""
 
+	medal_author = IntegerField(null=True, default=None)
+	"""
+	The time of the author medal in milliseconds
+	"""
+
+	medal_gold = IntegerField(null=True, default=None)
+	"""
+	The time of the gold medal in milliseconds
+	"""
+
+	medal_silver = IntegerField(null=True, default=None)
+	"""
+	The time of the silver medal in milliseconds
+	"""
+
+	medal_bronze = IntegerField(null=True, default=None)
+	"""
+	The time of the bronze medal in milliseconds
+	"""
+
 	class Meta:
 		db_table = 'cup_manager_matchinfo'

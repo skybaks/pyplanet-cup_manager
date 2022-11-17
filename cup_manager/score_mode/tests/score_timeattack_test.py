@@ -2,7 +2,8 @@ import unittest
 from copy import deepcopy
 
 from ...app_types import TeamPlayerScore
-from ..score_timeattack import ScoreTimeAttackDefault
+from ...models import MatchInfo
+from ..score_timeattack import ScoreTimeAttackDefault, ScoreTimeAttackPenaltyAuthorPlus15
 
 def create_results_ta1() -> 'list[TeamPlayerScore]':
 	return [
@@ -129,6 +130,57 @@ class ScoreTimeAttackDefaultTest(unittest.TestCase):
 		results = sorting.update_score_is_time(results)
 		results_str = sorting.diff_scores_str(results[0], results[1])
 		self.assertEqual('0:02.287', results_str)
+
+
+class ScoreTimeAttackPenaltyAuthorPlus15Test(unittest.TestCase):
+
+
+	def test_combined_scores(self):
+		results = create_results_ta1()
+		results_copy = deepcopy(results)
+		sorting = ScoreTimeAttackPenaltyAuthorPlus15()
+		results = sorting.combine_scores([results, create_results_ta2()], [MatchInfo(medal_author=10000), MatchInfo(medal_author=32000)])
+		self.assertNotEqual(results, results_copy)
+		self.assertEqual(6, len(results))
+
+
+	def test_sort_scores(self):
+		results = create_results_ta1()
+		sorting = ScoreTimeAttackPenaltyAuthorPlus15()
+		results = sorting.combine_scores([results, create_results_ta2()], [MatchInfo(medal_author=10000), MatchInfo(medal_author=32000)])
+		results_copy = deepcopy(results)
+		results = sorting.sort_scores(results)
+		self.assertNotEqual(results, results_copy)
+		self.assertEqual(6, len(results))
+		self.assertEqual('p02', results[0].login)
+		self.assertEqual('p06', results[1].login)
+		self.assertEqual('p01', results[2].login)
+		self.assertEqual('p03', results[3].login)
+		self.assertEqual('p05', results[4].login)
+		self.assertEqual('p04', results[5].login)
+		self.assertEqual(47215+24926, results[0].player_score)
+		self.assertEqual(10000+15000+47641, results[1].player_score)
+		self.assertEqual(49502+25103, results[2].player_score)
+		self.assertEqual(49897+26379, results[3].player_score)
+		self.assertEqual(47641+32000+15000, results[4].player_score)
+		self.assertEqual(48163+32000+15000, results[5].player_score)
+
+
+	def test_update_placement(self):
+		results = create_results_ta1()
+		sorting = ScoreTimeAttackPenaltyAuthorPlus15()
+		results = sorting.combine_scores([results, create_results_ta2()], [MatchInfo(medal_author=10000), MatchInfo(medal_author=32000)])
+		results = sorting.sort_scores(results)
+		results_copy = deepcopy(results)
+		results = sorting.update_placements(results)
+		self.assertNotEqual(results, results_copy)
+		self.assertEqual(6, len(results))
+		self.assertEqual(1, results[0].placement)
+		self.assertEqual(2, results[1].placement)
+		self.assertEqual(3, results[2].placement)
+		self.assertEqual(4, results[3].placement)
+		self.assertEqual(5, results[4].placement)
+		self.assertEqual(6, results[5].placement)
 
 
 if __name__ == '__main__':

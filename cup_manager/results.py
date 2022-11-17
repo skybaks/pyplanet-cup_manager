@@ -243,11 +243,19 @@ class ResultsCupManager:
 					map_name=self._match_map_name,
 					map_uid=current_map_uid,
 					mx_id=current_mx_id,
+					medal_author=self.instance.map_manager.current_map.time_author,
+					medal_gold=self.instance.map_manager.current_map.time_gold,
+					medal_silver=self.instance.map_manager.current_map.time_silver,
+					medal_bronze=self.instance.map_manager.current_map.time_bronze,
 				))
 			except Exception as e:
 				logger.error("Exception while attempting to write map information to database."
 					+ f" map_start_time: {str(self._match_start_time)}, mode_script: {str(current_mode_script)},"
-					+ f" map_name: {str(self._match_map_name)}, map_uid: {str(current_map_uid)}, mx_id: {str(current_mx_id)}")
+					+ f" map_name: {str(self._match_map_name)}, map_uid: {str(current_map_uid)}, mx_id: {str(current_mx_id)},"
+					+ f" medal_author: {str(self.instance.map_manager.current_map.time_author)},"
+					+ f" medal_gold: {str(self.instance.map_manager.current_map.time_gold)},"
+					+ f" medal_silver: {str(self.instance.map_manager.current_map.time_silver)},"
+					+ f" medal_bronze: {str(self.instance.map_manager.current_map.time_bronze)}")
 			await self._invalidate_view_cache_matches()
 
 
