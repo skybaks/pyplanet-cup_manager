@@ -219,7 +219,7 @@ class AddRemoveCupMatchesView(ManualListView):
 				'sorting': False,
 				'searching': False,
 				'width': 40,
-				'type': 'label'
+				'type': 'label',
 			},
 			{
 				'name': 'Map Name',
@@ -227,7 +227,15 @@ class AddRemoveCupMatchesView(ManualListView):
 				'sorting': False,
 				'searching': False,
 				'width': 50,
-				'type': 'label'
+				'type': 'label',
+			},
+			{
+				'name': 'Mode Script',
+				'index': 'mode_script',
+				'sorting': False,
+				'searching': False,
+				'width': 50,
+				'type': 'label',
 			},
 		]
 		return fields
@@ -248,6 +256,7 @@ class AddRemoveCupMatchesView(ManualListView):
 					'selected_str': sel_str_true if match_info.map_start_time in selected_matches else sel_str_false,
 					'match_time_str': datetime.fromtimestamp(match_info.map_start_time).strftime("%c"),
 					'map_name_str': match_info.map_name,
+					'mode_script': match_info.mode_script,
 				})
 				if match_info.map_start_time in selected_matches:
 					selected_matches.remove(match_info.map_start_time)
@@ -258,6 +267,7 @@ class AddRemoveCupMatchesView(ManualListView):
 					'selected_str': sel_str_true,
 					'match_time_str': datetime.fromtimestamp(match_start_time).strftime("%c"),
 					'map_name_str': 'No score data for this map yet',
+					'mode_script': 'Unkown',
 				})
 		return items
 
