@@ -236,6 +236,7 @@ class ActiveCupManager:
 		new_cup_preset_on = None
 		new_cup_map_count_target = 0
 		new_cup_key_name = ''
+		new_cup_scoremode = ''
 
 		if data.cup_alias:
 			lookup_name, cup_settings = await self.get_specific_cup_settings(data.cup_alias)
@@ -246,6 +247,8 @@ class ActiveCupManager:
 					new_cup_preset_on = cup_settings['preset_on']
 				if 'map_count' in cup_settings:
 					new_cup_map_count_target = cup_settings['map_count']
+				if 'scoremode' in cup_settings:
+					new_cup_scoremode = cup_settings['scoremode']
 			else:
 				logger.error(f"Cup key name \"{data.cup_alias}\" not found using //cup on command")
 				cup_names = (await self.get_cup_settings()).keys()
@@ -291,6 +294,13 @@ class ActiveCupManager:
 			if new_cup_map_count_target > 0:
 				self.cup_map_count_target = new_cup_map_count_target
 				await self.instance.chat(f'$ff0Set map count to $<$fff{str(self.cup_map_count_target)}$>. Use $<$fff//cup mapcount$> if this is incorrect', player)
+
+			if new_cup_scoremode:
+				if new_cup_scoremode in SCORE_MODE:
+					self.score_sorting = SCORE_MODE[new_cup_scoremode]()
+					await self.instance.chat(f'$ff0Set score mode to $<$fff{str(self.score_sorting.name)}$>. Use $<$fff//cup scoremode$> if this is incorrect', player)
+				else:
+					await self.instance.chat(f'$f00Predefined score mode $<$fff{str(new_cup_scoremode)}$> not found. Use $<$fff//cup scoremode$> to correct', player)
 
 			await self._save_cup_info()
 
