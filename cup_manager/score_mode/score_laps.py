@@ -9,13 +9,24 @@ logger = logging.getLogger(__name__)
 
 class ScoreLapsDefault(ScoreModeBase):
 	"""
-	Score sorting for Laps mode.
+	Score sorting for Laps mode. This mode will sort players by number of
+	checkpoints passed first, and then by finish time. This is because some
+	players who may have left early could have a lower time than others who played
+	the whole map.
+
+	When combining scores from multiple maps, the same rules are applied so
+	players who did not finish all maps will be placed lower than those that did.
+
+
+	Recommended Modes: Laps
 	Sorting: Checkpoint count descending, Finish time ascending
 	"""
 
 	def __init__(self) -> None:
 		super().__init__()
 		self.name = 'laps_default'
+		self.display_name = 'Default Laps Mode'
+		self.brief = 'Default sorting mode for Laps'
 		self.score1_is_time = True
 		self.score2_is_time = False
 		self.scoreteam_is_time = False

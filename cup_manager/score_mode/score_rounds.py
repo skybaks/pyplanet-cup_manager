@@ -9,20 +9,29 @@ logger = logging.getLogger(__name__)
 
 class ScoreRoundsDefault(ScoreModeBase):
 	"""
-	Score sorting for Rounds mode.
+	Score sorting for Rounds mode. This mode will be used by default for mode
+	scripts with "Rounds" in their name.
+
+	It uses only individual player scores summed across all maps and sorted in
+	descending order.
+
+
+	Recommended Modes: Rounds
 	Sorting: Points descending
 	"""
 
 	def __init__(self) -> None:
 		super().__init__()
 		self.name = 'rounds_default'
+		self.display_name = 'Default Rounds Mode'
+		self.brief = 'Default sorting mode for Rounds'
 		self.score1_is_time = False
 		self.score2_is_time = False
 		self.scoreteam_is_time = False
 		self.use_score1 = True
 		self.use_score2 = False
 		self.use_scoreteam = False
-		self.score_names.score1_name = 'Points'
+		self.score_names.score1_name = 'Point(s)'
 
 
 	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]'=[], **kwargs) -> 'list[TeamPlayerScore]':

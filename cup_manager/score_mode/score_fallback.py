@@ -7,21 +7,31 @@ from .score_base import ScoreModeBase
 
 class ScoreModeFallback(ScoreModeBase):
 	"""
-	Score sorting mode for general use.
+	Score sorting mode for general use. This mode is used when no other default
+	mode determination can be made.
+
+	Both team score and player score are used in sorting and determining
+	rankings. However, if team score is found to be zero for all players then it
+	will be hidden from display to reduce clutter.
+
+
+	Recommended Modes: Any player or team-based mode which uses points
 	Sorting: Team score descending, Score descending
 	"""
 
 	def __init__(self) -> None:
 		super().__init__()
 		self.name = 'score_mode_fallback'
+		self.display_name = 'Default Fallback Mode'
+		self.brief = 'Fallback when no other default mode has been determined'
 		self.score1_is_time = False
 		self.score2_is_time = False
 		self.scoreteam_is_time = False
 		self.use_score1 = True
 		self.use_score2 = False
 		self.use_scoreteam = True
-		self.score_names.score1_name = 'Points'
-		self.score_names.scoreteam_name = 'Points'
+		self.score_names.score1_name = 'Point(s)'
+		self.score_names.scoreteam_name = 'Point(s)'
 
 
 	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]'=[], **kwargs) -> 'list[TeamPlayerScore]':

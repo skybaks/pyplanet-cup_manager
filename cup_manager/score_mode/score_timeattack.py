@@ -9,13 +9,24 @@ logger = logging.getLogger(__name__)
 
 class ScoreTimeAttackDefault(ScoreModeBase):
 	"""
-	Score sorting for TimeAttack mode.
+	Score sorting for TimeAttack mode. This is the default sorting mode for
+	TimeAttack. Individual player finish time will be used as well as the number
+	of maps played.
+
+	Since the summed finish time is sorted in ascending order, number of maps
+	played will be sorted in descending order first for fairness to players who
+	played every map and may have a larger summed time than those that did not.
+
+
+	Recommended Modes: TimeAttack
 	Sorting: Maps played descending, Summed finish time ascending
 	"""
 
 	def __init__(self) -> None:
 		super().__init__()
 		self.name = 'timeattack_default'
+		self.display_name = 'Default TimeAttack Mode'
+		self.brief = 'Default sorting mode for TimeAttack'
 		self.score1_is_time = True
 		self.score2_is_time = False
 		self.scoreteam_is_time = False
@@ -58,13 +69,24 @@ class ScoreTimeAttackDefault(ScoreModeBase):
 
 class ScoreTimeAttackPenaltyAuthorPlus15(ScoreTimeAttackDefault):
 	"""
-	Score sorting for TimeAttack where players who did not finish a map get a penalty time of Author + 15 seconds.
+	Alternative score sorting mode for TimeAttack. This uses the author time of
+	a track and for each DNF map a player might have, the DNF is replaced with
+	the author time + 15 seconds.
+
+	Beyond the application of penalty time, the sorting in this mode does not
+	take into account a player's number of finished maps as the default
+	TimeAttack mode does.
+
+
+	Recommended Modes: TimeAttack
 	Sorting: Summed finish time ascending
 	"""
 
 	def __init__(self) -> None:
 		super().__init__()
 		self.name = 'timeattack_penaltyauthorplus15'
+		self.display_name = 'TimeAttack with Author+15s Penalty'
+		self.brief = 'DNFs are penalized as author time + 15 seconds'
 
 
 	def combine_scores(self, scores: 'list[list[TeamPlayerScore]]', maps: 'list[MatchInfo]' = [], **kwargs) -> 'list[TeamPlayerScore]':

@@ -24,6 +24,8 @@ class ScoreModeBase(ABC):
 
 	def __init__(self) -> None:
 		self.name = 'score_mode_base'
+		self.display_name = 'Score-Mode Base (Abstract)'
+		self.brief = '<Write short statement about sorting mode>'
 		self.score1_is_time = False
 		self.score2_is_time = False
 		self.scoreteam_is_time = False
