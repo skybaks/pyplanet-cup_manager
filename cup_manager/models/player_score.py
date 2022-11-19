@@ -39,4 +39,4 @@ class PlayerScore(TimedModel):
 	"""
 
 	class Meta:
-		db_table = 'cup_manager_playerscore_v2'
+		db_table = 'cup_manager_playerscore'

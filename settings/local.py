@@ -188,4 +188,13 @@ CUP_MANAGER_NAMES = {
 
 	},
 
+	'example': {
+		'name': 'Example Cup',
+		'preset_on': 'rounds180',
+		'preset_of': 'timeattack',
+		'map_count': 2,
+		'payout': 'hec',
+		'scoremode': 'rounds_default',
+	},
+
 }

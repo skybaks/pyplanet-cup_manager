@@ -13,6 +13,7 @@
             * [Update the cup edition](./usage.md#update-the-cup-edition)
             * [Update the cup map count](./usage.md#update-the-cup-map-count)
         * [Choose the mode script and settings preset](./usage.md#choose-the-mode-script-and-settings-preset)
+        * [Choose a specific score sorting mode](./usage.md#choose-a-specific-score-sorting-mode)
     * [During the cup](./usage.md#during-the-cup)
         * [Add or remove maps from the active cup](./usage.md#add-or-remove-maps-from-the-active-cup)
         * [Notify the cup logic of cup end](./usage.md#notify-the-cup-logic-of-cup-end)
@@ -105,6 +106,7 @@ lookup name for the cup which is what you will pass into the `//cup on <cup_name
 |preset_off|str|Optional|Include this subfield if you would like to have `//cup setup <preset>` called automatically for you when you end the cup. The value should match a key name or alias name of on of your defined presets|
 |map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
 |payout|str|Optional|This is used to link a certain payout scheme to your cup. This linkage will be used to default the selection on the payout and export windows.|
+|scoremode|str|Optional|Use this to predefine a score sorting mode for the cup. If left undefined the default sorting mode for your mode script will be used.|
 
 # Running a cup as server admin
 
@@ -118,6 +120,7 @@ Quick reference of all commands that *might* be relevant to a cup admin. Read be
 //cup edition <edition_number>
 //cup mapcount <map_count>
 //cup setup <cup_settings_preset>
+//cup scoremode <cup_scoremode_id>
 
 -- During Cup --
 //cup edit
@@ -193,6 +196,22 @@ defined presets:
 
 ```
 //cup setup
+```
+
+### Choose a specific score sorting mode
+
+> This step is completely optional and only should be used when your cup needs score sorting logic not covered in the default behaviors.
+
+The plugin has automatic detection built in for most common mode scripts in Trackmania and Maniaplanet as well as some generic fallback sorting modes which should cover a large variety of cases. However, you may still be interested in using a specific sorting mode for your cup. In that case use the command following command to set it:
+
+```
+//cup scoremode <scoremode_id>
+```
+
+If you dont know the name of the mode, run the following command instead and it will open a window you can use the pick the sorting mode you want.
+
+```
+//cup scoremode
 ```
 
 ## During the cup

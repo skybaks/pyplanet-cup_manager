@@ -3,7 +3,7 @@ import logging
 
 from pyplanet.views.generics.list import ManualListView
 
-from ..app_types import ScoreSortingPresets
+from ..score_mode.mode_logic import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class MatchHistoryView(ManualListView):
 			self.selected_map_times[player.login] = []
 
 
-	async def get_fields(self) -> 'list[dict[str, any]]':
+	async def get_fields(self) -> 'list[dict[str, str | bool | int]]':
 		fields = [
 			{
 				'name': '',
@@ -65,7 +65,7 @@ class MatchHistoryView(ManualListView):
 		return fields
 
 
-	async def get_buttons(self) -> 'list[dict[str, any]]':
+	async def get_buttons(self) -> 'list[dict[str, str | bool | int]]':
 		buttons = [
 			{
 				'title': 'Sum Sel.',
@@ -81,25 +81,25 @@ class MatchHistoryView(ManualListView):
 		return buttons
 
 
-	async def get_data(self) -> 'list[dict[str, any]]':
+	async def get_data(self) -> 'list[dict[str, str | bool | int]]':
 		items = []
 		maps = await self.app.results.get_data_matches()
-		for map in maps:
+		for map_data in maps:
 			items.append({
-				'selected': '' if map.map_start_time in self.selected_map_times[self.player.login] else '',
-				'map_start_time_str': datetime.fromtimestamp(map.map_start_time).strftime("%c"),
-				'map_start_time': map.map_start_time,
-				'mode_script': map.mode_script,
-				'map_name': map.map_name,
-				'map_uid': map.map_uid,
-				'mx_id': map.mx_id,
+				'selected': '' if map_data.map_start_time in self.selected_map_times[self.player.login] else '',
+				'map_start_time_str': datetime.fromtimestamp(map_data.map_start_time).strftime("%c"),
+				'map_start_time': map_data.map_start_time,
+				'mode_script': map_data.mode_script,
+				'map_name': map_data.map_name,
+				'map_uid': map_data.map_uid,
+				'mx_id': map_data.mx_id,
 			})
 		return items
 
 
 	async def _action_view_match(self, player, values, instance, **kwargs) -> None:
 		scores_query = [instance['map_start_time']]
-		scores_sorting = ScoreSortingPresets.get_preset(instance['mode_script'])
+		scores_sorting = get_sorting_from_mode(instance['mode_script'])
 		await self.close(player=player)
 		await self.app.results.open_view_match_results(player, scores_query, scores_sorting)
 
@@ -116,15 +116,8 @@ class MatchHistoryView(ManualListView):
 		if self.selected_map_times[player.login]:
 			self.selected_map_times[player.login].sort(reverse=True)
 			matches = await self.app.results.get_data_specific_matches(self.selected_map_times[player.login])
-			mode_script = None
-			for match in matches:
-				if match.map_start_time == self.selected_map_times[player.login][0]:
-					mode_script = match.mode_script
-					break
-			else:
-				logger.error("No match settings determination made for selected map results")
-
-			scores_sorting = ScoreSortingPresets.get_preset(mode_script)
+			mode_scripts = [match.mode_script for match in matches]
+			scores_sorting = get_sorting_from_mode(mode_scripts)
 			await self.close(player=player)
 			await self.app.results.open_view_match_results(player, self.selected_map_times[player.login], scores_sorting)
 

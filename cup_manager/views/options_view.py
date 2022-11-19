@@ -2,11 +2,13 @@ import logging
 import math
 import re
 from argparse import Namespace
+from asyncio import iscoroutinefunction
 
 from pyplanet.views.generics import ask_confirmation
 
 from .single_instance_view import SingleInstanceView
 from ..app_types import PaymentScore, TeamPlayerScore
+from ..score_mode import ScoreModeBase, SCORE_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -211,9 +213,10 @@ class PayoutsView(OptionsView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'Coppers'
 
-	def __init__(self, app, score_data: 'list[TeamPlayerScore]') -> None:
+	def __init__(self, app, score_data: 'list[TeamPlayerScore]', score_sorting: ScoreModeBase) -> None:
 		super().__init__(app, 'cup_manager.views.payouts_view_displayed')
 		self.score_data = score_data
+		self.score_sorting = score_sorting
 		self.apply_option_button_name = 'Pay'
 
 
@@ -292,7 +295,7 @@ class PayoutsView(OptionsView):
 	async def get_info_data(self) -> 'list[dict]':
 		info_data = []
 		if self.selected_option and 'name' in self.selected_option:
-			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[PaymentScore]
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data, self.score_sorting)	# type: list[PaymentScore]
 			for payout_item in payout_score:
 				info_data.append({
 					'place': payout_item.score.placement,
@@ -308,7 +311,7 @@ class PayoutsView(OptionsView):
 
 	async def button_pressed(self, player, *args, **kwargs):
 		if self.selected_option and 'name' in self.selected_option:
-			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data)	# type: list[PaymentScore]
+			payout_score = await self.app.get_data_payout_score(self.selected_option['name'], self.score_data, self.score_sorting)	# type: list[PaymentScore]
 			total_planets = sum([x.payment for x in payout_score])
 		cancel = bool(await ask_confirmation(
 			player=player,
@@ -436,4 +439,108 @@ class PresetsView(OptionsView):
 	async def button_pressed(self, player, *args, **kwargs):
 		if 'name' in self.selected_option and self.selected_option['name']:
 			await self.app.command_setup(player=player, data=Namespace(**{'preset': self.selected_option['name']}))
+			await self.close(player=player)
+
+
+class ScoreModeView(OptionsView):
+
+	title = 'Score Modes'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'NewTrack'
+
+	def __init__(self, app, select_button_method) -> None:
+		super().__init__(app, 'cup_manager.views.scoremode_view_displayed')
+		self.apply_option_button_name = 'Select'
+		self.select_button_method = select_button_method
+
+
+	async def get_option_fields(self) -> 'list[dict]':
+		fields = [
+			{
+				'name': 'Sorting Mode',
+				'width': 90,
+				'index': 'name',
+			},
+		]
+		return fields
+
+
+	async def get_info_data_fields(self) -> 'list[dict]':
+		fields = [
+			{
+				'name': 'Details',
+				'width': 105,
+				'index': 'doc',
+			}
+		]
+		return fields
+
+
+	async def get_info_header_fields(self) -> 'list[dict]':
+		fields = [
+			{
+				'name': 'Selected:',
+				'width': 20,
+				'index': 'name'
+			},
+			{
+				'name': '',
+				'width': 0,
+				'index': 'brief',
+			},
+		]
+		return fields
+
+
+	async def get_option_data(self) -> 'list[dict]':
+		options = []
+		for score_mode_id, score_mode_class in SCORE_MODE.items():
+			class_instance = score_mode_class()
+			new_option = {
+				'id': score_mode_id,
+				'name': class_instance.display_name,
+				# for header
+				'brief': class_instance.brief,
+				# for view
+				'selected': self.selected_option and self.selected_option['id'] == score_mode_id,
+			}
+
+			if not self.selected_option:
+				new_option['selected'] = True
+				self.selected_option = new_option
+
+			options.append(new_option)
+
+		self.option_count = len(options)
+		options = await self.apply_pagination(options, self.option_page, self.num_option_per_page)
+		self.displayed_option_data = options
+		return self.displayed_option_data
+
+
+	async def get_info_data(self) -> 'list[dict]':
+		info_data = []
+		if self.selected_option and 'id' in self.selected_option:
+			doc_str = SCORE_MODE[self.selected_option['id']].__doc__
+			doc_str = '\n'.join([line.strip() for line in doc_str.splitlines()]).strip()
+			info_data += [
+				{
+					'doc': doc_str,
+				}
+			]
+		return info_data
+
+
+	async def get_info_header_data(self) -> dict:
+		data = {}
+		if self.selected_option:
+			data.update(self.selected_option)
+		return data
+
+
+	async def button_pressed(self, player, *args, **kwargs):
+		if self.selected_option and 'id' in self.selected_option:
+			if iscoroutinefunction(self.select_button_method):
+				await self.select_button_method(self.selected_option['id'], player)
+			else:
+				self.select_button_method(self.selected_option['id'], player)
 			await self.close(player=player)

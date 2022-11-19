@@ -9,8 +9,10 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
 from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
-from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView
-from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore, ScoreSortingPresets
+from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView, ScoreModeView
+from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
+from .score_mode import ScoreModeBase, SCORE_MODE
+from .score_mode.mode_logic import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
 
@@ -241,11 +243,19 @@ class ResultsCupManager:
 					map_name=self._match_map_name,
 					map_uid=current_map_uid,
 					mx_id=current_mx_id,
+					medal_author=self.instance.map_manager.current_map.time_author,
+					medal_gold=self.instance.map_manager.current_map.time_gold,
+					medal_silver=self.instance.map_manager.current_map.time_silver,
+					medal_bronze=self.instance.map_manager.current_map.time_bronze,
 				))
 			except Exception as e:
 				logger.error("Exception while attempting to write map information to database."
 					+ f" map_start_time: {str(self._match_start_time)}, mode_script: {str(current_mode_script)},"
-					+ f" map_name: {str(self._match_map_name)}, map_uid: {str(current_map_uid)}, mx_id: {str(current_mx_id)}")
+					+ f" map_name: {str(self._match_map_name)}, map_uid: {str(current_map_uid)}, mx_id: {str(current_mx_id)},"
+					+ f" medal_author: {str(self.instance.map_manager.current_map.time_author)},"
+					+ f" medal_gold: {str(self.instance.map_manager.current_map.time_gold)},"
+					+ f" medal_silver: {str(self.instance.map_manager.current_map.time_silver)},"
+					+ f" medal_bronze: {str(self.instance.map_manager.current_map.time_bronze)}")
 			await self._invalidate_view_cache_matches()
 
 
@@ -272,7 +282,7 @@ class ResultsCupManager:
 			match_data = await self.get_data_matches()
 			for match in match_data:
 				if match.map_start_time == ended_map_start_time:
-					score_data = await self.get_data_scores(match.map_start_time, ScoreSortingPresets.get_preset(match.mode_script))
+					score_data = await self.get_data_scores(match.map_start_time, get_sorting_from_mode(str(match.mode_script)))
 					await self.instance.chat(f'$ff0Saved $<$fff{str(len(score_data))}$> record(s) from map $<$fff{ended_map_map_name}$>')
 					break
 			else:
@@ -304,11 +314,11 @@ class ResultsCupManager:
 			del self._view_cache_team_scores[map_start_time]
 
 
-	async def _button_export(self, player, values, view: any, **kwargs):
+	async def _button_export(self, player, values, view: 'ResultsView | any', **kwargs):
 		if view.scores_query:
 			scores_data = await self.get_data_scores(view.scores_query, view.scores_sorting)
 
-			match_info = []
+			match_info = []	# type: list[MatchInfo]
 			all_match_data = await self.get_data_matches()
 			for match_data_info in all_match_data:
 				if (isinstance(view.scores_query, int) and match_data_info.map_start_time == view.scores_query) or (isinstance(view.scores_query, list) and match_data_info.map_start_time in view.scores_query):
@@ -319,9 +329,7 @@ class ResultsCupManager:
 				player,
 				scores_data,
 				match_info,
-				show_score2=TeamPlayerScore.score2_relevant(view.scores_sorting),
-				show_team_score=TeamPlayerScore.score_team_relevant(view.scores_sorting),
-				score_names=TeamPlayerScore.get_score_names(view.scores_sorting)
+				view.scores_sorting
 			)
 
 			if hasattr(view, 'cup_start_time'):
@@ -358,6 +366,15 @@ class ResultsCupManager:
 		await view.display(player=player)
 
 
+	async def open_view_scoremode(self, player, target_view) -> None:
+		async def scoremode_selected(scoremode, player):
+			target_view.scores_sorting = SCORE_MODE[scoremode]()
+			await target_view.refresh(player=player)
+
+		view = ScoreModeView(self.app, scoremode_selected)
+		await view.display(player=player)
+
+
 	async def get_current_match_start_time(self) -> int:
 		return self._match_start_time
 
@@ -370,7 +387,7 @@ class ResultsCupManager:
 		return self._view_cache_matches
 
 
-	async def get_data_specific_matches(self, matches: any) -> 'list[MatchInfo]':
+	async def get_data_specific_matches(self, matches: 'int | list[int]') -> 'list[MatchInfo]':
 		lookup_matches = []
 		if isinstance(matches, int):
 			lookup_matches.append(matches)
@@ -403,7 +420,7 @@ class ResultsCupManager:
 		return self._view_cache_team_scores[map_start_time]
 
 
-	async def get_data_scores(self, map_start_time: any, sorting: ScoreSortingPresets) -> 'list[TeamPlayerScore]':
+	async def get_data_scores(self, map_start_time: 'int | list[int]', sorting: ScoreModeBase) -> 'list[TeamPlayerScore]':
 		lookup_matches = []
 		if isinstance(map_start_time, int):
 			lookup_matches.append(map_start_time)
@@ -411,53 +428,31 @@ class ResultsCupManager:
 			lookup_matches = map_start_time
 		else:
 			logger.error("Unexpected type in get_data_scores: " + str(map_start_time))
+		lookup_matches.sort()
 
-		score_by_login = {}
+		matches_scores = []	# type: list[list[TeamPlayerScore]]
 		for start_time in lookup_matches:
-
-			team_score_by_id = {}
 			team_scores = await self.get_data_team_scores(start_time)
+			team_lookup = {}	# type: dict[int, TeamScore]
 			for team_score in team_scores:
-				team_score_by_id[team_score.team_id] = { 'score': team_score.score, 'name': team_score.name }
+				team_lookup[team_score.team_id] = team_score
 
 			player_scores = await self.get_data_player_scores(start_time)
+			team_player_scores = []	# type: list[TeamPlayerScore]
 			for player_score in player_scores:
-				if player_score.login not in score_by_login:
-					score_by_login[player_score.login] = {
-						'score': 0,
-						'score2': 0,
-						'nickname': player_score.nickname,
-						'country': player_score.country,
-						'count': 0,
-						'team': player_score.team,
-						'team_name': '',
-						'team_score': 0,
-					}
-					if team_score_by_id and player_score.team in team_score_by_id:
-						score_by_login[player_score.login]['team_name'] = team_score_by_id[player_score.team]['name']
-				if team_score_by_id and player_score.team in team_score_by_id:
-					score_by_login[player_score.login]['team_score'] += team_score_by_id[player_score.team]['score']
-				score_by_login[player_score.login]['score'] += player_score.score
-				score_by_login[player_score.login]['score2'] += player_score.score2
-				score_by_login[player_score.login]['count'] += 1
+				new_score = TeamPlayerScore.from_player_score(player_score)
+				if new_score.team_id in team_lookup:
+					new_score.team_name = team_lookup[new_score.team_id].name
+					new_score.team_score = team_lookup[new_score.team_id].score
+				team_player_scores.append(new_score)
+			matches_scores.append(team_player_scores)
 
-		scores = []	# type: list[TeamPlayerScore]
-		for login, score_data in score_by_login.items():
-			new_score = TeamPlayerScore(
-				login,
-				score_data['nickname'],
-				score_data['country'],
-				score_data['team'],
-				score_data['team_name'],
-				score_data['team_score'],
-				score_data['score'],
-				score_data['score2']
-			)
-			new_score.player_score_is_time = sorting in [ScoreSortingPresets.TIMEATTACK, ScoreSortingPresets.LAPS]
-			new_score.count = score_data['count']
-			scores.append(new_score)
+		matches = await self.get_data_specific_matches(lookup_matches)
+		matches = sorted(matches, key=lambda x: (x.map_start_time))
 
-		scores = TeamPlayerScore.sort_scores(scores, sorting)
-		scores = TeamPlayerScore.update_placements(scores, sorting)
+		scores = sorting.combine_scores(matches_scores, matches)
+		scores = sorting.sort_scores(scores)
+		scores = sorting.update_placements(scores)
+		scores = sorting.update_score_is_time(scores)
 
 		return scores
