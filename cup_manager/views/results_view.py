@@ -37,13 +37,12 @@ class ResultsView(ManualListView):
 
 	async def get_fields(self) -> 'list[dict[str, any]]':
 		fields = []
-		nickname_width = 105
-		score2_width = 20
-		team_width = 20
+		nickname_width = 100
+		score_width = 25
 		if self.scores_sorting.score2_relevant():
-			nickname_width -= score2_width
+			nickname_width -= score_width
 		if self.scores_sorting.scoreteam_relevant():
-			nickname_width -= team_width
+			nickname_width -= score_width
 
 		fields += [
 			{
@@ -62,14 +61,6 @@ class ResultsView(ManualListView):
 				'width': nickname_width,
 				'type': 'label',
 			},
-			{
-				'name': 'Login',
-				'index': 'login',
-				'sorting': False,
-				'searching': False,
-				'width': 50,
-				'type': 'label',
-			},
 		]
 
 		score_names = self.scores_sorting.get_score_names()
@@ -81,7 +72,7 @@ class ResultsView(ManualListView):
 					'index': 'team_score_str',
 					'sorting': False,
 					'searching': False,
-					'width': team_width,
+					'width': score_width,
 					'type': 'label',
 				}
 			]
@@ -92,7 +83,7 @@ class ResultsView(ManualListView):
 				'index': 'player_score_str',
 				'sorting': False,
 				'searching': False,
-				'width': 20,
+				'width': 25,
 				'type': 'label',
 			},
 		]
@@ -104,12 +95,20 @@ class ResultsView(ManualListView):
 						'index': 'player_score2_str',
 						'sorting': False,
 						'searching': False,
-						'width': score2_width,
+						'width': score_width,
 						'type': 'label',
 					}
 			]
 
 		fields += [
+			{
+				'name': 'Login',
+				'index': 'login',
+				'sorting': False,
+				'searching': False,
+				'width': 40,
+				'type': 'label',
+			},
 			{
 				'name': 'Country',
 				'index': 'country',
