@@ -222,12 +222,14 @@ class ActiveCupManager:
 						prev_score = next((s for s in self.cached_scores if s.login == new_score.login), None)	# type: TeamPlayerScore
 						if prev_score and new_score.placement < prev_score.placement:
 							await self.instance.chat(
-								f"$ff0You gained $<$fff{str(prev_score.placement - new_score.placement)}$> positions in the {self.cup_name_fmt}. $fff[{placements.pretty_placement(prev_score.placement)} ➙ {placements.pretty_placement(new_score.placement)}]",
+								f"$ff0You gained $<$fff{str(abs(prev_score.placement - new_score.placement))}$> positions in the {self.cup_name_fmt}. $fff[{placements.pretty_placement(prev_score.placement)} ➙ {placements.pretty_placement(new_score.placement)}]",
 								new_score.login
 							)
 						elif prev_score and new_score.placement > prev_score.placement:
-							# Lost placements. Do we really want to rub it in?
-							pass
+							await self.instance.chat(
+								f"$ff0You lost $<$fff{str(abs(prev_score.placement - new_score.placement))}$> positions in the {self.cup_name_fmt}. $fff[{placements.pretty_placement(prev_score.placement)} ➙ {placements.pretty_placement(new_score.placement)}]",
+								new_score.login
+							)
 				self.cached_scores = new_scores
 
 
