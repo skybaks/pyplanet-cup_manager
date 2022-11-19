@@ -8,6 +8,7 @@ from ..score_mode import ScoreModeBase
 
 logger = logging.getLogger(__name__)
 
+
 class ResultsView(ManualListView):
 	title = 'Results'
 	icon_style = 'Icons128x128_1'
@@ -122,7 +123,13 @@ class ResultsView(ManualListView):
 
 
 	async def get_buttons(self) -> 'list[dict[str, any]]':
-		buttons = []
+		buttons = [
+			{
+				'title': '',	# sort symbol (font awesome)
+				'width': 7,
+				'action': self._action_resort,
+			},
+		]
 		for extern_button in self.external_buttons:
 			if (iscoroutinefunction(extern_button['visible']) and await extern_button['visible'](player=self.player, view=self)) \
 					or (isfunction(extern_button['visible']) and extern_button['visible'](player=self.player, view=self)) \
@@ -146,6 +153,10 @@ class ResultsView(ManualListView):
 				'team_score_str': highlight + str(player_score.team_score_str),
 			})
 		return items
+	
+
+	async def _action_resort(self, player, values, **kwargs) -> None:
+		await self.app.results.open_view_scoremode(player, self)
 
 
 class CupResultsView(ResultsView):

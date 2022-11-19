@@ -457,7 +457,7 @@ class ScoreModeView(OptionsView):
 	async def get_option_fields(self) -> 'list[dict]':
 		fields = [
 			{
-				'name': 'Sorting Mode Name',
+				'name': 'Sorting Mode',
 				'width': 90,
 				'index': 'name',
 			},

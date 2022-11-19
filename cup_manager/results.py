@@ -9,9 +9,9 @@ from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
 from .models import PlayerScore, TeamScore, MatchInfo, CupInfo
-from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView
+from .views import MatchHistoryView, TextResultsView, AddRemoveCupMatchesView, ResultsView, GeneralResultsView, ScoreModeView
 from .app_types import GenericPlayerScore, GenericTeamScore, TeamPlayerScore
-from .score_mode import ScoreModeBase
+from .score_mode import ScoreModeBase, SCORE_MODE
 from .score_mode.mode_logic import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
@@ -363,6 +363,15 @@ class ResultsCupManager:
 
 	async def open_view_match_results(self, player, scores_query, scores_sorting) -> None:
 		view = GeneralResultsView(self.app, player, scores_query, scores_sorting)
+		await view.display(player=player)
+
+
+	async def open_view_scoremode(self, player, target_view) -> None:
+		async def scoremode_selected(scoremode, player):
+			target_view.scores_sorting = SCORE_MODE[scoremode]()
+			await target_view.refresh(player=player)
+
+		view = ScoreModeView(self.app, scoremode_selected)
 		await view.display(player=player)
 
 
