@@ -2,6 +2,7 @@ import logging
 import math
 import re
 from argparse import Namespace
+from asyncio import iscoroutinefunction
 
 from pyplanet.views.generics import ask_confirmation
 
@@ -447,9 +448,10 @@ class ScoreModeView(OptionsView):
 	icon_style = 'Icons128x128_1'
 	icon_substyle = 'NewTrack'
 
-	def __init__(self, app) -> None:
+	def __init__(self, app, select_button_method) -> None:
 		super().__init__(app, 'cup_manager.views.scoremode_view_displayed')
 		self.apply_option_button_name = 'Select'
+		self.select_button_method = select_button_method
 
 
 	async def get_option_fields(self) -> 'list[dict]':
@@ -536,4 +538,9 @@ class ScoreModeView(OptionsView):
 
 
 	async def button_pressed(self, player, *args, **kwargs):
-		pass
+		if self.selected_option and 'id' in self.selected_option:
+			if iscoroutinefunction(self.select_button_method):
+				await self.select_button_method(self.selected_option['id'], player)
+			else:
+				self.select_button_method(self.selected_option['id'], player)
+			await self.close(player=player)

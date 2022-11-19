@@ -10,11 +10,11 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
 from pyplanet.utils import style
 
-from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView
+from .views import AddRemoveCupMatchesView, CupView, CupMapsView, CupResultsView, ScoreModeView
 from .app_types import TeamPlayerScore
 from .models import CupInfo, CupMatch, MatchInfo
 from .utils import placements
-from .score_mode import ScoreModeBase
+from .score_mode import ScoreModeBase, SCORE_MODE
 from .score_mode.mode_logic import get_sorting_from_mode
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,9 @@ class ActiveCupManager:
 			Command(command='edition', aliases=[], namespace=self.app.namespace, target=self._command_edition,
 				admin=True, perms='cup:manage_cup', description='Force the edition of the current cup.').add_param(
 					'cup_edition', nargs=1, type=int, required=True),
+			Command(command='scoremode', aliases=[], namespace=self.app.namespace, target=self._command_scoremode,
+				admin=True, perms='cup:manage_cup', description='Define a score sorting mode for the current cup.').add_param(
+					'scoremode_id', nargs=1, type=str, required=False),
 			Command(command='cups', aliases=[], namespace=self.app.namespace, target=self._command_cups,
 				admin=True, perms='cup:manage_cup', description='Display current and past cups.'),
 
@@ -106,7 +109,6 @@ class ActiveCupManager:
 	async def add_selected_match(self, selected_match: int) -> None:
 		if self.cup_start_time > 0 and selected_match not in self.match_start_times:
 			self.match_start_times.append(selected_match)
-			self.score_sorting = await self.determine_cup_score_sorting(self.match_start_times)
 			map_query = await self.get_data_cup_match_times(self.cup_start_time)
 			if selected_match not in map_query:
 				try:
@@ -135,13 +137,14 @@ class ActiveCupManager:
 
 	async def _mp_signals_flow_podium_start(self, *args, **kwargs) -> None:
 		if await self._current_match_in_cup():
-			scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
-			score_ties = self.score_sorting.get_ties(scores)
+			scoremode = await self.get_cup_scoremode()
+			scores = await self.app.results.get_data_scores(self.match_start_times, scoremode)	# type: list[TeamPlayerScore]
+			score_ties = scoremode.get_ties(scores)
 			podium_text = []
 			for player_score in scores:
 				if player_score.placement > 10:
 					break
-				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[{self.score_sorting.relevant_score_str(player_score, "$aaa")}$fff]$0cf')
+				podium_text.append(f'$0cf{str(player_score.placement)}.$fff{style.style_strip(player_score.nickname)}$fff[{scoremode.relevant_score_str(player_score, "$aaa")}$fff]$0cf')
 			if not self.cup_active:
 				podium_prefix = 'Final'
 				player_prefix = ''
@@ -182,8 +185,9 @@ class ActiveCupManager:
 
 			if current_map_num > 1:
 				# If not map 1 then dump out player diffs
-				scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
-				score_ties = self.score_sorting.get_ties(scores)
+				scoremode = await self.get_cup_scoremode()
+				scores = await self.app.results.get_data_scores(self.match_start_times, scoremode)	# type: list[TeamPlayerScore]
+				score_ties = scoremode.get_ties(scores)
 				for score_index in range(0, len(scores)-1):
 					current_score = scores[score_index]
 					if current_score.login in score_ties and len(score_ties[current_score.login]) > 0:
@@ -194,13 +198,13 @@ class ActiveCupManager:
 					elif score_index-1 >= 0:
 						ahead_score = scores[score_index-1]
 						await self.instance.chat(
-							f"$ff0You are behind $<$fff{style.style_strip(ahead_score.nickname)}$> by $<$fff{self.score_sorting.diff_scores_str(current_score, ahead_score)}$> in the {self.cup_name_fmt}",
+							f"$ff0You are behind $<$fff{style.style_strip(ahead_score.nickname)}$> by $<$fff{scoremode.diff_scores_str(current_score, ahead_score)}$> in the {self.cup_name_fmt}",
 							current_score.login
 						)
 					elif score_index+1 < len(scores):
 						behind_score = scores[score_index+1]
 						await self.instance.chat(
-							f"$ff0You are leading $<$fff{style.style_strip(behind_score.nickname)}$> by $<$fff{self.score_sorting.diff_scores_str(current_score, behind_score)}$> in the {self.cup_name_fmt}",
+							f"$ff0You are leading $<$fff{style.style_strip(behind_score.nickname)}$> by $<$fff{scoremode.diff_scores_str(current_score, behind_score)}$> in the {self.cup_name_fmt}",
 							current_score.login
 						)
 
@@ -212,7 +216,7 @@ class ActiveCupManager:
 	async def _notify_scores_update(self, match_start_time: int, **kwargs) -> None:
 		if match_start_time in self.match_start_times:
 			async with self.cached_scores_lock:
-				new_scores = await self.app.results.get_data_scores(self.match_start_times, self.score_sorting)	# type: list[TeamPlayerScore]
+				new_scores = await self.app.results.get_data_scores(self.match_start_times, await self.get_cup_scoremode())	# type: list[TeamPlayerScore]
 				if self.cached_scores and new_scores != self.cached_scores:
 					for new_score in new_scores:
 						prev_score = next((s for s in self.cached_scores if s.login == new_score.login), None)	# type: TeamPlayerScore
@@ -251,11 +255,18 @@ class ActiveCupManager:
 		self.cup_host = player
 
 		if not self.cup_active and await self._current_match_in_cup():
+			# This conditional will occur if you turn off a cup during a map and
+			# then while on the same map change your mind and decide to
+			# continue. This also might happen if a mapcount was set incorrectly
+			# and the automatic cup end logic was triggered but you want to undo
+			# that on the fly
 			self.cup_active = True
 			self.cup_map_count_target = 0
 			await self.instance.chat(f'$ff0Cup reactivated and map count reset to $<$fff{str(self.cup_map_count_target)}$>. Use $<$fff//cup edit$> to add/remove maps from scoring, use $<$fff//cup mapcount$> to set the actual map count, and use $<$fff//cup off$> to manually end the cup while the final map is being played', player)
 
 		elif not self.cup_active or new_cup_name:
+			# This conditional will occur when you have started a new cup or
+			# entered a new 'name' for a cup which is active.
 			self.cup_key_name = new_cup_key_name
 			self.cup_name = ''
 			if new_cup_name:
@@ -264,6 +275,7 @@ class ActiveCupManager:
 			if not self.cup_active:
 				self.cup_active = True
 				self.match_start_times = []
+				self.score_sorting = None
 				self.cup_map_count_target = 0
 				self.cup_start_time = int(datetime.now().timestamp())
 				async with self.cached_scores_lock:
@@ -333,6 +345,16 @@ class ActiveCupManager:
 			await self.instance.chat(f'$f00No cup is currently active. Start a cup using $<$fff//cup on$> and then run this command', player)
 
 
+	async def _command_scoremode(self, player, data, **kwargs) -> None:
+		if self.cup_active:
+			if data.scoremode_id:
+				await self.set_cup_scoremode(data.scoremode_id, player)
+			else:
+				await self.open_view_scoremode(player)
+		else:
+			await self.instance.chat(f'$f00No cup is currently active. Start a cup using $<$fff//cup on$> and then run this command', player)
+
+
 	async def _save_cup_info(self) -> None:
 		logger.debug("Saving cup info")
 		cup_query = await self.get_data_specific_cup_info(self.cup_start_time)
@@ -341,6 +363,7 @@ class ActiveCupManager:
 		save_edition = self.cup_edition_num
 		save_host_login = self.cup_host.login if self.cup_host else ''
 		save_host_nickname = self.cup_host.nickname if self.cup_host else ''
+		save_score_sorting = self.score_sorting.name if self.score_sorting else ''
 		if not self.cup_name:
 			save_cup_name = 'Cup'
 			# Use a silly key name so we never get overlap on the edition lookup for anonymous cups
@@ -353,7 +376,8 @@ class ActiveCupManager:
 					cup_name=save_cup_name,
 					cup_edition=save_edition,
 					cup_host_login=save_host_login,
-					cup_host_nickname=save_host_nickname
+					cup_host_nickname=save_host_nickname,
+					cup_scoremode=save_score_sorting,
 				).where(
 					CupInfo.cup_start_time == self.cup_start_time
 				)
@@ -367,7 +391,8 @@ class ActiveCupManager:
 					cup_name=save_cup_name,
 					cup_edition=save_edition,
 					cup_host_login=save_host_login,
-					cup_host_nickname=save_host_nickname
+					cup_host_nickname=save_host_nickname,
+					cup_scoremode=save_score_sorting,
 				)
 			)
 		await self._invalidate_view_cache_cup_info()
@@ -416,11 +441,16 @@ class ActiveCupManager:
 
 	async def open_view_results(self, player, maps_query: 'list[int]', cup_start_time: int) -> None:
 		if maps_query:
-			score_sorting = await self.determine_cup_score_sorting(maps_query)
-			view = CupResultsView(self.app, player, maps_query, score_sorting, cup_start_time)
+			scoremode = await self.determine_cup_score_sorting(cup_start_time, maps_query)
+			view = CupResultsView(self.app, player, maps_query, scoremode, cup_start_time)
 			await view.display(player=player.login)
 		else:
 			await self.instance.chat(f'$f00No cup results', player)
+
+
+	async def open_view_scoremode(self, player) -> None:
+		view = ScoreModeView(self.app, self.set_cup_scoremode)
+		await view.display(player=player)
 
 
 	async def get_data_cup_info(self) -> 'list[CupInfo]':
@@ -448,16 +478,34 @@ class ActiveCupManager:
 		return [int(map_time.map_start_time) for map_time in self._view_cache_cup_maps if map_time.cup_start_time == cup_start_time]
 
 
-	async def determine_cup_score_sorting(self, matches: 'list[int]') -> ScoreModeBase:
-		if not matches:
-			return None
-		matches.sort(reverse=True)
+	async def determine_cup_score_sorting(self, cup_start_time: int, matches: 'list[int]') -> ScoreModeBase:
 		score_sorting = None
-		matches_data = await self.app.results.get_data_specific_matches([matches[0]])	# type: list[MatchInfo]
-		if len(matches_data) > 0:
-			score_sorting = get_sorting_from_mode(str(matches_data[0].mode_script))
-			logger.debug(f"score sorting is {str(score_sorting)} from map with id {str(matches[0])}")
+		cup_info = await self.get_data_specific_cup_info(cup_start_time)
+		if cup_info and cup_info.cup_scoremode in SCORE_MODE:
+			score_sorting = SCORE_MODE[cup_info.cup_scoremode]()
 		else:
-			score_sorting = get_sorting_from_mode(await self.instance.mode_manager.get_current_script())
-			logger.debug(f"no scores entry for map with id {str(matches[0])}. return sorting based on current script to {str(score_sorting)}")
+			match_data = await self.app.results.get_data_specific_matches(matches)	# type: list[MatchInfo]
+			score_sorting = get_sorting_from_mode([match.mode_script for match in match_data])
 		return score_sorting
+
+
+	async def set_cup_scoremode(self, scoremode: str, player) -> None:
+		if not self.cup_active:
+			await self.instance.chat(f'$f00Unable to set score mode when no cup is active', player)
+			return
+		
+		if scoremode not in SCORE_MODE:
+			await self.instance.chat(f'$f00Requested score mode "$<$fff{str(scoremode)}$>" not found. Modes are: {", ".join([f"$<$fff{key}$>" for key in SCORE_MODE.keys()])}')
+			return
+
+		self.score_sorting = SCORE_MODE[scoremode]()
+		await self._save_cup_info()
+		await self.instance.chat(f'$ff0Cup score mode set to: $<$fff{str(self.score_sorting.name)}$>', player)
+
+
+	async def get_cup_scoremode(self) -> ScoreModeBase:
+		scoremode = self.score_sorting
+		if not scoremode:
+			matches_data = await self.app.results.get_data_specific_matches(self.match_start_times)	# type: list[MatchInfo]
+			scoremode = get_sorting_from_mode([match_data.mode_script for match_data in matches_data])
+		return scoremode

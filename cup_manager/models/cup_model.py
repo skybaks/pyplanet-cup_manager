@@ -33,6 +33,11 @@ class CupInfo(TimedModel):
 	Nickname of the cup host for this edition
 	"""
 
+	cup_scoremode = CharField(max_length=150, null=True)
+	"""
+	Score sorting mode to be used with the results of this cup
+	"""
+
 	class Meta:
 		db_table = 'cup_manager_cupinfo'
 
