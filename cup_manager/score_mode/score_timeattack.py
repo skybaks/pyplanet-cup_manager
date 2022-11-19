@@ -106,10 +106,15 @@ class ScoreTimeAttackPenaltyAuthorPlus15(ScoreTimeAttackDefault):
 					)
 		combined_scores = list(all_players.values())	# type: list[TeamPlayerScore]
 		for map_scores, map_info in zip(scores, maps):
+			map_penalty = 15000
+			if map_info.medal_author:
+				map_penalty += map_info.medal_author
+
 			for combined_player_score in combined_scores:
 				map_player_score = next((x for x in map_scores if x.login == combined_player_score.login), None)
 				if map_player_score:
 					combined_player_score.player_score += map_player_score.player_score
 				else:
-					combined_player_score.player_score += map_info.medal_author + 15000
+					combined_player_score.player_score += map_penalty
+
 		return combined_scores
