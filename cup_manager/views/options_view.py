@@ -443,6 +443,13 @@ class PresetsView(OptionsView):
 
 
 class ScoreModeView(OptionsView):
+	class DefaultMode:
+		"""
+		Select this to revert the score sorting to use the mode picked by
+		automatic logic.
+		"""
+		brief = 'Sorting mode picked by automatic logic'
+		display_name = '*** Auto-Select Sorting Mode'
 
 	title = 'Score Modes'
 	icon_style = 'Icons128x128_1'
@@ -452,6 +459,8 @@ class ScoreModeView(OptionsView):
 		super().__init__(app, 'cup_manager.views.scoremode_view_displayed')
 		self.apply_option_button_name = 'Select'
 		self.select_button_method = select_button_method
+		self.option_data = { '': ScoreModeView.DefaultMode }
+		self.option_data.update(SCORE_MODE)
 
 
 	async def get_option_fields(self) -> 'list[dict]':
@@ -494,7 +503,7 @@ class ScoreModeView(OptionsView):
 
 	async def get_option_data(self) -> 'list[dict]':
 		options = []
-		for score_mode_id, score_mode_class in SCORE_MODE.items():
+		for score_mode_id, score_mode_class in self.option_data.items():
 			class_instance = score_mode_class()
 			new_option = {
 				'id': score_mode_id,
@@ -520,7 +529,7 @@ class ScoreModeView(OptionsView):
 	async def get_info_data(self) -> 'list[dict]':
 		info_data = []
 		if self.selected_option and 'id' in self.selected_option:
-			doc_str = SCORE_MODE[self.selected_option['id']].__doc__
+			doc_str = self.option_data[self.selected_option['id']].__doc__
 			doc_str = '\n'.join([line.strip() for line in doc_str.splitlines()]).strip()
 			info_data += [
 				{
