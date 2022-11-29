@@ -1,4 +1,5 @@
 from inspect import iscoroutinefunction, isfunction
+from copy import deepcopy
 import logging
 
 from pyplanet.views.generics.list import ManualListView
@@ -22,7 +23,21 @@ class ResultsView(ManualListView):
 		self.manager = app.context.ui
 		self.player = player
 		self.scores_query = scores_query
-		self.scores_sorting = scores_sorting
+		# Keep track of the original score sorting so we can revert if needed
+		self.scores_sorting_data = None
+		self.scores_sorting_init = scores_sorting
+
+
+	@property
+	def scores_sorting(self):
+		if not self.scores_sorting_data:
+			self.scores_sorting_data = deepcopy(self.scores_sorting_init)
+		return self.scores_sorting_data
+
+
+	@scores_sorting.setter
+	def scores_sorting(self, value):
+		self.scores_sorting_data = value
 
 
 	@classmethod

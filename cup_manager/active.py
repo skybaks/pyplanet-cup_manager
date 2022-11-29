@@ -505,14 +505,18 @@ class ActiveCupManager:
 		if not self.cup_active:
 			await self.instance.chat(f'$f00Unable to set score mode when no cup is active', player)
 			return
-		
-		if scoremode not in SCORE_MODE:
+
+		if not scoremode:
+			self.score_sorting = None
+			await self.instance.chat(f'$ff0Cup score mode set to: $<$fffuse default determination logic$>', player)
+		elif scoremode in SCORE_MODE:
+			self.score_sorting = SCORE_MODE[scoremode]()
+			await self.instance.chat(f'$ff0Cup score mode set to: $<$fff{str(self.score_sorting.name)}$>', player)
+		else:
 			await self.instance.chat(f'$f00Requested score mode "$<$fff{str(scoremode)}$>" not found. Modes are: {", ".join([f"$<$fff{key}$>" for key in SCORE_MODE.keys()])}')
 			return
 
-		self.score_sorting = SCORE_MODE[scoremode]()
 		await self._save_cup_info()
-		await self.instance.chat(f'$ff0Cup score mode set to: $<$fff{str(self.score_sorting.name)}$>', player)
 
 
 	async def get_cup_scoremode(self) -> ScoreModeBase:

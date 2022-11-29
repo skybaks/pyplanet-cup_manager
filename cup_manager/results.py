@@ -368,7 +368,10 @@ class ResultsCupManager:
 
 	async def open_view_scoremode(self, player, target_view) -> None:
 		async def scoremode_selected(scoremode, player):
-			target_view.scores_sorting = SCORE_MODE[scoremode]()
+			if scoremode in SCORE_MODE:
+				target_view.scores_sorting = SCORE_MODE[scoremode]()
+			else:
+				target_view.scores_sorting = None
 			await target_view.refresh(player=player)
 
 		view = ScoreModeView(self.app, scoremode_selected)
