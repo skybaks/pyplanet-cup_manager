@@ -33,7 +33,7 @@ class GenericTeamScore:
 
 
 class TeamPlayerScore:
-	def __init__(self, login, nickname, country, team_id, team_name, team_score, player_score, player_score2) -> None:
+	def __init__(self, login, nickname, country, team_id, team_name, team_score, player_score, player_score2, player_score_match) -> None:
 		self.login = login
 		self.nickname = nickname
 		self.country = country
@@ -42,6 +42,7 @@ class TeamPlayerScore:
 		self.team_score = team_score
 		self.player_score = player_score
 		self.player_score2 = player_score2
+		self.player_score_match = player_score_match
 		self.team_score_is_time = False
 		self.player_score_is_time = False
 		self.player_score2_is_time = False
@@ -62,6 +63,7 @@ class TeamPlayerScore:
 			and self.team_score == __o.team_score \
 			and self.player_score == __o.player_score \
 			and self.player_score2 == __o.player_score2 \
+			and self.player_score_match == __o.player_score_match \
 			and self.team_score_is_time == __o.team_score_is_time \
 			and self.player_score_is_time == __o.player_score_is_time \
 			and self.player_score2_is_time == __o.player_score2_is_time \
@@ -94,7 +96,8 @@ class TeamPlayerScore:
 			None,
 			0,
 			player_score.score,
-			player_score.score2
+			player_score.score2,
+			player_score.score_match
 		)
 
 
