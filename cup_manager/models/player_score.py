@@ -38,5 +38,10 @@ class PlayerScore(TimedModel):
 	Team number for the player
 	"""
 
+	score_match = IntegerField(null=False, default=0)
+	"""
+	Match score value for the player
+	"""
+
 	class Meta:
 		db_table = 'cup_manager_playerscore'

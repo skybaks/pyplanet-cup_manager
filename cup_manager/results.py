@@ -91,8 +91,8 @@ class ResultsCupManager:
 		await self._handle_map_update('MapEnd')
 
 
-	async def _handle_team_score_update(self, team_scores: list):
-		new_scores = []
+	async def _handle_team_score_update(self, team_scores: list) -> None:
+		new_scores = []	# type: list[GenericTeamScore]
 		for team_score in team_scores:
 			try:
 				new_score_id = team_score['id']
@@ -134,45 +134,36 @@ class ResultsCupManager:
 
 	async def _handle_player_score_update(self, player_scores: list):
 		current_script_lower = (await self.instance.mode_manager.get_current_script()).lower()
-		new_scores = []
+		new_scores: 'list[GenericPlayerScore]' = []
 		for player_score in player_scores:
 			try:
-				new_score_login = player_score['login'] if 'login' in player_score else player_score['player'].login
-				new_score_nick = player_score['name'] if 'name' in player_score else player_score['player'].nickname
+				new_score = GenericPlayerScore()
+				new_score.login = player_score['login'] if 'login' in player_score else player_score['player'].login
+				new_score.nickname = player_score['name'] if 'name' in player_score else player_score['player'].nickname
 
-				new_score_country = 'World'
+				new_score.country = 'World'
 				try:
-					if 'player' in player_score and player_score['player'].flow.zone.country != None:
-						new_score_country = player_score['player'].flow.zone.country
-					else:
-						logger.warning("player.flow.zone.country was None for login \"" + new_score_login + "\" nickname \"" + new_score_nick + "\". Defaulting to " + str(new_score_country))
+					new_score.country = player_score['player'].flow.zone.country
 				except Exception as e:
-					logger.error("Exception while accessing country for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
+					logger.error(f"Exception while accessing country for login \"{new_score.login}\", nickname \"{new_score.nick}\": {str(e)}")
 
-				new_score_team = -1
+				new_score.team = -1
 				try:
-					if 'player' in player_score and player_score['player'].flow.team_id != None:
-						new_score_team = player_score['player'].flow.team_id
-					else:
-						logger.warning("player.flow.team_id was None for login \"" + new_score_login + "\" nickname \"" + new_score_nick + "\". Defaulting to " + str(new_score_team))
+					new_score.team = player_score['player'].flow.team_id
 				except Exception as e:
-					logger.error("Exception while accessing team_id for login \"" + new_score_login + "\", nickname \"" + new_score_nick + "\": " + str(e))
+					logger.error(f"Exception while accessing team_id for login \"{new_score.login}\", nickname \"{new_score.nick}\": {str(e)}")
 
 				if 'timeattack' in current_script_lower:
-					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
-					if new_score_score != -1:
-						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, score2=0, team=new_score_team))
-
+					new_score.score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
 				elif 'laps' in current_script_lower:
-					new_score_score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
-					new_score_score2 = len(player_score['best_race_checkpoints']) if 'best_race_checkpoints' in player_score else len(player_score['bestracecheckpoints'])
-					if new_score_score != -1:
-						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, score2=new_score_score2, team=new_score_team))
-
+					new_score.score = player_score['best_race_time'] if 'best_race_time' in player_score else player_score['bestracetime']
+					new_score.score2 = len(player_score['best_race_checkpoints']) if 'best_race_checkpoints' in player_score else len(player_score['bestracecheckpoints'])
 				else:
-					new_score_score = player_score['map_points'] if 'map_points' in player_score else player_score['mappoints']
-					if new_score_score != -1:
-						new_scores.append(GenericPlayerScore(new_score_login, new_score_nick, new_score_country, new_score_score, score2=0, team=new_score_team))
+					new_score.score = player_score['map_points'] if 'map_points' in player_score else player_score['mappoints']
+					new_score.score_match = player_score['match_points'] if 'match_points' in player_score else player_score['matchpoints']
+
+				if new_score.score != -1:
+					new_scores.append(new_score)
 
 			except Exception as e:
 				logger.error(f"Exception while recording scores for following player_score object: {str(player_score)}")
@@ -194,6 +185,7 @@ class ResultsCupManager:
 									score=new_score.score,
 									score2=new_score.score2,
 									team=new_score.team,
+									score_match=new_score.score_match,
 								).where(
 									(PlayerScore.login == new_score.login) & (PlayerScore.map_start_time == self._match_start_time)
 								)
@@ -210,13 +202,14 @@ class ResultsCupManager:
 									score=new_score.score,
 									score2=new_score.score2,
 									team=new_score.team,
+									score_match=new_score.score_match,
 								)
 							)
 					except Exception as e:
 						logger.error("Exception writing PlayerScore to database."
 							+ f" map_start_time: {str(self._match_start_time)}, login: {str(new_score.login)},"
 							+ f" nickname: {str(new_score.nickname)}, country: {str(new_score.country)}, score: {str(new_score.score)},"
-							+ f" score2: {str(new_score.score2)}, team: {str(new_score.team)}")
+							+ f" score2: {str(new_score.score2)}, team: {str(new_score.team)}, score_match: {str(new_score.score_match)}")
 					await self._invalidate_view_cache_scores(self._match_start_time)
 
 

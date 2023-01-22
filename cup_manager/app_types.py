@@ -7,81 +7,32 @@ from .models import PlayerScore
 
 logger = logging.getLogger(__name__)
 
-class ScoreSortingPresets(Enum):
-	UNDEFINED = -1
-	TIMEATTACK = 0
-	LAPS = 1
-	ROUNDS = 2
-
-
-	@staticmethod
-	def get_preset(mode: str) -> 'ScoreSortingPresets':
-		mode_lower = mode.lower()
-		if 'timeattack' in mode_lower:
-			preset = ScoreSortingPresets.TIMEATTACK
-		elif 'laps' in mode_lower:
-			preset = ScoreSortingPresets.LAPS
-		elif 'rounds' in mode_lower:
-			preset = ScoreSortingPresets.ROUNDS
-		else:
-			preset = ScoreSortingPresets.UNDEFINED
-		return preset
-
 
 class GenericPlayerScore:
-	login = ''
-	nickname = ''
-	country = ''
-	score = 0
-	score2 = 0
-	team = 0
-
-
-	def __init__(self, login, nickname, country, score, score2=0, team=0) -> None:
-		self.login = login
-		self.nickname = nickname
-		self.country = country
-		self.score = score
-		self.score2 = score2
-		self.team = team
-
+	def __init__(self) -> None:
+		self.login = ''
+		self.nickname = ''
+		self.country = ''
+		self.score = 0
+		self.score2 = 0
+		self.team = -1
+		self.score_match = 0
 
 	def __repr__(self) -> str:
-		return f"<GenericPlayerScore login:{self.login} nickname:{self.nickname} country:{self.country} score:{self.score} score2:{self.score2} team:{self.team}>"
+		return f"<GenericPlayerScore login:{self.login} nickname:{self.nickname} country:{self.country} score:{self.score} score2:{self.score2} team:{self.team} score_match:{self.score_match}>"
 
 
 class GenericTeamScore:
-	id = 0
-	name = ''
-	score = 0
-
-
-	def __init__(self, id, name, score) -> None:
-		self.id = id
+	def __init__(self, team_id, name, score) -> None:
+		self.id = team_id
 		self.name = name
 		self.score = score
-
 
 	def __repr__(self) -> str:
 		return f"<GenericTeamScore id:{self.id} name:{self.name} score:{self.score}>"
 
 
 class TeamPlayerScore:
-	login = ''
-	nickname = ''
-	country = ''
-	team_id = 0
-	team_name = ''
-	team_score = 0
-	player_score = 0
-	player_score2 = 0
-	team_score_is_time = False
-	player_score_is_time = False
-	player_score2_is_time = False
-	count = 1
-	placement = 0
-
-
 	def __init__(self, login, nickname, country, team_id, team_name, team_score, player_score, player_score2) -> None:
 		self.login = login
 		self.nickname = nickname
@@ -91,6 +42,11 @@ class TeamPlayerScore:
 		self.team_score = team_score
 		self.player_score = player_score
 		self.player_score2 = player_score2
+		self.team_score_is_time = False
+		self.player_score_is_time = False
+		self.player_score2_is_time = False
+		self.count = 1
+		self.placement = 0
 
 
 	def __repr__(self) -> str:
@@ -143,10 +99,6 @@ class TeamPlayerScore:
 
 
 class PaymentScore:
-	score = None
-	payment = 0
-
-
 	def __init__(self, score: TeamPlayerScore, payment: int) -> None:
 		self.score = score
 		self.payment = payment
