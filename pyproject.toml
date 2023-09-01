@@ -25,3 +25,10 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/skybaks/pyplanet-cup_manager"
 "Bug Tracker" = "https://github.com/skybaks/pyplanet-cup_manager/issues"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "/settings",
+    "skybaks/cup_manager/score_mode/tests",
+]
