@@ -9,23 +9,22 @@ from .active import ActiveCupManager
 
 logger = logging.getLogger(__name__)
 
+
 class CupManagerApp(AppConfig):
-	game_dependencies = ['trackmania_next', 'trackmania', 'shootmania']
-	app_dependencies = ['core.maniaplanet', 'core.trackmania', 'core.shootmania']
-	namespace = 'cup'
+    game_dependencies = ["trackmania_next", "trackmania", "shootmania"]
+    app_dependencies = ["core.maniaplanet", "core.trackmania", "core.shootmania"]
+    namespace = "cup"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+        self.results = ResultsCupManager(self)
+        self.setup = SetupCupManager(self)
+        self.payout = PayoutCupManager(self)
+        self.active = ActiveCupManager(self)
 
-		self.results = ResultsCupManager(self)
-		self.setup = SetupCupManager(self)
-		self.payout = PayoutCupManager(self)
-		self.active = ActiveCupManager(self)
-
-
-	async def on_start(self):
-		await self.results.on_start()
-		await self.setup.on_start()
-		await self.payout.on_start()
-		await self.active.on_start()
+    async def on_start(self):
+        await self.results.on_start()
+        await self.setup.on_start()
+        await self.payout.on_start()
+        await self.active.on_start()

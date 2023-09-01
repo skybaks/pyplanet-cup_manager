@@ -11,15 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 def get_sorting_from_mode_singular(mode_script: str) -> ScoreModeBase:
-	"""
-	Returns the default sorting mode of the input mode script
-	"""
-	mode_name = mode_script.lower()
-	if 'timeattack' in mode_name:
-		return ScoreTimeAttackDefault()
-	elif 'laps' in mode_name:
-		return ScoreLapsDefault()
-	elif 'rounds' in mode_name:
-		return ScoreRoundsDefault()
-	else:
-		return ScoreModeFallback()
+    """
+    Returns the default sorting mode of the input mode script
+    """
+    mode_name = mode_script.lower()
+    if "timeattack" in mode_name:
+        return ScoreTimeAttackDefault()
+    elif "laps" in mode_name:
+        return ScoreLapsDefault()
+    elif "rounds" in mode_name:
+        return ScoreRoundsDefault()
+    else:
+        return ScoreModeFallback()

@@ -4,9 +4,9 @@ from .match_info import MatchInfo
 from .cup_model import CupInfo, CupMatch
 
 __all__ = [
-	'PlayerScore',
-	'TeamScore',
-	'MatchInfo',
-	'CupInfo',
-	'CupMatch',
+    "PlayerScore",
+    "TeamScore",
+    "MatchInfo",
+    "CupInfo",
+    "CupMatch",
 ]
