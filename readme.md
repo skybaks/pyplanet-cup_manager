@@ -18,5 +18,5 @@ will work with any script mode which supports the scores callback.
 * Maniaplanet - Timeattack, Rounds, Laps
 * Shootmania - Melee, Elite, Royal, Siege, Infection, Combo
 
-See [the usage information](./usage.md) to get started integrating with your PyPlanet instance and running your
-competition.
+See [the usage information](https://github.com/skybaks/pyplanet-cup_manager/blob/master/usage.md) to get started
+integrating with your PyPlanet instance and running your competition.
