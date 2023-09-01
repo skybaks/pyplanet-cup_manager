@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyplanet-cup_manager"
-version = "4.0.0-dev2"
+version = "4.0.0-dev3"
 authors = [
     { name="skybaks", email="tmflame@gmail.com" },
 ]
@@ -32,3 +32,6 @@ exclude = [
     "/settings",
     "skybaks/cup_manager/score_mode/tests",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skybaks/cup_manager/templates" = "skybaks/cup_manager/templates"
