@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyplanet-cup_manager"
+version = "4.0.0-dev1"
+authors = [
+    { name="skybaks", email="tmflame@gmail.com" },
+]
+description = "A Pyplanet server controller plugin for hosting competitions"
+readme = "readme.md"
+requires-python = ">=3.7"
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+
+    "Operating System :: OS Independent",
+
+    "Topic :: Games/Entertainment",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/skybaks/pyplanet-cup_manager"
+"Bug Tracker" = "https://github.com/skybaks/pyplanet-cup_manager/issues"
