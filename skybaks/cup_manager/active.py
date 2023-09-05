@@ -22,6 +22,7 @@ from .models import CupInfo, CupMatch, MatchInfo
 from .utils import placements
 from .score_mode import ScoreModeBase, SCORE_MODE
 from .score_mode.mode_logic import get_sorting_from_mode
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -153,12 +154,10 @@ class ActiveCupManager:
         await self.app.results.register_scores_update_notify(self._notify_scores_update)
 
     async def get_cup_settings(self) -> "dict[str, dict]":
-        cup_names = {}
         try:
-            cup_names = settings.CUP_MANAGER_NAMES
+            return settings.CUP_MANAGER_NAMES
         except:
-            logger.error("Error reading CUP_MANAGER_NAMES from local.py")
-        return cup_names
+            return config.get_fallback_names()
 
     async def get_specific_cup_settings(
         self, lookup_name: str
