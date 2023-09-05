@@ -22,7 +22,6 @@ from .models import CupInfo, CupMatch, MatchInfo
 from .utils import placements
 from .score_mode import ScoreModeBase, SCORE_MODE
 from .score_mode.mode_logic import get_sorting_from_mode
-from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -153,16 +152,10 @@ class ActiveCupManager:
         await self.app.results.register_match_start_notify(self._notify_match_start)
         await self.app.results.register_scores_update_notify(self._notify_scores_update)
 
-    async def get_cup_settings(self) -> "dict[str, dict]":
-        try:
-            return settings.CUP_MANAGER_NAMES
-        except:
-            return config.get_fallback_names()
-
     async def get_specific_cup_settings(
         self, lookup_name: str
     ) -> "tuple[str, dict[str, any]]":
-        all_settings = await self.get_cup_settings()
+        all_settings = await self.app.config.get_cup_settings()
         for settings_key in all_settings.keys():
             if settings_key.lower() == lookup_name.lower():
                 return (settings_key, all_settings[settings_key])
@@ -359,7 +352,7 @@ class ActiveCupManager:
                 logger.error(
                     f'Cup key name "{data.cup_alias}" not found using //cup on command'
                 )
-                cup_names = (await self.get_cup_settings()).keys()
+                cup_names = (await self.app.config.get_cup_settings()).keys()
                 await self.instance.chat(
                     f"$f00Cup key name not found. Configured names are: {', '.join([f'$<$fff{kname}$>' for kname in cup_names])}",
                     player.login,

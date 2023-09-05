@@ -7,7 +7,6 @@ from pyplanet.apps.core.trackmania import callbacks as tm_signals
 
 
 from .views import PresetsView
-from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +45,6 @@ class SetupCupManager:
             ).add_param("preset", required=False),
         )
 
-    async def get_presets(self) -> dict:
-        try:
-            return settings.CUP_MANAGER_PRESETS
-        except:
-            return config.get_fallback_presets()
-
     async def command_setup(self, player, data, **kwargs) -> None:
         if not await self.instance.permission_manager.has_permission(
             player, "cup:setup_cup"
@@ -60,7 +53,7 @@ class SetupCupManager:
 
         if data.preset:
             cmd_preset = data.preset.lower()
-            presets = await self.get_presets()
+            presets = await self.app.config.get_cup_presets()
             selected_preset = None
             for preset_key, preset_data in presets.items():
                 if cmd_preset == preset_key or cmd_preset in preset_data["aliases"]:

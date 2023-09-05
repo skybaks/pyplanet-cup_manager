@@ -9,7 +9,6 @@ from .views import MatchHistoryView, PayoutsView, ResultsView
 from .app_types import TeamPlayerScore, PaymentScore
 from .utils import placements
 from .score_mode import ScoreModeBase
-from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +29,6 @@ class PayoutCupManager:
         ResultsView.add_button(
             "Payout", self._button_payout, self._check_payout_permissions
         )
-
-    async def get_payouts(self) -> "dict[str, list[int]]":
-        try:
-            return settings.CUP_MANAGER_PAYOUTS
-        except:
-            return config.get_fallback_payouts()
 
     async def pay_players(self, player, payment_data: "list[PaymentScore]") -> None:
         if not await self._check_payout_permissions(player=player):
@@ -58,7 +51,7 @@ class PayoutCupManager:
         sorted_results: "list[TeamPlayerScore]",
         score_sorting: ScoreModeBase,
     ) -> "list[PaymentScore]":
-        payouts = await self.get_payouts()
+        payouts = await self.app.config.get_cup_payouts()
         selected_payout = []  # type: list[int]
         if payout_key in payouts:
             selected_payout = payouts[payout_key]

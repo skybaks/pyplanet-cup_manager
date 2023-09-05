@@ -1,5 +1,8 @@
 import logging
 
+from pyplanet.conf import settings
+from pyplanet.core.instance import Instance
+
 logger = logging.getLogger(__name__)
 
 FALLBACK_CONFIG_PRESETS: dict = dict()
@@ -7,7 +10,39 @@ FALLBACK_CONFIG_PAYOUTS: dict = dict()
 FALLBACK_CONFIG_NAMES: dict = dict()
 
 
-def get_fallback_presets() -> dict:
+class CupConfiguration:
+    def __init__(self, app) -> None:
+        self.app = app
+        self.instance: Instance = app.instance
+        # - look for config path in setting or env
+        #   - if yes then use for storage
+        # - else try to use local.py
+        # - else try use default path for json
+        # - else use fallback configs
+
+    async def get_cup_presets(self) -> "dict[str, dict]":
+        try:
+            return settings.CUP_MANAGER_PRESETS
+        except KeyError:
+            logger.debug("CUP_MANAGER_PRESETS not defined in local.py")
+        return get_fallback_presets()
+
+    async def get_cup_payouts(self) -> "dict[str, dict]":
+        try:
+            return settings.CUP_MANAGER_PAYOUTS
+        except KeyError:
+            logger.debug("CUP_MANAGER_PAYOUTS not defined in local.py")
+        return get_fallback_payouts()
+
+    async def get_cup_settings(self) -> "dict[str, dict]":
+        try:
+            return settings.CUP_MANAGER_NAMES
+        except KeyError:
+            logger.debug("CUP_MANAGER_NAMES not defined in local.py")
+        return get_fallback_names()
+
+
+def get_fallback_presets() -> "dict[str, dict]":
     global FALLBACK_CONFIG_PRESETS
     if not FALLBACK_CONFIG_PRESETS:
         logger.debug("Initializing fallback config presets")
@@ -86,7 +121,7 @@ def get_fallback_presets() -> dict:
     return FALLBACK_CONFIG_PRESETS
 
 
-def get_fallback_payouts() -> dict:
+def get_fallback_payouts() -> "dict[str, dict]":
     global FALLBACK_CONFIG_PAYOUTS
     if not FALLBACK_CONFIG_PAYOUTS:
         logger.debug("Initializing fallback payouts")
@@ -114,7 +149,7 @@ def get_fallback_payouts() -> dict:
     return FALLBACK_CONFIG_PAYOUTS
 
 
-def get_fallback_names() -> dict:
+def get_fallback_names() -> "dict[str, dict]":
     global FALLBACK_CONFIG_NAMES
     if not FALLBACK_CONFIG_NAMES:
         logger.debug("Initializing fallback names")
