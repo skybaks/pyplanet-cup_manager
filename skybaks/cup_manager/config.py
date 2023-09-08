@@ -1,4 +1,6 @@
 import logging
+import os
+import json
 
 from pyplanet.conf import settings
 from pyplanet.core.instance import Instance
@@ -14,32 +16,89 @@ class CupConfiguration:
     def __init__(self, app) -> None:
         self.app = app
         self.instance: Instance = app.instance
-        # - look for config path in setting or env
-        #   - if yes then use for storage
-        # - else try to use local.py
-        # - else try use default path for json
-        # - else use fallback configs
+        self.cached_cup_presets: dict = dict()
+        self.cached_cup_payouts: dict = dict()
+        self.cached_cup_settings: dict = dict()
+        self.config_path = "UserData/Maps/MatchSettings/cup_manager"
+        try:
+            self.config_path = settings.CUP_MANAGER_CONFIG_PATH
+        except KeyError:
+            logger.debug("CUP_MANAGER_CONFIG_PATH not defined in local.py")
 
     async def get_cup_presets(self) -> "dict[str, dict]":
-        try:
-            return settings.CUP_MANAGER_PRESETS
-        except KeyError:
-            logger.debug("CUP_MANAGER_PRESETS not defined in local.py")
-        return get_fallback_presets()
+        if not self.cached_cup_presets:
+            loaded_presets = await self.load_json_from_config("presets.json")
+            if loaded_presets:
+                self.cached_cup_presets = loaded_presets
+        if not self.cached_cup_presets:
+            try:
+                loaded_presets = settings.CUP_MANAGER_PRESETS
+                if loaded_presets:
+                    self.cached_cup_presets = loaded_presets
+            except KeyError:
+                logger.debug("CUP_MANAGER_PRESETS not defined in local.py")
+        if not self.cached_cup_presets:
+            self.cached_cup_presets = get_fallback_presets()
+        return self.cached_cup_presets
 
     async def get_cup_payouts(self) -> "dict[str, dict]":
-        try:
-            return settings.CUP_MANAGER_PAYOUTS
-        except KeyError:
-            logger.debug("CUP_MANAGER_PAYOUTS not defined in local.py")
-        return get_fallback_payouts()
+        if not self.cached_cup_payouts:
+            loaded_payouts = await self.load_json_from_config("payouts.json")
+            if loaded_payouts:
+                self.cached_cup_payouts = loaded_payouts
+        if not self.cached_cup_payouts:
+            try:
+                loaded_payouts = settings.CUP_MANAGER_PAYOUTS
+                if loaded_payouts:
+                    self.cached_cup_payouts = loaded_payouts
+            except KeyError:
+                logger.debug("CUP_MANAGER_PAYOUTS not defined in local.py")
+        if not self.cached_cup_payouts:
+            self.cached_cup_payouts = get_fallback_payouts()
+        return self.cached_cup_payouts
 
     async def get_cup_settings(self) -> "dict[str, dict]":
+        if not self.cached_cup_settings:
+            loaded_settings = await self.load_json_from_config("settings.json")
+            if loaded_settings:
+                self.cached_cup_settings = loaded_settings
+        if not self.cached_cup_settings:
+            try:
+                loaded_settings = settings.CUP_MANAGER_NAMES
+                if loaded_settings:
+                    self.cached_cup_settings = loaded_settings
+            except KeyError:
+                logger.debug("CUP_MANAGER_NAMES not defined in local.py")
+        if not self.cached_cup_settings:
+            self.cached_cup_settings = get_fallback_names()
+        return self.cached_cup_settings
+
+    async def read_file_from_config(self, filename: str) -> str:
+        file_path = os.path.join(self.config_path, filename)
         try:
-            return settings.CUP_MANAGER_NAMES
-        except KeyError:
-            logger.debug("CUP_MANAGER_NAMES not defined in local.py")
-        return get_fallback_names()
+            if await self.instance.storage.driver.exists(file_path):
+                async with self.instance.storage.driver.open(file_path, "r") as r_file:
+                    return await r_file.read()
+        except Exception as e:
+            logger.exception(e)
+        return ""
+
+    async def write_file_from_config(self, filename: str, contents: str) -> None:
+        file_path = os.path.join(self.config_path, filename)
+        try:
+            async with self.instance.storage.driver.open(file_path, "W") as w_file:
+                await w_file.write(contents)
+        except Exception as e:
+            logger.exception(e)
+
+    async def load_json_from_config(self, filename: str) -> dict:
+        file_contents = await self.read_file_from_config(filename)
+        if file_contents:
+            try:
+                return json.loads(file_contents)
+            except:
+                logger.error("Error decoding json file " + filename)
+        return dict()
 
 
 def get_fallback_presets() -> "dict[str, dict]":
