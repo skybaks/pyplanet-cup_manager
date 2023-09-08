@@ -5,6 +5,7 @@
     * [Set up Pyplanet](./usage.md#set-up-pyplanet)
     * [Install the plugin](./usage.md#install-the-plugin)
     * [Set up a local py file](./usage.md#set-up-a-local-py-file)
+    * [Customizing the cup configuration](./usage.md#customizing-the-cup-configuration)
 * [Running a cup as server admin](./usage.md#running-a-cup-as-server-admin)
     * [Admin quick reference](./usage.md#admin-quick-reference)
     * [Set up before the cup map starts](./usage.md#set-up-before-the-cup-map-starts)
@@ -48,6 +49,9 @@ Then you will need to add the plugin to your "settings\apps.py". Add the followi
 
 ## Set up a local py file
 
+**⚠ Use of the local.py file is DEPRECATED and could be removed in future updates.** Please use instead
+[Customizing the cup configuration](./usage.md#customizing-the-cup-configuration).
+
 > This is optional but you should try to set one up if you want to utilize full functionality of the plugin.
 
 A "local.py" is an optional settings file which Pyplanet can load to provide additional custom information to plugins.
@@ -81,6 +85,15 @@ lookup name for the cup which is what you will pass into the `//cup on <cup_name
 |map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
 |payout|str|Optional|This is used to link a certain payout scheme to your cup. This linkage will be used to default the selection on the payout and export windows.|
 |scoremode|str|Optional|Use this to predefine a score sorting mode for the cup. If left undefined the default sorting mode for your mode script will be used.|
+
+## Customizing the cup configuration
+
+Setting up your cup specifics in the configuration is meant to reduce workload ingame when running your cup.
+
+The configuration is customized with a couple specific json files. This allows you to enter the name of your specific
+cup, thenumber of maps the competition will be over, the kind of scoring you want to use, one or more mode script
+setting presets, and even a planets payout scheme.
+
 
 # Running a cup as server admin
 
