@@ -4,7 +4,6 @@ from datetime import datetime
 import uuid
 from argparse import Namespace
 
-from pyplanet.conf import settings
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
@@ -31,19 +30,19 @@ class ActiveCupManager:
         self.app = app
         self.instance = app.instance
         self.context = app.context
-        self.cup_active = False
-        self.match_start_times = []
-        self.score_sorting = None  # type: ScoreModeBase
+        self.cup_active: bool = False
+        self.match_start_times: "list[int]" = []
+        self.score_sorting: ScoreModeBase = None
         self.cached_scores_lock = asyncio.Lock()
-        self.cached_scores = []
-        self.cup_key_name = ""
-        self.cup_name = ""
-        self.cup_edition_num = 0
-        self.cup_map_count_target = 0
-        self.cup_start_time = 0
-        self.cup_host = None
-        self._view_cache_cup_info = []  # type: list[CupInfo]
-        self._view_cache_cup_maps = []  # type: list[CupMatch]
+        self.cached_scores: "list[TeamPlayerScore]" = []
+        self.cup_key_name: str = ""
+        self.cup_name: str = ""
+        self.cup_edition_num: int = 0
+        self.cup_map_count_target: int = 0
+        self.cup_start_time: int = 0
+        self.cup_host: str = None
+        self._view_cache_cup_info: "list[CupInfo]" = []
+        self._view_cache_cup_maps: "list[CupMatch]" = []
 
     @property
     def cup_name_fmt(self) -> str:

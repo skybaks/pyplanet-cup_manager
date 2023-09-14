@@ -5,6 +5,8 @@ import json
 from pyplanet.conf import settings
 from pyplanet.core.instance import Instance
 
+from .views import FileEditView
+
 logger = logging.getLogger(__name__)
 
 FALLBACK_CONFIG_PRESETS: dict = dict()
@@ -19,15 +21,22 @@ class CupConfiguration:
         self.cached_cup_presets: dict = dict()
         self.cached_cup_payouts: dict = dict()
         self.cached_cup_settings: dict = dict()
-        self.config_path = "UserData/Maps/MatchSettings/cup_manager"
+        self.config_path = "UserData/Maps/MatchSettings"
         try:
             self.config_path = settings.CUP_MANAGER_CONFIG_PATH
         except KeyError:
             logger.debug("CUP_MANAGER_CONFIG_PATH not defined in local.py")
 
-    async def get_cup_presets(self) -> "dict[str, dict]":
+    async def on_start(self) -> None:
+        #view = FileEditView(self.app)
+        #await view.display("banjee")
+        pass
+
+    async def get_cup_presets(self, force_reload=False) -> "dict[str, dict]":
+        if force_reload:
+            self.cached_cup_presets = dict()
         if not self.cached_cup_presets:
-            loaded_presets = await self.load_json_from_config("presets.json")
+            loaded_presets = await self.load_json_from_config("cup_presets.json")
             if loaded_presets:
                 self.cached_cup_presets = loaded_presets
         if not self.cached_cup_presets:
@@ -41,9 +50,11 @@ class CupConfiguration:
             self.cached_cup_presets = get_fallback_presets()
         return self.cached_cup_presets
 
-    async def get_cup_payouts(self) -> "dict[str, dict]":
+    async def get_cup_payouts(self, force_reload=False) -> "dict[str, dict]":
+        if force_reload:
+            self.cached_cup_payouts = dict()
         if not self.cached_cup_payouts:
-            loaded_payouts = await self.load_json_from_config("payouts.json")
+            loaded_payouts = await self.load_json_from_config("cup_payouts.json")
             if loaded_payouts:
                 self.cached_cup_payouts = loaded_payouts
         if not self.cached_cup_payouts:
@@ -57,9 +68,11 @@ class CupConfiguration:
             self.cached_cup_payouts = get_fallback_payouts()
         return self.cached_cup_payouts
 
-    async def get_cup_settings(self) -> "dict[str, dict]":
+    async def get_cup_settings(self, force_reload=False) -> "dict[str, dict]":
+        if force_reload:
+            self.cached_cup_settings = dict()
         if not self.cached_cup_settings:
-            loaded_settings = await self.load_json_from_config("settings.json")
+            loaded_settings = await self.load_json_from_config("cup_settings.json")
             if loaded_settings:
                 self.cached_cup_settings = loaded_settings
         if not self.cached_cup_settings:
@@ -86,7 +99,7 @@ class CupConfiguration:
     async def write_file_from_config(self, filename: str, contents: str) -> None:
         file_path = os.path.join(self.config_path, filename)
         try:
-            async with self.instance.storage.driver.open(file_path, "W") as w_file:
+            async with self.instance.storage.driver.open(file_path, "w") as w_file:
                 await w_file.write(contents)
         except Exception as e:
             logger.exception(e)
@@ -99,6 +112,23 @@ class CupConfiguration:
             except:
                 logger.error("Error decoding json file " + filename)
         return dict()
+
+    async def get_config_by_filename(self, filename: str) -> str:
+        if filename == "cup_presets.json":
+            return json.dumps(await self.get_cup_presets(force_reload=True), indent=4)
+        elif filename == "cup_payouts.json":
+            return json.dumps(await self.get_cup_payouts(force_reload=True), indent=4)
+        elif filename == "cup_settings.json":
+            return json.dumps(await self.get_cup_settings(force_reload=True), indent=4)
+        else:
+            return ""
+
+    async def get_config_files(self) -> "list[str]":
+        return [
+            "cup_presets.json",
+            "cup_payouts.json",
+            "cup_settings.json",
+        ]
 
 
 def get_fallback_presets() -> "dict[str, dict]":

@@ -1,0 +1,36 @@
+<frame pos="0 17" z-index="150">
+  <quad pos="0 62.5" size="220 137" z-index="-50" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList" />
+  <quad pos="0 61.5" size="218 11" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList" />
+  <quad pos="-108 60.5 0" size="9 9" z-index="1" style="{{ icon_style }}" substyle="{{ icon_substyle }}" />
+  <label pos="-97 57.8 0" size="190 7" z-index="2" text="$o{{ title }}" textsize="2.5" textcolor="FFFFFFF" halign="left" />
+  <quad pos="99 59.5 0" size="7 7" z-index="1" style="Icons128x32_1" substyle="Close" action="{{ id }}__fileedit_button_close"/>
+
+  <!--toolbar-->
+  <frame pos="-58 49.5" halign="left" valign="top">
+    <quad pos="0 0" size="167 7" z-index="-49" style="Bgs1InRace" substyle="BgCardList" />
+
+    <label pos="9.5 -3.5" size="17 5" text=" Save" halign="center" valign="center2" focusareacolor1="7775" focusareacolor2="7777" scriptevents="1" action="{{ id }}__fileedit_button_save" />
+    <label pos="29.5 -3.5" size="21 5" text=" Reload" halign="center" valign="center2" focusareacolor1="7775" focusareacolor2="7777" scriptevents="1" action="{{ id }}__fileedit_button_reload" />
+  </frame>
+
+  <!--side bar-->
+  <frame pos="-110 49.5" halign="left" valign="top">
+    <quad pos="1 0" size="50 123" z-index="-49" halign="left" valign="top" style="Bgs1InRace" substyle="BgCardList" />
+
+    {% if files is defined and (files | length > 0) %}
+      {% for file in files %}
+        <label pos="2 {{ -4 - (loop.index0 * 6) }}" size="48 5" textprefix=" " text="{{ file.filename }}" halign="left" valign="center2" scriptevents="1" action="{{ id }}__fileedit_file_{{ loop.index0 }}"
+          {% if file.selected %}
+            focusareacolor1="7a75"
+            focusareacolor2="7a77"
+          {% else %}
+            focusareacolor1="7775"
+            focusareacolor2="7777"
+          {% endif %}
+        />
+      {% endfor %}
+    {% endif %}
+  </frame>
+
+  <textedit pos="-58 41.5" size="167 115" halign="left" valign="top" default="{{ file_text }}" textsize="2" focusareacolor1="0005" focusareacolor2="000b" name="text_body" />
+</frame>
