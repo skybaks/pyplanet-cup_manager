@@ -5,7 +5,6 @@ import json
 from pyplanet.conf import settings
 from pyplanet.core.instance import Instance
 
-from .views import FileEditView
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +27,6 @@ class CupConfiguration:
             logger.debug("CUP_MANAGER_CONFIG_PATH not defined in local.py")
 
     async def on_start(self) -> None:
-        #view = FileEditView(self.app)
-        #await view.display("banjee")
         pass
 
     async def get_cup_presets(self, force_reload=False) -> "dict[str, dict]":
@@ -112,23 +109,6 @@ class CupConfiguration:
             except:
                 logger.error("Error decoding json file " + filename)
         return dict()
-
-    async def get_config_by_filename(self, filename: str) -> str:
-        if filename == "cup_presets.json":
-            return json.dumps(await self.get_cup_presets(force_reload=True), indent=4)
-        elif filename == "cup_payouts.json":
-            return json.dumps(await self.get_cup_payouts(force_reload=True), indent=4)
-        elif filename == "cup_settings.json":
-            return json.dumps(await self.get_cup_settings(force_reload=True), indent=4)
-        else:
-            return ""
-
-    async def get_config_files(self) -> "list[str]":
-        return [
-            "cup_presets.json",
-            "cup_payouts.json",
-            "cup_settings.json",
-        ]
 
 
 def get_fallback_presets() -> "dict[str, dict]":
