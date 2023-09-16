@@ -5,6 +5,7 @@ import json
 from pyplanet.conf import settings
 from pyplanet.core.instance import Instance
 from pyplanet.contrib.command import Command
+from pyplanet.contrib.setting import Setting
 
 
 logger = logging.getLogger(__name__)
@@ -22,8 +23,18 @@ class CupConfiguration:
             self.config_path = settings.CUP_MANAGER_CONFIG_PATH
         except KeyError:
             logger.debug("CUP_MANAGER_CONFIG_PATH not defined in local.py")
+        self.config_file = Setting(
+            "cup_manager_config_filename",
+            "Cup Manager Config Filename",
+            Setting.CAT_GENERAL,
+            type=str,
+            description='Json filename to be loaded as cup configuration. Loads from folder "%s" which is configured by CUP_MANAGER_CONFIG_PATH in local.py'
+            % self.config_path,
+            default="cup_manager_config.json",
+        )
 
     async def on_start(self) -> None:
+        await self.app.context.setting.register(self.config_file)
         await self.instance.command_manager.register(
             Command(
                 command="config",
@@ -41,7 +52,6 @@ class CupConfiguration:
                 help="load, download",
             )
         )
-
         await self.load_config()
 
     async def get_cup_presets(self) -> "dict[str, dict]":
@@ -93,7 +103,9 @@ class CupConfiguration:
         return dict()
 
     async def load_config(self) -> None:
-        loaded_config_file = await self.load_config_from_file("cup_manager_config.json")
+        loaded_config_file = await self.load_config_from_file(
+            await self.config_file.get_value()
+        )
         if loaded_config_file:
             self.config = loaded_config_file
             return
@@ -239,13 +251,13 @@ def get_fallback_config() -> "dict[str]":
                 ],
             },
             "names": {
-                "fallback": {
-                    "name": "Fallback Cup (Not Configured)",
+                "basic": {
+                    "name": "Basic Cup",
                     "preset_on": "rounds180",
                     "preset_off": "timeattack",
                     "map_count": 1,
                     "scoremode": "rounds_default",
-                }
+                },
             },
         }
     return FALLBACK_CONFIG
