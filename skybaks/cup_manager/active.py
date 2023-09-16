@@ -154,7 +154,7 @@ class ActiveCupManager:
     async def get_specific_cup_settings(
         self, lookup_name: str
     ) -> "tuple[str, dict[str, any]]":
-        all_settings = await self.app.config.get_cup_settings()
+        all_settings = await self.app.config.get_cup_names()
         for settings_key in all_settings.keys():
             if settings_key.lower() == lookup_name.lower():
                 return (settings_key, all_settings[settings_key])
@@ -351,7 +351,7 @@ class ActiveCupManager:
                 logger.error(
                     f'Cup key name "{data.cup_alias}" not found using //cup on command'
                 )
-                cup_names = (await self.app.config.get_cup_settings()).keys()
+                cup_names = (await self.app.config.get_cup_names()).keys()
                 await self.instance.chat(
                     f"$f00Cup key name not found. Configured names are: {', '.join([f'$<$fff{kname}$>' for kname in cup_names])}",
                     player.login,
