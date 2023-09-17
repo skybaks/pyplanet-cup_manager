@@ -1,6 +1,8 @@
 import logging
 import os
 import json
+import aiohttp
+import re
 
 from pyplanet.conf import settings
 from pyplanet.core.instance import Instance
@@ -19,6 +21,7 @@ class CupConfiguration:
         self.instance: Instance = app.instance
         self.config_path = "UserData/Maps/MatchSettings"
         self.config: "dict[str]" = dict()
+        self.session: "aiohttp.ClientSession | None" = None
         try:
             self.config_path = settings.CUP_MANAGER_CONFIG_PATH
         except KeyError:
@@ -34,6 +37,7 @@ class CupConfiguration:
         )
 
     async def on_start(self) -> None:
+        await self.create_session()
         await self.app.context.setting.register(self.config_file)
         await self.instance.command_manager.register(
             Command(
@@ -44,12 +48,20 @@ class CupConfiguration:
                 admin=True,
                 perms="cup:manage_cup",
                 description="Load in a new configuration for the cup manager plugin",
-            ).add_param(
+            )
+            .add_param(
                 "command",
                 nargs=1,
                 type=str,
                 required=False,
                 help="load, download",
+            )
+            .add_param(
+                "file_or_url",
+                nargs=1,
+                type=str,
+                required=False,
+                help="Filename or URL to load config from",
             )
         )
         await self.load_config()
@@ -64,13 +76,19 @@ class CupConfiguration:
         return self.config.get("names")
 
     async def command_config(self, player, data, *args, **kwargs) -> None:
-        if not data.cmd:
+        if not data.command:
             # TODO: Implement config editor views
             pass
-        elif data.cmd == "load":
-            load_filename = kwargs.get("load", "")
-        elif data.cmd == "download":
-            download_link = kwargs.get("download", "")
+        elif data.command == "load" and data.file_or_url:
+            config_filename = data.file_or_url
+        elif data.command == "download" and data.file_or_url:
+            config_filename = await self.download_file(data.file_or_url, player)
+
+        if config_filename:
+            loaded_config = await self.load_config_from_file(config_filename, player)
+            if loaded_config:
+                self.config = loaded_config
+                await self.config_file.set_value(config_filename)
 
     async def load_config_from_file(self, filename, player=None) -> dict:
         loaded_config = await self.load_json_from_config_dir(filename)
@@ -134,10 +152,10 @@ class CupConfiguration:
             logger.exception(e)
         return ""
 
-    async def write_file_from_config_dir(self, filename: str, contents: str) -> None:
+    async def write_file_from_config_dir(self, filename: str, contents) -> None:
         file_path = os.path.join(self.config_path, filename)
         try:
-            async with self.instance.storage.driver.open(file_path, "w") as w_file:
+            async with self.instance.storage.driver.open(file_path, "wb") as w_file:
                 await w_file.write(contents)
         except Exception as e:
             logger.exception(e)
@@ -150,6 +168,39 @@ class CupConfiguration:
             except:
                 logger.error("Error decoding json file " + filename)
         return dict()
+
+    async def create_session(self) -> None:
+        self.session = await aiohttp.ClientSession(
+            headers={"User-Agent": "https://github.com/skybaks/pyplanet-cup_manager"}
+        ).__aenter__()
+
+    async def close_session(self) -> None:
+        if self.session and hasattr(self.session, "__aexist__"):
+            await self.session.__aexit__()
+
+    async def download_file(self, url: str, player=None) -> str:
+        response = await self.session.get(url)
+        if response.status < 200 or response.status > 399:
+            if player:
+                self.instance.chat(
+                    f"$f00Error downloading config from {url}", player.login
+                )
+            logger.error(f"Got invalid response from download url {url}")
+            return
+        out_filename = await self.get_filename_from_url(url)
+        await self.write_file_from_config_dir(out_filename, await response.read())
+        if player:
+            self.instance.chat(f"$ff0Downloaded config to {out_filename}", player.login)
+        return out_filename
+
+    async def get_filename_from_url(self, url: str) -> str:
+        filename: str = os.path.basename(url).replace(".json", "")
+        filename = re.sub("[^a-zA-Z0-9]", "_", filename)
+        if not filename:
+            filename = os.path.dirname(url)
+        if not filename.endswith(".json"):
+            filename += ".json"
+        return filename
 
 
 def get_fallback_config() -> "dict[str]":
