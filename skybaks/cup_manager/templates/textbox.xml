@@ -52,6 +52,6 @@
 
   <textedit id="{{ id }}__textbox-textedit-text_body" pos="0 {{ 51 - (9 + (5.5 * (output_options | length))) }}" size="108 40" z-index="1" halign="center" valign="top" default="{{ text_body }}" textsize="1" textcolor="FFFFFFF" focusareacolor1="7775" focusareacolor2="7777" autonewline="0"/>
 
-  <label id="{{ id }}__textbox-button-copy" pos="39 {{ 7.5 - (9 + (5.5 * (output_options | length))) }}" size="30 4.9" text="Copy Text" textprefix="$o$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777" scriptevents="1"/>
+  <label id="{{ id }}__textbox-button-copy" pos="39 {{ 7.5 - (9 + (5.5 * (output_options | length))) }}" size="30 4.9" text=" Copy Text" textprefix="$o$fff" textsize="1.3" valign="center2" halign="center" focusareacolor1="7775" focusareacolor2="7777" scriptevents="1"/>
 </frame>
 <script><!-- {% include 'cup_manager/textbox.Script.txt' %} --></script>
