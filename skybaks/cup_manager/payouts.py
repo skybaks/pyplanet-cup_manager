@@ -30,34 +30,6 @@ class PayoutCupManager:
             "Payout", self._button_payout, self._check_payout_permissions
         )
 
-    async def get_payouts(self) -> "dict[str, list[int]]":
-        payouts = {}
-        try:
-            payouts = settings.CUP_MANAGER_PAYOUTS
-        except:
-            payouts = {
-                "hec": [
-                    1000,
-                    700,
-                    500,
-                    400,
-                    300,
-                ],
-                "smurfscup": [
-                    6000,
-                    4000,
-                    3000,
-                    2500,
-                    1500,
-                    1000,
-                    800,
-                    600,
-                    400,
-                    200,
-                ],
-            }
-        return payouts
-
     async def pay_players(self, player, payment_data: "list[PaymentScore]") -> None:
         if not await self._check_payout_permissions(player=player):
             logger.error(f"{player.login} does not have permission 'transactions:pay'")
@@ -79,7 +51,7 @@ class PayoutCupManager:
         sorted_results: "list[TeamPlayerScore]",
         score_sorting: ScoreModeBase,
     ) -> "list[PaymentScore]":
-        payouts = await self.get_payouts()
+        payouts = await self.app.config.get_cup_payouts()
         selected_payout = []  # type: list[int]
         if payout_key in payouts:
             selected_payout = payouts[payout_key]

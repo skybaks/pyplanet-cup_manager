@@ -39,7 +39,7 @@ class ScoreTimeAttackDefault(ScoreModeBase):
         self,
         scores: "list[list[TeamPlayerScore]]",
         maps: "list[MatchInfo]" = [],
-        **kwargs
+        **kwargs,
     ) -> "list[TeamPlayerScore]":
         combined_scores = []  # type: list[TeamPlayerScore]
         for map_scores in scores:
@@ -100,7 +100,7 @@ class ScoreTimeAttackPenaltyAuthorPlus15(ScoreTimeAttackDefault):
         self,
         scores: "list[list[TeamPlayerScore]]",
         maps: "list[MatchInfo]" = [],
-        **kwargs
+        **kwargs,
     ) -> "list[TeamPlayerScore]":
         all_players = {}  # type: dict[str, TeamPlayerScore]
         for map_scores in scores:

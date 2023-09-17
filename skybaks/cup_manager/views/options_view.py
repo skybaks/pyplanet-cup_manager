@@ -245,7 +245,7 @@ class PayoutsView(OptionsView):
         return fields
 
     async def get_option_data(self) -> "list[dict]":
-        payouts = await self.app.get_payouts()
+        payouts = await self.app.app.config.get_cup_payouts()
         options = []
         if not self.selected_option and len(payouts) > 0:
             self.selected_option = {"name": list(payouts.keys())[0]}
@@ -373,7 +373,7 @@ class PresetsView(OptionsView):
         return fields
 
     async def get_option_data(self) -> "list[dict]":
-        presets = await self.app.get_presets()
+        presets = await self.app.app.config.get_cup_presets()
         options = []
         for key, data in presets.items():
             if "script" in data and self.app.instance.game.game in data["script"]:
@@ -411,7 +411,7 @@ class PresetsView(OptionsView):
     async def get_info_data(self) -> "list[dict]":
         info_data = []
         if self.selected_option and "name" in self.selected_option:
-            presets = await self.app.get_presets()
+            presets = await self.app.app.config.get_cup_presets()
             selected_preset = presets[self.selected_option["name"]]
             if "settings" in selected_preset and selected_preset["settings"]:
                 for key, data in selected_preset["settings"].items():

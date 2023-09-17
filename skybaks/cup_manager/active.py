@@ -4,7 +4,6 @@ from datetime import datetime
 import uuid
 from argparse import Namespace
 
-from pyplanet.conf import settings
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
 from pyplanet.contrib.command import Command
@@ -31,19 +30,19 @@ class ActiveCupManager:
         self.app = app
         self.instance = app.instance
         self.context = app.context
-        self.cup_active = False
-        self.match_start_times = []
-        self.score_sorting = None  # type: ScoreModeBase
+        self.cup_active: bool = False
+        self.match_start_times: "list[int]" = []
+        self.score_sorting: ScoreModeBase = None
         self.cached_scores_lock = asyncio.Lock()
-        self.cached_scores = []
-        self.cup_key_name = ""
-        self.cup_name = ""
-        self.cup_edition_num = 0
-        self.cup_map_count_target = 0
-        self.cup_start_time = 0
-        self.cup_host = None
-        self._view_cache_cup_info = []  # type: list[CupInfo]
-        self._view_cache_cup_maps = []  # type: list[CupMatch]
+        self.cached_scores: "list[TeamPlayerScore]" = []
+        self.cup_key_name: str = ""
+        self.cup_name: str = ""
+        self.cup_edition_num: int = 0
+        self.cup_map_count_target: int = 0
+        self.cup_start_time: int = 0
+        self.cup_host: str = None
+        self._view_cache_cup_info: "list[CupInfo]" = []
+        self._view_cache_cup_maps: "list[CupMatch]" = []
 
     @property
     def cup_name_fmt(self) -> str:
@@ -152,18 +151,10 @@ class ActiveCupManager:
         await self.app.results.register_match_start_notify(self._notify_match_start)
         await self.app.results.register_scores_update_notify(self._notify_scores_update)
 
-    async def get_cup_settings(self) -> "dict[str, dict]":
-        cup_names = {}
-        try:
-            cup_names = settings.CUP_MANAGER_NAMES
-        except:
-            logger.error("Error reading CUP_MANAGER_NAMES from local.py")
-        return cup_names
-
     async def get_specific_cup_settings(
         self, lookup_name: str
     ) -> "tuple[str, dict[str, any]]":
-        all_settings = await self.get_cup_settings()
+        all_settings = await self.app.config.get_cup_names()
         for settings_key in all_settings.keys():
             if settings_key.lower() == lookup_name.lower():
                 return (settings_key, all_settings[settings_key])
@@ -360,7 +351,7 @@ class ActiveCupManager:
                 logger.error(
                     f'Cup key name "{data.cup_alias}" not found using //cup on command'
                 )
-                cup_names = (await self.get_cup_settings()).keys()
+                cup_names = (await self.app.config.get_cup_names()).keys()
                 await self.instance.chat(
                     f"$f00Cup key name not found. Configured names are: {', '.join([f'$<$fff{kname}$>' for kname in cup_names])}",
                     player.login,

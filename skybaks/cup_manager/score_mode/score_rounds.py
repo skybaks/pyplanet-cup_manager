@@ -37,7 +37,7 @@ class ScoreRoundsDefault(ScoreModeBase):
         self,
         scores: "list[list[TeamPlayerScore]]",
         maps: "list[MatchInfo]" = [],
-        **kwargs
+        **kwargs,
     ) -> "list[TeamPlayerScore]":
         combined_scores = []  # type: list[TeamPlayerScore]
         for map_scores in scores:

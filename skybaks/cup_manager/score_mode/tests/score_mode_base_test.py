@@ -47,7 +47,7 @@ class ScoreModeBaseImpl(ScoreModeBase):
         self,
         scores: "list[list[TeamPlayerScore]]",
         maps: "list[MatchInfo]" = [],
-        **kwargs
+        **kwargs,
     ) -> "list[TeamPlayerScore]":
         return []
 
