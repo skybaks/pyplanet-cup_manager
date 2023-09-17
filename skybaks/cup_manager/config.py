@@ -54,7 +54,7 @@ class CupConfiguration:
                 nargs=1,
                 type=str,
                 required=False,
-                help="load, download",
+                help='"load" to load a config file; "download" to download a config file',
             )
             .add_param(
                 "file_or_url",
@@ -76,13 +76,18 @@ class CupConfiguration:
         return self.config.get("names")
 
     async def command_config(self, player, data, *args, **kwargs) -> None:
+        config_filename: str = ""
         if not data.command:
             # TODO: Implement config editor views
             pass
-        elif data.command == "load" and data.file_or_url:
-            config_filename = data.file_or_url
-        elif data.command == "download" and data.file_or_url:
-            config_filename = await self.download_file(data.file_or_url, player)
+        elif data.command in ["load", "l"]:
+            if data.file_or_url:
+                config_filename = data.file_or_url
+            else:
+                config_filename = await self.config_file.get_value()
+        elif data.command == ["download", "dl"]:
+            if data.file_or_url:
+                config_filename = await self.download_file(data.file_or_url, player)
 
         if config_filename:
             loaded_config = await self.load_config_from_file(config_filename, player)
@@ -100,6 +105,10 @@ class CupConfiguration:
                 )
             logger.debug(f"Loaded cup configuration from {filename}")
             return loaded_config
+        if player:
+            await self.instance.chat(
+                f"$f00Failed to load config from {filename}", player.login
+            )
         return dict()
 
     async def load_config_from_settings(self, player=None) -> dict:
