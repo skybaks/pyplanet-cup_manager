@@ -19,7 +19,7 @@ __all__ = [
 
 
 def _build_mode_score_dict() -> "dict[str, type[ScoreModeBase]]":
-    mode_scores = {}  # type: dict[str, any]
+    mode_scores: "dict[str]" = dict()
     lookup_classes = [ScoreModeBase]
     while lookup_classes:
         parent_class = lookup_classes.pop()
