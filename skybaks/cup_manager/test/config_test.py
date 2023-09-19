@@ -12,15 +12,39 @@ class ConfigValidationTest(unittest.TestCase):
         reasons = validate_config(config)
         self.assertFalse(reasons, msg="\n".join(reasons))
 
-    def test_failed_names_payout(self) -> None:
-        config = {
-            "presets": {},
-            "payouts": {"test1": [1, 2]},
-            "names": {"tc": {"name": "test cup", "payout": "test2"}},
-        }
+        del config["presets"]
         reasons = validate_config(config)
         self.assertTrue(len(reasons) == 1)
-        self.assertTrue("names/tc/payout" in reasons[0])
+        self.assertTrue("presets" in reasons[0])
+
+        del config["payouts"]
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 2)
+        self.assertTrue("payouts" in reasons[1])
+
+        del config["names"]
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 3)
+        self.assertTrue("names" in reasons[2])
+
+    def test_payout_config(self) -> None:
+        config = {
+            "presets": dict(),
+            "payouts": {"pay-01": [1, 2, 3, 4, 5, 6]},
+            "names": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertFalse(reasons)
+
+        config["payouts"]["pay-02"] = 1
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("payouts/pay-02 is not the right type" in reasons[0])
+
+        config["payouts"]["pay-02"] = [1, 2, "3"]
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("payouts/pay-02 contains elements which are not" in reasons[0])
 
     def test_failed_names_preset(self) -> None:
         config = {
