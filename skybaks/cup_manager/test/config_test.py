@@ -46,6 +46,99 @@ class ConfigValidationTest(unittest.TestCase):
         self.assertTrue(len(reasons) == 1)
         self.assertTrue("payouts/pay-02 contains elements which are not" in reasons[0])
 
+    def test_presets_config(self) -> None:
+        config = {
+            "presets": {
+                "pre-01": {
+                    "aliases": list(),
+                    "script": {"tm": "script.Script.txt"},
+                    "settings": dict(),
+                }
+            },
+            "payouts": dict(),
+            "names": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertFalse(reasons)
+
+        config["presets"]["pre-02"] = 1
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02 is not the right type" in reasons[0])
+
+        config["presets"]["pre-02"] = dict()
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 3)
+        self.assertTrue("aliases" in reasons[0])
+        self.assertTrue("script" in reasons[1])
+        self.assertTrue("settings" in reasons[2])
+
+        config["presets"]["pre-02"] = {
+            "aliases": 0,
+            "script": {"tm": ""},
+            "settings": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02/aliases is not the right type" in reasons[0])
+
+        config["presets"]["pre-02"] = {
+            "aliases": [1, "p2"],
+            "script": {"tm": ""},
+            "settings": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue(
+            "presets/pre-02/aliases contains elements which are not the right type"
+            in reasons[0]
+        )
+
+        config["presets"]["pre-02"] = {
+            "aliases": ["p2"],
+            "script": 0,
+            "settings": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02/script is not the right type" in reasons[0])
+
+        config["presets"]["pre-02"] = {
+            "aliases": ["p2"],
+            "script": dict(),
+            "settings": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02/script contains no elements" in reasons[0])
+
+        config["presets"]["pre-02"] = {
+            "aliases": ["p2"],
+            "script": {"fake": "script"},
+            "settings": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02/script/fake is not a valid game" in reasons[0])
+
+        config["presets"]["pre-02"] = {
+            "aliases": ["p2"],
+            "script": {"tmnext": 1},
+            "settings": dict(),
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02/script/tmnext value of" in reasons[0])
+
+        config["presets"]["pre-02"] = {
+            "aliases": ["p2"],
+            "script": {"tmnext": "script"},
+            "settings": 1,
+        }
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("presets/pre-02/settings is not the right type" in reasons[0])
+
     def test_failed_names_preset(self) -> None:
         config = {
             "presets": {

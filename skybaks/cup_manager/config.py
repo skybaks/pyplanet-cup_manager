@@ -360,15 +360,20 @@ def validate_presets(config: dict) -> "list[str]":
                             f"presets/{key}/script is not the right type. Expected a dict"
                         )
                     else:
-                        for game, script_name in script_data.items():
-                            if game not in ["tm", "tmnext", "sm"]:
-                                invalid_reasons.append(
-                                    f"presets/{key}/script/{game} is not a valid game identifier"
-                                )
-                            if not isinstance(script_name, str):
-                                invalid_reasons.append(
-                                    f'presets/{key}/script/{game} value of "{str(script_name)}" is not the right type. Expected string'
-                                )
+                        if not script_data:
+                            invalid_reasons.append(
+                                f"presets/{key}/script contains no elements. Define a script for at least one game"
+                            )
+                        else:
+                            for game, script_name in script_data.items():
+                                if game not in ["tm", "tmnext", "sm"]:
+                                    invalid_reasons.append(
+                                        f"presets/{key}/script/{game} is not a valid game identifier"
+                                    )
+                                if not isinstance(script_name, str):
+                                    invalid_reasons.append(
+                                        f'presets/{key}/script/{game} value of "{str(script_name)}" is not the right type. Expected string'
+                                    )
 
                 if "settings" not in data:
                     invalid_reasons.append(f'"settings" is missing from presets/{key}')
