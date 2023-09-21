@@ -3,7 +3,7 @@ from .score_rounds import ScoreRoundsDefault
 from .score_timeattack import ScoreTimeAttackDefault, ScoreTimeAttackPenaltyAuthorPlus15
 from .score_laps import ScoreLapsDefault
 from .score_fallback import ScoreModeFallback
-from .score_mixed import ScoreModeMixed
+from .score_mixed import ScoreModeMixed, ScoreModeMixedGolf
 
 
 __all__ = [
@@ -15,6 +15,7 @@ __all__ = [
     "ScoreLapsDefault",
     "ScoreModeFallback",
     "ScoreModeMixed",
+    "ScoreModeMixedGolf",
 ]
 
 

@@ -44,7 +44,7 @@ class ScoreModeMixed(ScoreModeBase):
         maps: "list[MatchInfo]" = [],
         **kwargs,
     ) -> "list[TeamPlayerScore]":
-        combined_scores = []  # type: list[TeamPlayerScore]
+        combined_scores: "list[TeamPlayerScore]" = []
         for map_scores, map_info in zip(scores, maps):
             map_sorting = get_sorting_from_mode_singular(map_info.mode_script)
             map_scores_sorted = map_sorting.sort_scores(map_scores)
@@ -77,3 +77,52 @@ class ScoreModeMixed(ScoreModeBase):
             else:
                 scores[i].placement = i + 1
         return scores
+
+
+class ScoreModeMixedGolf(ScoreModeMixed):
+    """
+    Score sorting mode where each players placement in a map is converted to a
+    number of points. For example: 1st place gets 1 point, 2nd place gets 2
+    points, 3rd place gets 3 points, etc. Then the positions are sorted so that
+    the lowest score is best.
+
+    This sorting mode differs from the the "Default Mixed Modes" sorting because
+    it provides the same weight to placements for each map even when there might
+    be different amounts of players. 1st place is always worth 1 point
+    regardless of how many players were in the map.
+
+
+    Recommended Modes: Any combination that have their own default sorting
+    Sorting: Points for each map placement ascending
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "score_mode_mixed_golf"
+        self.display_name = "Mixed Modes Golf-Points"
+        self.brief = "Use placement as points, lowest total wins"
+
+    def combine_scores(
+        self,
+        scores: "list[list[TeamPlayerScore]]",
+        maps: "list[MatchInfo]" = [],
+        **kwargs,
+    ) -> "list[TeamPlayerScore]":
+        combined_scores: "list[TeamPlayerScore]" = list()
+        for map_scores, map_info in zip(scores, maps):
+            map_sorting = get_sorting_from_mode_singular(map_info.mode_script)
+            map_scores_sorted = map_sorting.sort_scores(map_scores)
+            map_scores_sorted = map_sorting.update_placements(map_scores_sorted)
+            for map_score in map_scores_sorted:
+                map_score.player_score = map_score.placement
+                existing_score = next(
+                    (x for x in combined_scores if x.login == map_score.login), None
+                )
+                if existing_score:
+                    existing_score.player_score += map_score.player_score
+                else:
+                    combined_scores.append(map_score)
+        return combined_scores
+
+    def sort_scores(self, scores: "list[TeamPlayerScore]") -> "list[TeamPlayerScore]":
+        return sorted(scores, key=lambda x: (x.player_score))
