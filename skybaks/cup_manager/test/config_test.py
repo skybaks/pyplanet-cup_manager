@@ -139,28 +139,88 @@ class ConfigValidationTest(unittest.TestCase):
         self.assertTrue(len(reasons) == 1)
         self.assertTrue("presets/pre-02/settings is not the right type" in reasons[0])
 
-    def test_failed_names_preset(self) -> None:
+    def test_names_config(self) -> None:
         config = {
             "presets": {
                 "pre-1": {
                     "aliases": [],
-                    "script": {"tm": "Script.Script.txt"},
+                    "script": {"tm": "script.Script.txt"},
                     "settings": {"S_Setting": True},
-                },
-                "pre-2": {
-                    "aliases": [],
-                    "script": {"tmnext": "Other.Script.txt"},
-                    "settings": {"S_Setting_1": 1},
-                },
+                }
             },
-            "payouts": dict(),
-            "names": {
-                "cup-1": {"name": "Cup 1", "preset_on": "pre-3", "preset_off": "pre-1"}
-            },
+            "payouts": {"pay-1": [0, 1, 2, 3]},
+            "names": {"cup-1": {"name": "Cup 1"}},
         }
         reasons = validate_config(config)
+        self.assertFalse(reasons)
+
+        config["names"]["cup-2"] = list()
+        reasons = validate_config(config)
         self.assertTrue(len(reasons) == 1)
-        self.assertTrue("names/cup-1/preset_on" in reasons[0])
+        self.assertTrue("names/cup-2 is not the right type" in reasons[0])
+
+        config["names"]["cup-2"] = dict()
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue('"name" is missing from names/cup-2' in reasons[0])
+
+        config["names"]["cup-2"] = {"name": 234.15}
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("names/cup-2/name is not the right type" in reasons[0])
+
+        config["names"]["cup-2"] = {"name": "Cup 2", "map_count": "3"}
+        reasons = validate_config(config)
+        self.assertTrue(len(reasons) == 1)
+        self.assertTrue("names/cup-2/map_count is not the right type" in reasons[0])
+
+        config["names"]["cup-2"]["map_count"] = 3
+        config["names"]["cup-2"]["scoremode"] = 6
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/scoremode is not the right type" in reasons[0])
+
+        config["names"]["cup-2"]["scoremode"] = "fake_mode"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue('names/cup-2/scoremode value of "fake_mode"' in reasons[0])
+
+        config["names"]["cup-2"]["scoremode"] = "rounds_default"
+        config["names"]["cup-2"]["payout"] = 1.25
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/payout is not the right type" in reasons[0])
+
+        config["names"]["cup-2"]["payout"] = "fake_pay"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/payout value of" in reasons[0])
+
+        config["names"]["cup-2"]["payout"] = "pay-1"
+        config["names"]["cup-2"]["preset_on"] = 0.0
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/preset_on is not the right type" in reasons[0])
+
+        config["names"]["cup-2"]["preset_on"] = "preset_fake"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/preset_on value of" in reasons[0])
+
+        config["names"]["cup-2"]["preset_on"] = "pre-1"
+        config["names"]["cup-2"]["preset_off"] = 0.0
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/preset_off is not the right type" in reasons[0])
+
+        config["names"]["cup-2"]["preset_off"] = "preset_fake"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 1)
+        self.assertTrue("names/cup-2/preset_off value of" in reasons[0])
+
+        config["names"]["cup-2"]["preset_off"] = "pre-1"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 0)
 
 
 if __name__ == "__main__":
