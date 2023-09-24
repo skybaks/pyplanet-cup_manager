@@ -87,9 +87,15 @@ class CupConfiguration:
                 config_filename = data.file_or_url
             else:
                 config_filename = await self.config_file.get_value()
-        elif data.command == ["download", "dl"]:
+        elif data.command in ["download", "dl"]:
             if data.file_or_url:
                 config_filename = await self.download_file(data.file_or_url, player)
+        else:
+            await self.instance.chat(
+                f'$f00Unknown config command "{str(data.command)}". Use "load" or "l" to load a file or "download" or "dl" to download a file.',
+                player.login,
+            )
+            return
 
         if config_filename:
             loaded_config = await self.load_config_from_file(config_filename, player)
@@ -99,18 +105,24 @@ class CupConfiguration:
 
     async def load_config_from_file(self, filename, player=None) -> dict:
         loaded_config = await self.load_json_from_config_dir(filename)
-        # TODO: Perform validation
-        if loaded_config:
+        invalid_reasons = validate_config(loaded_config)
+        if loaded_config and not invalid_reasons:
+            logger.info(f"Loaded cup configuration from {filename}")
             if player:
                 await self.instance.chat(
                     f"$ff0Loaded cup configuration from {filename}", player.login
                 )
-            logger.debug(f"Loaded cup configuration from {filename}")
             return loaded_config
+
+        logger.error(f"Failed to load config from {filename}")
+        for reason in invalid_reasons:
+            logger.error(f"\t{str(reason)}")
         if player:
             await self.instance.chat(
                 f"$f00Failed to load config from {filename}", player.login
             )
+            for reason in invalid_reasons:
+                await self.instance.chat(f"$f00\t{str(reason)}", player.login)
         return dict()
 
     async def load_config_from_settings(self, player=None) -> dict:
@@ -190,16 +202,22 @@ class CupConfiguration:
             await self.session.__aexit__()
 
     async def download_file(self, url: str, player=None) -> str:
-        response = await self.session.get(url)
-        if response.status < 200 or response.status > 399:
+        try:
+            response = await self.session.get(url)
+            if response.status < 200 or response.status > 399:
+                if player:
+                    self.instance.chat(
+                        f"$f00Error downloading config from {url}", player.login
+                    )
+                logger.error(f"Got invalid response from download url {url}")
+                return
+            out_filename = await self.get_filename_from_url(url)
+            await self.write_file_from_config_dir(out_filename, await response.read())
+        except Exception as e:
+            logger.error(f"Exception while trying to download from \"{url}\": {str(e)}")
             if player:
-                self.instance.chat(
-                    f"$f00Error downloading config from {url}", player.login
-                )
-            logger.error(f"Got invalid response from download url {url}")
+                await self.instance.chat(f"$f00Error when trying to download from \"{str(url)}\"", player.login)
             return
-        out_filename = await self.get_filename_from_url(url)
-        await self.write_file_from_config_dir(out_filename, await response.read())
         if player:
             self.instance.chat(f"$ff0Downloaded config to {out_filename}", player.login)
         return out_filename
