@@ -4,7 +4,7 @@
 * [Setting up with a dedicated server](./usage.md#setting-up-with-a-dedicated-server)
     * [Set up Pyplanet](./usage.md#set-up-pyplanet)
     * [Install the plugin](./usage.md#install-the-plugin)
-    * [Set up a local py file](./usage.md#set-up-a-local-py-file)
+    * [DEPRECATED] [Set up a local py file](./usage.md#set-up-a-local-py-file)
     * [Customizing the cup configuration](./usage.md#customizing-the-cup-configuration)
 * [Running a cup as server admin](./usage.md#running-a-cup-as-server-admin)
     * [Admin quick reference](./usage.md#admin-quick-reference)
@@ -31,7 +31,8 @@
 This plugin runs from within the Pyplanet server controller. You will need to have pyplanet configured and working
 before starting to set up this plugin.
 
-Pyplanet has a very robust set of documentation and extremely helpful directions on how to get it set up. Go to: https://pypla.net/
+Pyplanet has a very robust set of documentation and extremely helpful directions on how to get it set up. Go to:
+https://pypla.net/
 
 ## Install the plugin
 
@@ -93,6 +94,97 @@ Setting up your cup specifics in the configuration is meant to reduce workload i
 The configuration is customized with a couple specific json files. This allows you to enter the name of your specific
 cup, thenumber of maps the competition will be over, the kind of scoring you want to use, one or more mode script
 setting presets, and even a planets payout scheme.
+
+### Create a Cup Configuration File
+
+The cup configuration file is a Json formatted text file with a specific structure. See
+[cup_manager_config](./settings/cup_manager_config.json) for an example.
+
+The base level of the config file contains three elements like so:
+
+```json
+{
+    "names": {},
+    "presets": {},
+    "payouts": {}
+}
+```
+
+#### Cup Config File: Names
+
+The "names" config contains the names of the cups which you are going to run from the plugin as well as any additional
+information tying these cups to any presets or payouts which are also defined in the config file.
+
+```json
+{
+    "my_cup": {
+        "name": "My Cup"
+    },
+    "my_other_cup": {
+        "name": "My Other Cup"
+    }
+}
+```
+
+The most simple instantiation of a named cup is defined with only a "name" attribute that will be the display name of
+the cup. In the example above, the key names "my_cup" and "my_other_cup" are the ID names that would be used with the
+`//cup on <ID>` command to start the cup from in game.
+
+```json
+{
+    "my_cup": {
+        "name": "My Cup",
+
+        /* [Optional]
+            Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a
+            settings preset. You can define one or the other or both.
+            - preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
+            - preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends
+        */
+        "preset_on": "my_rounds_preset",
+        "preset_off": "my_timeattack_preset",
+
+        /* [Optional]
+            Use map_count to predefine the number of maps the cup will be played on. This is equivalent to running
+            "//cup mapcount <map_count>" right after you start the cup.
+        */
+        "map_count": 7,
+
+        /* [Optional]
+            Use payout to predefine the payout config this cup will be using. The value entered in this field should
+            match the ID name of a payout defined in this config file.
+            Predefining the payout here will make it easier to access from the results and will make it appear in the
+            exported results.
+        */
+        "payout": "my_payout",
+
+        /* [Optional]
+            Use scoremode to force the type of score behavior for the cup. This is equivalent to running
+            "//cup scoremode <score_mode>" after starting a cup. If included the field should be set to one of the
+            scoremode IDs found when running "//cup scoremode"
+        */
+        "scoremode": "score_mode_mixed"
+    }
+}
+```
+
+Shown above are the additional optional fields which can be added to further customize a defined cup. Each is
+documented in the attached comment.
+
+#### Cup Config File: Presets
+
+TODO
+
+#### Cup Config File: Payouts
+
+TODO
+
+### Cup Configuration Location
+
+The default location for saving and loading cup configuration json files is `UserData/Maps/MatchSettings` under the
+dedicated server.
+This value can be changed by adding `CUP_MANAGER_CONFIG_PATH` to your pyplanet settings file. However, it is
+recommended in most instances to stick with the defaults.
 
 
 # Running a cup as server admin
