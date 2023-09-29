@@ -265,7 +265,6 @@ def get_fallback_config() -> "dict[str]":
                         "S_WarmUpNb": 1,
                         "S_WarmUpDuration": 900,
                         "S_PointsRepartition": "50,45,41,38,36,34,32,30,28,26,24,22,20,18,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,1,1",
-                        "S_TurboFinishTime": True,
                     },
                 },
                 "rounds480": {
@@ -280,7 +279,6 @@ def get_fallback_config() -> "dict[str]":
                         "S_WarmUpNb": 1,
                         "S_WarmUpDuration": 600,
                         "S_PointsRepartition": "50,45,41,38,36,34,32,30,28,26,24,22,20,18,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,1,1",
-                        "S_TurboFinishTime": True,
                     },
                 },
                 "laps50": {

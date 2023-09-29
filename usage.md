@@ -91,9 +91,9 @@ lookup name for the cup which is what you will pass into the `//cup on <cup_name
 
 Setting up your cup specifics in the configuration is meant to reduce workload ingame when running your cup.
 
-The configuration is customized with a couple specific json files. This allows you to enter the name of your specific
-cup, thenumber of maps the competition will be over, the kind of scoring you want to use, one or more mode script
-setting presets, and even a planets payout scheme.
+The configuration is customized with a json file. Using this file you can enter the name of your specific cup, the
+number of maps the competition will be over, the kind of scoring you want to use, one or more mode script setting
+presets, and even a planets payout scheme.
 
 ### Create a Cup Configuration File
 
@@ -173,11 +173,87 @@ documented in the attached comment.
 
 #### Cup Config File: Presets
 
-TODO
+The presets section of the config file allows you to define a preset mode script and settings. Each preset that you
+define can be invoked using the `//cup setup <preset>` command.
+
+```json
+{
+    "my_preset": {
+
+        /*
+            The aliases section of the preset defines shorthand names that can be used with the "//cup setup" command
+            instead of the full preset identifier.
+            In the case of this current example preset, each of the following commands could be used to activate:
+            - //cup setup my_preset
+            - //cup setup mp
+            - //cup setup 1
+        */
+        "aliases": [ "mp", "1" ],
+
+        /*
+            The script field contains the name of the mode script to be used with this preset along with what game it
+            is associated with. Since script filenames can differ between games, this is designed to allow for preset
+            reuse. You are only required to define at least one script.
+            The available game names are:
+            - tm        -> Used for Maniaplanet
+            - tmnext    -> Used for Trackmania (2020)
+            - sm        -> Used for Shootmania
+        */
+        "script": {
+            "tm": "Rounds.Script.txt",
+            "tmnext": "Trackmania/TM_Rounds_Online.Script.txt"
+        },
+
+        /*
+            This field is used to define settings that will be applied to the mode script when the preset is activated.
+            Define any number of script settings along with the value you want to be applied.
+        */
+        "settings": {
+            "S_FinishTimeout": 10,
+            "S_PointsLimit": 240,
+            "S_PointsRepartition": "15,12,10,8,6,4,3,3,3,2,2,2,1"
+        }
+    },
+
+    "my_other_preset": {
+        "aliases": [],
+        "script": {
+            "tmnext": "Trackmania/TM_TimeAttack_Online.Script.txt"
+        },
+        "settings": {
+            "S_TimeLimit": 360,
+        }
+    }
+}
+```
+
+Shown above is an example of two presets with comments used to document each of the sub-fields. Any number of presets
+can be defined in the config file.
+
+The identifiers "my_preset" and "my_other_preset" are simply examples and your presets can use whatever identifier
+names that are meaningful to you. These identifiers are also what would be used for the "preset_on" or "preset_off"
+fields in the names config.
 
 #### Cup Config File: Payouts
 
-TODO
+The payouts section of the config file is used to define a award scheme for planets. In games which support planets,
+the defined payouts can be accessed from the cup results to pay the winning players in batch.
+
+```json
+{
+    /*
+        In this case, "my_payout" can be whatever name you would like to use to identify the payout by. The numbers in
+        this array define the payment scheme in order where the first element would be given the highest ranked player.
+    */
+    "my_payout": [ 500, 250, 100 ],
+
+    "my_other_payout": [6000, 1000, 500, 200, 100, 50]
+}
+```
+
+Shown above is an example of payouts annotated with comments. The names of the payouts shown here "my_payout" and
+"my_other_payout" are custom and you can define your payouts with any names that are meaningful to you. These names are
+the identifiers for the payouts and would also be used along with the "payout" field in the names config.
 
 ### Cup Configuration Location
 
