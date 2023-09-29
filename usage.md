@@ -4,8 +4,8 @@
 * [Setting up with a dedicated server](./usage.md#setting-up-with-a-dedicated-server)
     * [Set up Pyplanet](./usage.md#set-up-pyplanet)
     * [Install the plugin](./usage.md#install-the-plugin)
-    * [DEPRECATED] [Set up a local py file](./usage.md#set-up-a-local-py-file)
     * [Customizing the cup configuration](./usage.md#customizing-the-cup-configuration)
+    * [DEPRECATED] [Set up a local py file](./usage.md#set-up-a-local-py-file)
 * [Running a cup as server admin](./usage.md#running-a-cup-as-server-admin)
     * [Admin quick reference](./usage.md#admin-quick-reference)
     * [Set up before the cup map starts](./usage.md#set-up-before-the-cup-map-starts)
@@ -47,45 +47,6 @@ Then you will need to add the plugin to your "settings\apps.py". Add the followi
 ```
 "skybaks.cup_manager",
 ```
-
-## Set up a local py file
-
-**⚠ Use of the local.py file is DEPRECATED and could be removed in future updates.** Please use instead
-[Customizing the cup configuration](./usage.md#customizing-the-cup-configuration).
-
-> This is optional but you should try to set one up if you want to utilize full functionality of the plugin.
-
-A "local.py" is an optional settings file which Pyplanet can load to provide additional custom information to plugins.
-This plugin opts to use the format of a local.py file rather than your server database to store information about mode
-presets, payout schemas, etc... because it is much easier to copy your customizations between multiple servers you
-host in this format.
-
-If you do not already have a local.py file in your Pyplanet settings folder then you can copy the one from the settings
-folder in cup_manager. [This one is provided as an example](./settings/local.py).
-
-**`CUP_MANAGER_PRESETS` defines the script and setting presets which are available from the command `//cup setup <preset>`.**
-This is a python dictionary of preset entries where the key value is the preset lookup name.
-|Preset Subfield|Value Type|Required|Usage|
-|---------------|----------|--------|-----|
-|aliases|list[str]|Yes|Define an optional list of additional names which can be used to trigger the preset|
-|script|dict[str,str]|Yes|Set the mode script to load with this preset on a per game basis where the key value is the short identifier for the game. valid game identifiers are 'tm' for maniaplanet, 'sm' for shootmania, and 'tmnext' for tm2020|
-|settings|dict[str,Any]|Yes|Define the script settings to be applied when the mode script loads|
-
-**`CUP_MANAGER_PAYOUTS` defines the payment schemes that are available to admins from the "Payout" button on a match results screen.**
-This is a python dictionary where the key value should be a meaningful name and the value should be a list[int]
-of the number of planets to pay each player ordered from first to last.
-
-**`CUP_MANAGER_NAMES` defines the name and associated default settings for a given cup.**
-By defining cup default settings here you can greatly increase the level of automation from the plugin. The key is the
-lookup name for the cup which is what you will pass into the `//cup on <cup_name>` command.
-|Cup Subfield|Value Type|Required|Usage|
-|------------|----------|--------|-----|
-|name|str|Yes|The verbose name for the cup which will be used in ingame chat messages and saved in the cup results|
-|preset_on|str|Optional|Include this subfield if you would like to have `//cup set <preset>` called automatically for you when you start the cup. The value should match a key name or alias name of on of your defined presets|
-|preset_off|str|Optional|Include this subfield if you would like to have `//cup setup <preset>` called automatically for you when you end the cup. The value should match a key name or alias name of on of your defined presets|
-|map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
-|payout|str|Optional|This is used to link a certain payout scheme to your cup. This linkage will be used to default the selection on the payout and export windows.|
-|scoremode|str|Optional|Use this to predefine a score sorting mode for the cup. If left undefined the default sorting mode for your mode script will be used.|
 
 ## Customizing the cup configuration
 
@@ -261,6 +222,45 @@ The default location for saving and loading cup configuration json files is `Use
 dedicated server.
 This value can be changed by adding `CUP_MANAGER_CONFIG_PATH` to your pyplanet settings file. However, it is
 recommended in most instances to stick with the defaults.
+
+## Set up a local py file
+
+**⚠ Use of the local.py file is DEPRECATED and could be removed in future updates.** Please use instead
+[Customizing the cup configuration](./usage.md#customizing-the-cup-configuration).
+
+> This is optional but you should try to set one up if you want to utilize full functionality of the plugin.
+
+A "local.py" is an optional settings file which Pyplanet can load to provide additional custom information to plugins.
+This plugin opts to use the format of a local.py file rather than your server database to store information about mode
+presets, payout schemas, etc... because it is much easier to copy your customizations between multiple servers you
+host in this format.
+
+If you do not already have a local.py file in your Pyplanet settings folder then you can copy the one from the settings
+folder in cup_manager. [This one is provided as an example](./settings/local.py).
+
+**`CUP_MANAGER_PRESETS` defines the script and setting presets which are available from the command `//cup setup <preset>`.**
+This is a python dictionary of preset entries where the key value is the preset lookup name.
+|Preset Subfield|Value Type|Required|Usage|
+|---------------|----------|--------|-----|
+|aliases|list[str]|Yes|Define an optional list of additional names which can be used to trigger the preset|
+|script|dict[str,str]|Yes|Set the mode script to load with this preset on a per game basis where the key value is the short identifier for the game. valid game identifiers are 'tm' for maniaplanet, 'sm' for shootmania, and 'tmnext' for tm2020|
+|settings|dict[str,Any]|Yes|Define the script settings to be applied when the mode script loads|
+
+**`CUP_MANAGER_PAYOUTS` defines the payment schemes that are available to admins from the "Payout" button on a match results screen.**
+This is a python dictionary where the key value should be a meaningful name and the value should be a list[int]
+of the number of planets to pay each player ordered from first to last.
+
+**`CUP_MANAGER_NAMES` defines the name and associated default settings for a given cup.**
+By defining cup default settings here you can greatly increase the level of automation from the plugin. The key is the
+lookup name for the cup which is what you will pass into the `//cup on <cup_name>` command.
+|Cup Subfield|Value Type|Required|Usage|
+|------------|----------|--------|-----|
+|name|str|Yes|The verbose name for the cup which will be used in ingame chat messages and saved in the cup results|
+|preset_on|str|Optional|Include this subfield if you would like to have `//cup set <preset>` called automatically for you when you start the cup. The value should match a key name or alias name of on of your defined presets|
+|preset_off|str|Optional|Include this subfield if you would like to have `//cup setup <preset>` called automatically for you when you end the cup. The value should match a key name or alias name of on of your defined presets|
+|map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
+|payout|str|Optional|This is used to link a certain payout scheme to your cup. This linkage will be used to default the selection on the payout and export windows.|
+|scoremode|str|Optional|Use this to predefine a score sorting mode for the cup. If left undefined the default sorting mode for your mode script will be used.|
 
 
 # Running a cup as server admin
