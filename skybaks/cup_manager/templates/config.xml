@@ -14,9 +14,18 @@
     {% endfor %}
   </frame>
 
-  <!-- Workspace BG -->
+  <!-- workspace background -->
   <frame pos="-109 43" halign="left" valign="top">
-    <quad pos="0 0" size="218 94" halign="left" valign="top" bgcolor="0005" />
+    <quad pos="0 0" size="218 1" halign="left" valign="top" bgcolor="0005" />
+  </frame>
+
+  <!-- sidebar -->
+  <frame pos="-109 41" halign="left" valign="top">
+    <quad pos="35 0" size="1 113.5" halign="left" valign="top" bgcolor="0005" />
+
+    {% for sidebar in sidebar_items %}
+      <label pos="0 {{ -3.5 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" focusareacolor1="0005" focusareacolor2="0007" action="{{ id }}__config_sidebar_{{ loop.index0 }}" />
+    {% endfor %}
   </frame>
 
 </frame>

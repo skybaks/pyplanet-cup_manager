@@ -22,7 +22,8 @@ class CupConfigView(SingleInstanceView):
                 "title": self.title,
                 "icon_style": self.icon_style,
                 "icon_substyle": self.icon_substyle,
-                "config_tabs": list()
+                "config_tabs": list(),
+                "sidebar_items": list(),
             }
         )
 
@@ -31,4 +32,30 @@ class CupConfigView(SingleInstanceView):
                 "name": tab,
                 "selected": False
             })
+
+        sidebar_items = await self.get_sidebar_items()
+        for item in sidebar_items:
+            context["sidebar_items"].append({
+                "name": item,
+                "selected": False
+            })
+
         return context
+
+    async def get_sidebar_items(self):
+        return [
+            "list_item_00",
+            "list_item_01",
+            "list_item_02",
+            "list_item_03",
+            "list_item_04",
+            "list_item_05",
+            "list_item_06",
+            "list_item_07",
+            "list_item_08",
+            "list_item_09",
+            "list_item_10",
+            "list_item_11",
+            "list_item_12",
+            "list_item_13",
+        ]

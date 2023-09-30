@@ -214,9 +214,11 @@ class CupConfiguration:
             out_filename = await self.get_filename_from_url(url)
             await self.write_file_from_config_dir(out_filename, await response.read())
         except Exception as e:
-            logger.error(f"Exception while trying to download from \"{url}\": {str(e)}")
+            logger.error(f'Exception while trying to download from "{url}": {str(e)}')
             if player:
-                await self.instance.chat(f"$f00Error when trying to download from \"{str(url)}\"", player.login)
+                await self.instance.chat(
+                    f'$f00Error when trying to download from "{str(url)}"', player.login
+                )
             return
         if player:
             self.instance.chat(f"$ff0Downloaded config to {out_filename}", player.login)
