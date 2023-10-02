@@ -1,7 +1,18 @@
+{% import "cup_manager/config_data.xml" as config_data %}
+
 {% set sel_col = "aaa" %}
 {% set def_col = "000" %}
 {% set sel_aph = "5" %}
 {% set def_aph = "7" %}
+
+{% macro set_selection_color(is_selected) %}
+  {% if is_selected %}
+    focusareacolor1="{{ sel_col }}{{ sel_aph }}" focusareacolor2="{{ sel_col }}{{ def_aph }}"
+  {% else %}
+    focusareacolor1="{{ def_col }}{{ sel_aph }}" focusareacolor2="{{ def_col }}{{ def_aph }}"
+  {% endif %}
+{% endmacro %}
+
 <frame pos="0 17" z-index="150">
 
   {# title bar #}
@@ -14,13 +25,7 @@
   {# config tabs #}
   <frame pos="-109 50" halign="left" valign="top">
     {% for tab in config_tabs %}
-      <label pos="{{ 10 + (20.5 * loop.index0) }} -3.5" size="20 7" textprefix="$o" text="{{ tab.name }}" textsize="1.3" valign="center2" halign="center" action="{{ id }}__config_tab_{{ loop.index0 }}"
-        {% if tab.selected %}
-          focusareacolor1="{{ sel_col }}{{ sel_aph }}" focusareacolor2="{{ sel_col }}{{ def_aph }}"
-        {% else %}
-          focusareacolor1="{{ def_col }}{{ sel_aph }}" focusareacolor2="{{ def_col }}{{ def_aph }}"
-        {% endif %}
-      />
+      <label pos="{{ 10 + (20.5 * loop.index0) }} -3.5" size="20 7" textprefix="$o" text="{{ tab.name }}" textsize="1.3" valign="center2" halign="center" {{ set_selection_color(tab.selected) }} action="{{ id }}__config_tab_{{ loop.index0 }}"/>
     {% endfor %}
       <quad pos="0 -7" size="218 1" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
   </frame>
@@ -28,13 +33,7 @@
   {# sidebar #}
   <frame pos="-109 41" halign="left" valign="top">
     {% for sidebar in sidebar_items %}
-      <label pos="0 {{ -3.5 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" action="{{ id }}__config_sidebar_{{ loop.index0 }}"
-      {% if sidebar.selected %}
-        focusareacolor1="{{ sel_col }}{{ sel_aph }}" focusareacolor2="{{ sel_col }}{{ def_aph }}"
-      {% else %}
-        focusareacolor1="{{ def_col }}{{ sel_aph }}" focusareacolor2="{{ def_col }}{{ def_aph }}"
-      {% endif %}
-      />
+      <label pos="0 {{ -3.5 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" {{ set_selection_color(sidebar.selected) }} action="{{ id }}__config_sidebar_{{ loop.index0 }}"/>
     {% endfor %}
     <quad pos="35 0" size="1 113.5" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
 
@@ -50,6 +49,15 @@
       {% endif %}
       <label pos="20.5 -107.5" size="15 5" text="{{ sidebar_page }} / {{ sidebar_num_pages }}" textsize="1.5" halign="center"/>
     {% endif %}
+
+    {# TODO: Icons64x64_1/Add to add a new entry #}
+  </frame>
+
+  {# data #}
+  <frame pos="-72 41">
+      {# x=181 y=114 #}
+      {{ config_data.names(id, "TODO: connect real world data to this") }}
   </frame>
 
 </frame>
+<script><!-- {% include 'cup_manager/config.Script.txt' %} --></script>

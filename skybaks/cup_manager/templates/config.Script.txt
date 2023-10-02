@@ -1,0 +1,20 @@
+#Include "TextLib" as TL
+
+while (True) {
+    foreach (Event in PendingEvents) {
+        if (Event.Type == CMlScriptEvent::Type::MouseOver
+            && TL::StartsWith("help_", Event.ControlId)) {
+            declare CMlFrame HelpFrame <=> (Page.GetFirstChild(Event.ControlId ^ "_hover") as CMlFrame);
+            if (HelpFrame != Null) {
+                HelpFrame.Visible = True;
+            }
+        } else if (Event.Type == CMlScriptEvent::Type::MouseOut
+            && TL::StartsWith("help_", Event.ControlId)) {
+            declare CMlFrame HelpFrame <=> (Page.GetFirstChild(Event.ControlId ^ "_hover") as CMlFrame);
+            if (HelpFrame != Null) {
+                HelpFrame.Visible = False;
+            }
+        }
+    }
+    yield;
+}

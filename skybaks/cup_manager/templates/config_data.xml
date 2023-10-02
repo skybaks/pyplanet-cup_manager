@@ -1,0 +1,94 @@
+{% from "cup_manager/icons.xml" import icons %}
+{# x=181 y=114 #}
+
+{% macro label_bg(pos, size, text) %}
+  <quad pos="{{ pos }}" size="{{ size }}" bgcolor="0007" halign="right" valign="center2" z-index="-41" />
+  <label pos="{{ pos }}" size="{{ size }}" text=" {{ text }} " textsize="1.7" halign="right" valign="center2" z-index="-40" />
+{% endmacro %}
+
+{% macro button_icon(pos_x, pos_y, size_x, size_y, icon, action="", textsize=-1, scriptevents=False, id="") %}
+  <quad pos="{{ pos_x }} {{ pos_y }}" size="{{ size_x }} {{ size_y }}" style="Icons64x64_1" substyle="ClipPause" z-index="-40" halign="left" valign="top"
+    {% if action %}
+      action="{{ action }}"
+    {% endif %}
+    {% if scriptevents %}
+      scriptevents="1"
+    {% endif %}
+    {% if id %}
+      id="{{ id }}"
+    {% endif %}
+  />
+  <label pos="{{ pos_x + (size_x / 2)}} {{ pos_y - (size_y / 2)}}" size="{{ size_x }} {{ size_y }}" textprefix="$000" text="{{ icon }}" halign="center" valign="center2"
+    {% if textsize > 0 %}
+      textsize="{{ textsize }}"
+    {% endif %}
+  />
+{% endmacro %}
+
+{% macro switched_entry(pos_y, text, editing, id, name, deletable=True) %}
+  {% if not editing %}
+    <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
+    {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
+    {% if deletable %}
+      {{ button_icon(170, pos_y, 10, 10, icons.trash, id + "__" + name + "_delete") }}
+    {% endif %}
+  {% else %}
+    <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="{{ name }}" />
+    {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_accept") }}
+    {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_cancel") }}
+  {% endif %}
+{% endmacro %}
+
+{% macro frame_help(pos_x, pos_y, size_x, size_y, id, text) %}
+  <frame id="{{ id }}" pos="{{ pos_x }} {{ pos_y }}" z-index="10" hidden="1">
+    <quad pos="0 0" size="{{ size_x }} {{ size_y }}" bgcolor="000d" z-index="-10" />
+    <label pos="1 -1" size="{{ size_x - 2 }} {{ size_y - 2}}" halign="left" valign="top" autonewline="1" textsize="2" text="{{ text }}" />
+  </frame>
+{% endmacro %}
+
+{% macro hover_tooltip(pos_x, pos_y, name, help_text, prevent_overflow=114) %}
+  {{ button_icon(pos_x, pos_y, 7, 7, icons.info_circle, textsize=1.7, scriptevents=True, id="help_" + name) }}
+  {{ frame_help(pos_x + 10, [pos_y, 50 - prevent_overflow]|max, 150, 50, "help_" + name + "_hover", help_text) }}
+{% endmacro %}
+
+{% macro names(id, data) %}
+  {{ hover_tooltip(0, 0, "names_id", "TODO: The ID is the thing for the names.") }}
+  {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
+  <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+  {{ switched_entry(0, data, False, id, "names_id") }}
+
+  {{ hover_tooltip(0, -11, "names_name", "TODO: This is the name") }}
+  {{ label_bg(pos="40 -14.5", size="30 7", text="Name:") }}
+  <quad pos="41 -11" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+  {{ switched_entry(-11, "this is a test", False, id, "names_name", deletable=False) }}
+
+  {{ hover_tooltip(0, -22, "names_preset_on", "TODO: Preset on") }}
+  {{ label_bg(pos="40 -25.5", size="30 7", text="Preset On:") }}
+  <quad pos="41 -22" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+
+  {{ hover_tooltip(0, -33, "names_preset_off", "TODO: Preset off") }}
+  {{ label_bg(pos="40 -36.5", size="30 7", text="Preset Off:") }}
+  <quad pos="41 -33" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+
+  {{ hover_tooltip(0, -44, "names_map_count", "TODO: map count") }}
+  {{ label_bg(pos="40 -47.5", size="30 7", text="Map Count:") }}
+  <quad pos="41 -44" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+  {{ switched_entry(-44, "this is a test 2", False, id, "names_map_count") }}
+
+  {{ hover_tooltip(0, -55, "names_payout", "TODO: payout") }}
+  {{ label_bg(pos="40 -58.5", size="30 7", text="Payout:") }}
+  <quad pos="41 -55" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+
+  {{ hover_tooltip(0, -66, "names_score_mode", "TODO: help score_mode") }}
+  {{ label_bg(pos="40 -69.5", size="30 7", text="Score Mode:") }}
+  <quad pos="41 -66" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+
+{% endmacro %}
+
+{% macro presets(id, data) %}
+  <label text="presets" />
+{% endmacro %}
+
+{% macro payouts(id, data) %}
+  <label text="payouts" />
+{% endmacro %}
