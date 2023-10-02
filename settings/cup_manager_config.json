@@ -5,6 +5,7 @@
             "preset_on": "rounds180",
             "preset_off": "timeattack",
             "map_count": 3,
+            "payout": "payout1",
             "scoremode": "rounds_default"
         }
     },

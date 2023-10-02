@@ -1,28 +1,44 @@
+{% set sel_col = "aaa" %}
+{% set def_col = "000" %}
+{% set sel_aph = "5" %}
+{% set def_aph = "7" %}
 <frame pos="0 17" z-index="150">
 
-  <!-- title bar -->
+  {# title bar #}
   <quad pos="0 62.5" size="220 137" z-index="-50" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList" />
   <quad pos="0 61.5" size="218 11" z-index="-49" halign="center" valign="top" style="Bgs1InRace" substyle="BgCardList"/>
   <quad pos="-108 60.5 0" size="9 9" z-index="1" style="{{ icon_style }}" substyle="{{ icon_substyle }}"/>
   <label pos="-97 57.8 0" size="190 7" z-index="2" text="$o{{ title }}" textsize="2.5" textcolor="FFFFFFF" halign="left"/>
   <quad pos="99 59.5 0" size="7 7" z-index="1" style="Icons128x32_1" substyle="Close" action="{{ id }}__config_button_close"/>
 
-  <!-- config tabs -->
+  {# config tabs #}
   <frame pos="-109 50" halign="left" valign="top">
     {% for tab in config_tabs %}
-      <label pos="{{ 10 + (20.5 * loop.index0) }} -3.5" size="20 7" textprefix="$o" text="{{ tab.name }}" textsize="1.3" valign="center2" halign="center" focusareacolor1="0005" focusareacolor2="0007" action="{{ id }}__config_tab_{{ loop.index0 }}" />
+      <label pos="{{ 10 + (20.5 * loop.index0) }} -3.5" size="20 7" textprefix="$o" text="{{ tab.name }}" textsize="1.3" valign="center2" halign="center" action="{{ id }}__config_tab_{{ loop.index0 }}"
+        {% if tab.selected %}
+          focusareacolor1="{{ sel_col }}{{ sel_aph }}" focusareacolor2="{{ sel_col }}{{ def_aph }}"
+        {% else %}
+          focusareacolor1="{{ def_col }}{{ sel_aph }}" focusareacolor2="{{ def_col }}{{ def_aph }}"
+        {% endif %}
+      />
     {% endfor %}
-      <quad pos="0 -7" size="218 1" halign="left" valign="top" bgcolor="0005" />
+      <quad pos="0 -7" size="218 1" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
   </frame>
 
-  <!-- sidebar -->
+  {# sidebar #}
   <frame pos="-109 41" halign="left" valign="top">
     {% for sidebar in sidebar_items %}
-      <label pos="0 {{ -3.5 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" focusareacolor1="0005" focusareacolor2="0007" action="{{ id }}__config_sidebar_{{ loop.index0 }}" />
+      <label pos="0 {{ -3.5 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" action="{{ id }}__config_sidebar_{{ loop.index0 }}"
+      {% if sidebar.selected %}
+        focusareacolor1="{{ sel_col }}{{ sel_aph }}" focusareacolor2="{{ sel_col }}{{ def_aph }}"
+      {% else %}
+        focusareacolor1="{{ def_col }}{{ sel_aph }}" focusareacolor2="{{ def_col }}{{ def_aph }}"
+      {% endif %}
+      />
     {% endfor %}
-    <quad pos="35 0" size="1 113.5" halign="left" valign="top" bgcolor="0005" />
+    <quad pos="35 0" size="1 113.5" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
 
-    <!-- sidebar paging -->
+    {# sidebar paging #}
     {% if sidebar_num_pages > 1 %}
       <quad pos=" 5 -105" size="8 8" style="Icons64x64_1" substyle="ClipPause" z-index="-50" />
       <quad pos="28 -105" size="8 8" style="Icons64x64_1" substyle="ClipPause" z-index="-50" />

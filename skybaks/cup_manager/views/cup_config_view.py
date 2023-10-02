@@ -15,6 +15,8 @@ class CupConfigView(SingleInstanceIndexActionsView):
     def __init__(self, app) -> None:
         super().__init__(app, "cup_manager.views.cup_config_view_displayed")
         self.config_tabs: "list[str]" = ["names", "presets", "payouts"]
+        self.selected_tab_item: str = self.config_tabs[0]
+        self.selected_sidebar_item: str = ""
 
         self.subscribe("sidebar_page_prev", self.sidebar_paging)
         self.subscribe("sidebar_page_next", self.sidebar_paging)
@@ -33,7 +35,9 @@ class CupConfigView(SingleInstanceIndexActionsView):
         )
 
         for tab in self.config_tabs:
-            context["config_tabs"].append({"name": tab, "selected": False})
+            context["config_tabs"].append(
+                {"name": tab, "selected": tab == self.selected_tab_item}
+            )
 
         self.sidebar_data.data = await self.get_sidebar_items()
         sidebar_items = self.sidebar_data.get_current_page_data()
@@ -45,7 +49,9 @@ class CupConfigView(SingleInstanceIndexActionsView):
             }
         )
         for item in sidebar_items:
-            context["sidebar_items"].append({"name": item, "selected": False})
+            context["sidebar_items"].append(
+                {"name": item, "selected": item == self.selected_sidebar_item}
+            )
 
         return context
 
@@ -74,12 +80,18 @@ class CupConfigView(SingleInstanceIndexActionsView):
     async def select_config_tab(
         self, player, action: str, values: dict, index: int, **kwargs
     ) -> None:
-        logger.info(f"Clicked {str(self.config_tabs[index])}")
+        new_selected_tab = self.config_tabs[index]
+        if new_selected_tab != self.selected_tab_item:
+            self.selected_tab_item = new_selected_tab
+            await self.refresh(player=player)
 
     async def select_config_sidebar(
         self, player, action, values, index, **kwargs
     ) -> None:
-        logger.info(f"Clicked {str(self.sidebar_data.get_current_page_data()[index])}")
+        new_selected_item = self.sidebar_data.get_current_page_data()[index]
+        if new_selected_item != self.selected_sidebar_item:
+            self.selected_sidebar_item = new_selected_item
+            await self.refresh(player=player)
 
     async def sidebar_paging(self, player, action, values, **kwargs) -> None:
         if "next" in action and self.sidebar_data.next_page():
