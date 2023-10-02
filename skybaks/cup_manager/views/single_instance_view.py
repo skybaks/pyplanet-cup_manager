@@ -1,5 +1,12 @@
+from typing import Callable
+import re
+import logging
+from asyncio import iscoroutinefunction
+
 from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
+
+logger = logging.getLogger(__name__)
 
 
 class SingleInstanceView(TemplateView):
@@ -40,3 +47,37 @@ class SingleInstanceView(TemplateView):
             del self.player_data[player.login]
         await self.hide(player_logins=[player.login])
         player.attributes.set(self.tag, None)
+
+
+class SingleInstanceIndexActionsView(SingleInstanceView):
+    def __init__(self, app, tag) -> None:
+        super().__init__(app, tag)
+        self.receivers_index: "dict[str, list[Callable]]" = dict()
+
+    def subscribe_index(self, action: str, target: Callable):
+        if action not in self.receivers_index:
+            self.receivers_index[action] = list()
+        self.receivers_index[action].append(target)
+
+    async def handle_catch_all(self, player, action: str, values, **kwargs):
+        match_result: "re.Match[str]" = re.match("(.*)_([0-9]+)", action)
+        if (
+            len(match_result.groups()) == 2
+            and match_result.group(1) in self.receivers_index
+        ):
+            try:
+                index: int = int(match_result.group(2))
+                action_methods: "list[Callable]" = self.receivers_index.get(
+                    match_result.group(1)
+                )
+                for action_method in action_methods:
+                    if iscoroutinefunction(action_method):
+                        await action_method(player, action, values, index)
+                    else:
+                        action_method(player, action, values, index)
+            except ValueError as e:
+                logger.error(
+                    f'Got invalid value "{str(match_result.group(2))}" from handle_catch_all for action "{str(action)}"'
+                )
+            except:
+                logger.error(f"Error handling action: {str(action)}")
