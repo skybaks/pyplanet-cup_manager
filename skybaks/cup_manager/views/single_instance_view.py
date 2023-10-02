@@ -1,8 +1,8 @@
-from typing import Callable
 import re
 import logging
+import math
 from asyncio import iscoroutinefunction
-from typing import Iterable
+from typing import Iterable, Callable
 
 from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
@@ -12,6 +12,34 @@ logger = logging.getLogger(__name__)
 
 def apply_pagination(frame: Iterable, page: int, num_per_page: int) -> Iterable:
     return frame[(page - 1) * num_per_page : page * num_per_page]
+
+
+class PagedData:
+    """Manages paged data for views
+    Paging uses a 1-based index, i.e. The first page will be page 1.
+    """
+
+    def __init__(self, max_per_page: int) -> None:
+        self.max_per_page: int = max_per_page
+        self.current_page: int = 1
+        self.data: Iterable = list()
+
+    @property
+    def num_pages(self) -> int:
+        return int(math.ceil(len(self.data) / self.max_per_page))
+
+    def get_current_page_data(self) -> Iterable:
+        return apply_pagination(self.data, self.current_page, self.max_per_page)
+
+    def next_page(self, *args, **kwargs) -> bool:
+        old_page = self.current_page
+        self.current_page = min(self.current_page + 1, self.num_pages)
+        return self.current_page != old_page
+
+    def prev_page(self, *args, **kwargs) -> bool:
+        old_page = self.current_page
+        self.current_page = max(self.current_page - 1, 1)
+        return self.current_page != old_page
 
 
 class SingleInstanceView(TemplateView):
