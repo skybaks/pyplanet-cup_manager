@@ -2,11 +2,16 @@ from typing import Callable
 import re
 import logging
 from asyncio import iscoroutinefunction
+from typing import Iterable
 
 from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
 
 logger = logging.getLogger(__name__)
+
+
+def apply_pagination(frame: Iterable, page: int, num_per_page: int) -> Iterable:
+    return frame[(page - 1) * num_per_page : page * num_per_page]
 
 
 class SingleInstanceView(TemplateView):
@@ -62,7 +67,8 @@ class SingleInstanceIndexActionsView(SingleInstanceView):
     async def handle_catch_all(self, player, action: str, values, **kwargs):
         match_result: "re.Match[str]" = re.match("(.*)_([0-9]+)", action)
         if (
-            len(match_result.groups()) == 2
+            match_result
+            and len(match_result.groups()) == 2
             and match_result.group(1) in self.receivers_index
         ):
             try:

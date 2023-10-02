@@ -6,14 +6,14 @@ from asyncio import iscoroutinefunction
 
 from pyplanet.views.generics import ask_confirmation
 
-from .single_instance_view import SingleInstanceView
+from .single_instance_view import SingleInstanceIndexActionsView, apply_pagination
 from ..app_types import PaymentScore, TeamPlayerScore
 from ..score_mode import ScoreModeBase, SCORE_MODE
 
 logger = logging.getLogger(__name__)
 
 
-class OptionsView(SingleInstanceView):
+class OptionsView(SingleInstanceIndexActionsView):
     template_name = "cup_manager/options.xml"
 
     title = "Options"
@@ -42,20 +42,12 @@ class OptionsView(SingleInstanceView):
         self.subscribe("info_datalist_button_prev", self._info_datalist_prev_page)
         self.subscribe("info_datalist_button_next", self._info_datalist_next_page)
         self.subscribe("info_datalist_button_last", self._info_datalist_last_page)
+        self.subscribe_index("option_list_body", self.select_option_list)
 
-    async def handle_catch_all(self, player, action, values, **kwargs):
-        if action.startswith("option_list_body_"):
-            match = re.search("^option_list_body_([0-9]+)", action)
-            if len(match.groups()) == 1:
-                try:
-                    row = int(match.group(1))
-                    if len(self.displayed_option_data) > row:
-                        self.selected_option = self.displayed_option_data[row]
-                        await self.refresh(player=player)
-                except Exception as e:
-                    logger.error(
-                        f"Got unexpected results from option list item action {action}: {e}"
-                    )
+    async def select_option_list(self, player, action, value, index, **kwargs) -> None:
+        if len(self.displayed_option_data) > index:
+            self.selected_option = self.displayed_option_data[index]
+            await self.refresh(player=player)
 
     async def get_context_data(self):
         context = await super().get_context_data()
@@ -126,10 +118,6 @@ class OptionsView(SingleInstanceView):
     async def get_info_data(self) -> "list[dict]":
         data = []
         return data
-
-    @staticmethod
-    async def apply_pagination(frame, page: int, num_per_page: int) -> any:
-        return frame[(page - 1) * num_per_page : page * num_per_page]
 
     async def button_pressed(self, player, *args, **kwargs):
         pass
@@ -259,9 +247,7 @@ class PayoutsView(OptionsView):
             )
         frame = options
         self.option_count = len(frame)
-        frame = await self.apply_pagination(
-            frame, self.option_page, self.num_option_per_page
-        )
+        frame = apply_pagination(frame, self.option_page, self.num_option_per_page)
         self.displayed_option_data = frame
         return self.displayed_option_data
 
@@ -290,7 +276,7 @@ class PayoutsView(OptionsView):
                 )
         frame = info_data
         self.info_data_count = len(frame)
-        frame = await self.apply_pagination(
+        frame = apply_pagination(
             frame, self.info_data_page, self.num_info_data_per_page
         )
         return frame
@@ -396,9 +382,7 @@ class PresetsView(OptionsView):
 
         frame = options
         self.option_count = len(frame)
-        frame = await self.apply_pagination(
-            frame, self.option_page, self.num_option_per_page
-        )
+        frame = apply_pagination(frame, self.option_page, self.num_option_per_page)
         self.displayed_option_data = frame
         return self.displayed_option_data
 
@@ -418,7 +402,7 @@ class PresetsView(OptionsView):
                     info_data.append({"name": key, "value": data})
         frame = info_data
         self.info_data_count = len(frame)
-        frame = await self.apply_pagination(
+        frame = apply_pagination(
             frame, self.info_data_page, self.num_info_data_per_page
         )
         return frame
@@ -505,9 +489,7 @@ class ScoreModeView(OptionsView):
             options.append(new_option)
 
         self.option_count = len(options)
-        options = await self.apply_pagination(
-            options, self.option_page, self.num_option_per_page
-        )
+        options = apply_pagination(options, self.option_page, self.num_option_per_page)
         self.displayed_option_data = options
         return self.displayed_option_data
 
