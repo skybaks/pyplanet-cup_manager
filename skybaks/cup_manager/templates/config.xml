@@ -56,7 +56,7 @@
   {# data #}
   <frame pos="-72 41">
       {# x=181 y=114 #}
-      {{ config_data.names(id, "TODO: connect real world data to this") }}
+      {{ config_data.names(id, config_context) }}
   </frame>
 
 </frame>

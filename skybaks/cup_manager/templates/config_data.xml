@@ -33,9 +33,9 @@
       {{ button_icon(170, pos_y, 10, 10, icons.trash, id + "__" + name + "_delete") }}
     {% endif %}
   {% else %}
-    <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="{{ name }}" />
-    {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_accept") }}
-    {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_cancel") }}
+    <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
+    {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_edit_accept") }}
+    {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_edit_cancel") }}
   {% endif %}
 {% endmacro %}
 
@@ -52,34 +52,34 @@
 {% endmacro %}
 
 {% macro names(id, data) %}
-  {{ hover_tooltip(0, 0, "names_id", "TODO: The ID is the thing for the names.") }}
+  {{ hover_tooltip(0, 0, "names_id", data.help.id) }}
   {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
   <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(0, data, False, id, "names_id") }}
+  {{ switched_entry(0, data.value.id, data.editing.id, id, "names_id") }}
 
-  {{ hover_tooltip(0, -11, "names_name", "TODO: This is the name") }}
+  {{ hover_tooltip(0, -11, "names_name", data.help.name) }}
   {{ label_bg(pos="40 -14.5", size="30 7", text="Name:") }}
   <quad pos="41 -11" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(-11, "this is a test", False, id, "names_name", deletable=False) }}
+  {{ switched_entry(-11, data.value.name, data.editing.name, id, "names_name", deletable=False) }}
 
-  {{ hover_tooltip(0, -22, "names_preset_on", "TODO: Preset on") }}
+  {{ hover_tooltip(0, -22, "names_preset_on", data.help.preset_on) }}
   {{ label_bg(pos="40 -25.5", size="30 7", text="Preset On:") }}
   <quad pos="41 -22" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
 
-  {{ hover_tooltip(0, -33, "names_preset_off", "TODO: Preset off") }}
+  {{ hover_tooltip(0, -33, "names_preset_off", data.help.preset_off) }}
   {{ label_bg(pos="40 -36.5", size="30 7", text="Preset Off:") }}
   <quad pos="41 -33" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
 
-  {{ hover_tooltip(0, -44, "names_map_count", "TODO: map count") }}
+  {{ hover_tooltip(0, -44, "names_map_count", data.help.map_count) }}
   {{ label_bg(pos="40 -47.5", size="30 7", text="Map Count:") }}
   <quad pos="41 -44" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(-44, "this is a test 2", False, id, "names_map_count") }}
+  {{ switched_entry(-44, data.value.map_count, data.editing.map_count, id, "names_map_count") }}
 
-  {{ hover_tooltip(0, -55, "names_payout", "TODO: payout") }}
+  {{ hover_tooltip(0, -55, "names_payout", data.help.payout) }}
   {{ label_bg(pos="40 -58.5", size="30 7", text="Payout:") }}
   <quad pos="41 -55" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
 
-  {{ hover_tooltip(0, -66, "names_score_mode", "TODO: help score_mode") }}
+  {{ hover_tooltip(0, -66, "names_scoremode", data.help.scoremode) }}
   {{ label_bg(pos="40 -69.5", size="30 7", text="Score Mode:") }}
   <quad pos="41 -66" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
 
