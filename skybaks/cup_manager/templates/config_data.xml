@@ -55,7 +55,7 @@
   {{ hover_tooltip(0, 0, "names_id", data.help.id) }}
   {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
   <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(0, data.value.id, data.editing.id, id, "names_id") }}
+  {{ switched_entry(0, data.id, data.editing.id, id, "names_id", deletable=False) }}
 
   {{ hover_tooltip(0, -11, "names_name", data.help.name) }}
   {{ label_bg(pos="40 -14.5", size="30 7", text="Name:") }}

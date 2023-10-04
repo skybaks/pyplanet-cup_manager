@@ -1,13 +1,44 @@
 import logging
 import re
 from copy import deepcopy
+from typing import Any
 
 from .single_instance_view import SingleInstanceIndexActionsView, PagedData
 
 logger = logging.getLogger(__name__)
 
 
-class ConfigContextNames:
+class ConfigContext:
+    def __init__(self, data_name: str, view: "CupConfigView") -> None:
+        self.name: str = data_name
+        self.data: "dict[str, dict | list]" = view.config_data[data_name]
+        self.view: "CupConfigView" = view
+        self.value: "dict | list | None" = None
+        self.selected_item: str = ""
+
+    def get_selected_item(self) -> str:
+        return self.selected_item
+
+    def set_selected_item(self, item_name) -> None:
+        if item_name in self.data:
+            self.value = self.data[item_name]
+            self.selected_item = item_name
+
+    async def get_data(self) -> "dict[str]":
+        return {
+            "name": self.name,
+            "id": self.selected_item,
+            "value": self.value,
+        }
+
+    def get_action(self, action: str) -> str:
+        action_name = action
+        if action.startswith(self.view.id):
+            action_name = action[len(self.view.id) + 2 :]
+        return action_name
+
+
+class ConfigContextNames(ConfigContext):
     help: "dict[str, str]" = {
         "id": "TODO: Help for ID",
         "name": "TODO: Help for Name",
@@ -19,13 +50,12 @@ class ConfigContextNames:
     }
 
     def __init__(self, view: "CupConfigView") -> None:
-        self.view = view
+        super().__init__("names", view)
         self.editing: "dict[str, bool]" = {
             "id": False,
             "name": False,
             "map_count": False,
         }
-        self.value: "dict[str, str]" = dict()
         self.view.subscribe("names_id_edit", self.enable_edit)
         self.view.subscribe("names_name_edit", self.enable_edit)
         self.view.subscribe("names_map_count_edit", self.enable_edit)
@@ -36,20 +66,6 @@ class ConfigContextNames:
         self.view.subscribe("names_id_edit_cancel", self.cancel_edit)
         self.view.subscribe("names_name_edit_cancel", self.cancel_edit)
         self.view.subscribe("names_map_count_edit_cancel", self.cancel_edit)
-
-    def get_selected_item(self) -> str:
-        return self.value.get("id", "")
-
-    def set_selected_item(self, item_name) -> None:
-        if item_name in self.view.config_data["names"]:
-            self.value: dict = self.view.config_data["names"][item_name]
-            self.value.update({"id": item_name})
-
-    def get_action(self, action: str) -> str:
-        action_name = action
-        if action.startswith(self.view.id):
-            action_name = action[len(self.view.id) + 2 :]
-        return action_name
 
     async def enable_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match("names_(\w+)_edit", self.get_action(action))
@@ -69,10 +85,8 @@ class ConfigContextNames:
                 old_name = self.get_selected_item()
                 new_name = values.get("switched_entry")
                 # Do we care about possibly overwriting an existing entry?
-                self.view.config_data["names"][new_name] = self.view.config_data[
-                    "names"
-                ][old_name]
-                del self.view.config_data["names"][old_name]
+                self.data[new_name] = self.data[old_name]
+                del self.data[old_name]
                 self.view.selected_sidebar_item = new_name
             elif match_result.group(1) in self.value:
                 self.value[match_result.group(1)] = values.get("switched_entry")
@@ -87,12 +101,25 @@ class ConfigContextNames:
                 self.editing[key] = False
             await self.view.refresh(player=player)
 
-    async def get_data(self) -> "dict[str]":
-        return {
-            "editing": self.editing,
-            "value": self.value,
-            "help": self.help,
-        }
+    async def get_data(self) -> "dict[str, Any]":
+        context_data = await super().get_data()
+        context_data.update(
+            {
+                "editing": self.editing,
+                "help": self.help,
+            }
+        )
+        return context_data
+
+
+class ConfigContextPresets(ConfigContext):
+    def __init__(self, view: "CupConfigView") -> None:
+        super().__init__("presets", view)
+
+
+class ConfigContextPayouts(ConfigContext):
+    def __init__(self, view: "CupConfigView") -> None:
+        super().__init__("payouts", view)
 
 
 class CupConfigView(SingleInstanceIndexActionsView):
@@ -100,29 +127,32 @@ class CupConfigView(SingleInstanceIndexActionsView):
     title = "Cup Configuration"
     icon_style = "Icons128x128_1"
     icon_substyle = "ProfileAdvanced"
-    sidebar_data = PagedData(max_per_page=14)
+    sidebar_data = PagedData(max_per_page=13)
 
     def __init__(self, app, config: dict) -> None:
         super().__init__(app, "cup_manager.views.cup_config_view_displayed")
         self.config_data: "dict[str]" = deepcopy(config)
         self.config_tabs: "list[str]" = list(self.config_data.keys())
         self.selected_tab_item: str = self.config_tabs[0]
-        # self.selected_sidebar_item: str = ""
 
         self.subscribe("sidebar_page_prev", self.sidebar_paging)
         self.subscribe("sidebar_page_next", self.sidebar_paging)
         self.subscribe_index("config_tab", self.select_config_tab)
         self.subscribe_index("config_sidebar", self.select_config_sidebar)
 
-        self.config_context = ConfigContextNames(self)
+        self.config_context: "dict[str, ConfigContext]" = {
+            "names": ConfigContextNames(self),
+            "presets": ConfigContextPresets(self),
+            "payouts": ConfigContextPayouts(self),
+        }
 
     @property
     def selected_sidebar_item(self) -> str:
-        return self.config_context.get_selected_item()
+        return self.config_context[self.selected_tab_item].get_selected_item()
 
     @selected_sidebar_item.setter
     def selected_sidebar_item(self, value: str) -> None:
-        self.config_context.set_selected_item(value)
+        self.config_context[self.selected_tab_item].set_selected_item(value)
 
     async def get_context_data(self):
         context = await super().get_context_data()
@@ -153,7 +183,13 @@ class CupConfigView(SingleInstanceIndexActionsView):
             context["sidebar_items"].append(
                 {"name": item, "selected": item == self.selected_sidebar_item}
             )
-        context.update({"config_context": await self.config_context.get_data()})
+        context.update(
+            {
+                "config_context": await self.config_context[
+                    self.selected_tab_item
+                ].get_data()
+            }
+        )
 
         return context
 

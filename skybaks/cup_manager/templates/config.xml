@@ -33,9 +33,17 @@
   {# sidebar #}
   <frame pos="-109 41" halign="left" valign="top">
     {% for sidebar in sidebar_items %}
-      <label pos="0 {{ -3.5 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" {{ set_selection_color(sidebar.selected) }} action="{{ id }}__config_sidebar_{{ loop.index0 }}"/>
+      <label pos="0 {{ -11 - (7.5 * loop.index0)}}" size="35 7" textprefix=" " text="{{ sidebar.name }}" textsize="1.3" valign="center2" halign="left" {{ set_selection_color(sidebar.selected) }} action="{{ id }}__config_sidebar_{{ loop.index0 }}"/>
     {% endfor %}
-    <quad pos="35 0" size="1 113.5" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
+    <quad pos="35 -7.5" size="1 106" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
+
+    {{ config_data.button_icon(0, 0, 6, 6, "+", action=id + "__sidebar_add_item") }}
+    <quad pos="0 0" size="17.75 6" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
+    <label pos="7 -3" size="10.75 6" halign="left" valign="center2" text="Add" textsize="2" />
+
+    {{ config_data.button_icon(17.75, 0, 6, 6, "-", action=id + "__sidebar_del_item") }}
+    <quad pos="18.25 0" size="17.75 6" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
+    <label pos="25.25 -3" size="10.75 6" halign="left" valign="center2" text="Del" textsize="2" />
 
     {# sidebar paging #}
     {% if sidebar_num_pages > 1 %}
@@ -55,8 +63,13 @@
 
   {# data #}
   <frame pos="-72 41">
-      {# x=181 y=114 #}
+    {% if config_context.name == "names" %}
       {{ config_data.names(id, config_context) }}
+    {% elif config_context.name == "presets" %}
+      {{ config_data.presets(id, config_context) }}
+    {% elif config_context.name == "payouts" %}
+      {{ config_data.payouts(id, config_context) }}
+    {% endif %}
   </frame>
 
 </frame>
