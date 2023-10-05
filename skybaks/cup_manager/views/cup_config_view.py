@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any
 
 from .single_instance_view import SingleInstanceIndexActionsView, PagedData
+from ..score_mode import SCORE_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -51,27 +52,64 @@ class ConfigContextNames(ConfigContext):
 
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("names", view)
-        self.editing: "dict[str, bool]" = {
-            "id": False,
-            "name": False,
-            "map_count": False,
-        }
-        self.view.subscribe("names_id_edit", self.enable_edit)
-        self.view.subscribe("names_name_edit", self.enable_edit)
-        self.view.subscribe("names_map_count_edit", self.enable_edit)
-        # TODO: self.view.subscribe("names_id_delete", None)
-        self.view.subscribe("names_id_edit_accept", self.accept_edit)
-        self.view.subscribe("names_name_edit_accept", self.accept_edit)
-        self.view.subscribe("names_map_count_edit_accept", self.accept_edit)
-        self.view.subscribe("names_id_edit_cancel", self.cancel_edit)
-        self.view.subscribe("names_name_edit_cancel", self.cancel_edit)
-        self.view.subscribe("names_map_count_edit_cancel", self.cancel_edit)
+        self.editing: "dict[str, bool]" = dict()
+        self.preset_data: PagedData = PagedData(max_per_page=6)
+        self.payout_data: PagedData = PagedData(max_per_page=6)
+        self.scoremode_data: PagedData = PagedData(max_per_page=6)
+        self.edit_selection: str = ""
+        fields = [
+            "id",
+            "name",
+            "map_count",
+            "preset_on",
+            "preset_off",
+            "payout",
+            "scoremode",
+        ]
+        for field in fields:
+            self.editing.update({field: False})
+            self.view.subscribe(f"names_{field}_edit", self.enable_edit)
+            self.view.subscribe(f"names_{field}_edit_accept", self.accept_edit)
+            self.view.subscribe(f"names_{field}_edit_cancel", self.cancel_edit)
+        self.view.subscribe("names_preset_on_page_next", self.preset_paging)
+        self.view.subscribe("names_preset_on_page_prev", self.preset_paging)
+        self.view.subscribe_index(
+            "names_preset_on_selection_list", self.edit_preset_select
+        )
+        self.view.subscribe("names_preset_off_page_next", self.preset_paging)
+        self.view.subscribe("names_preset_off_page_prev", self.preset_paging)
+        self.view.subscribe_index(
+            "names_preset_off_selection_list", self.edit_preset_select
+        )
+        self.view.subscribe("names_payout_page_next", self.payout_paging)
+        self.view.subscribe("names_payout_page_prev", self.payout_paging)
+        self.view.subscribe_index(
+            "names_payout_selection_list", self.edit_payout_select
+        )
+        self.view.subscribe("names_scoremode_page_next", self.scoremode_paging)
+        self.view.subscribe("names_scoremode_page_prev", self.scoremode_paging)
+        self.view.subscribe_index(
+            "names_scoremode_selection_list", self.edit_scoremode_select
+        )
+
+    async def update_paged_data(self) -> None:
+        self.preset_data.data = list()
+        for key in self.view.config_data.get("presets", dict()).keys():
+            self.preset_data.data.append(key)
+            for alias in self.view.config_data["presets"][key]["aliases"]:
+                self.preset_data.data.append(alias)
+        self.payout_data.data = list(
+            self.view.config_data.get("payouts", dict()).keys()
+        )
+        self.scoremode_data.data = list(SCORE_MODE.keys())
 
     async def enable_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match("names_(\w+)_edit", self.get_action(action))
         if match_result and match_result.group(1) in self.editing:
             for key in self.editing.keys():
                 self.editing[key] = True if key == match_result.group(1) else False
+            self.edit_selection = self.value.get(match_result.group(1), "")
+            await self.update_paged_data()
             await self.view.refresh(player=player)
 
     async def accept_edit(self, player, action: str, values: dict, **kwargs) -> None:
@@ -88,8 +126,10 @@ class ConfigContextNames(ConfigContext):
                 self.data[new_name] = self.data[old_name]
                 del self.data[old_name]
                 self.view.selected_sidebar_item = new_name
-            elif match_result.group(1) in self.value:
+            elif match_result.group(1) in self.value and "switched_entry" in values:
                 self.value[match_result.group(1)] = values.get("switched_entry")
+            elif match_result.group(1) in self.value:
+                self.value[match_result.group(1)] = self.edit_selection
             await self.view.refresh(player=player)
 
     async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
@@ -101,14 +141,86 @@ class ConfigContextNames(ConfigContext):
                 self.editing[key] = False
             await self.view.refresh(player=player)
 
+    async def edit_preset_select(self, player, action, values, index, **kwargs) -> None:
+        new_selected_item = self.preset_data.get_current_page_data()[index]
+        if new_selected_item != self.edit_selection:
+            self.edit_selection = new_selected_item
+            await self.view.refresh(player=player)
+
+    async def edit_payout_select(self, player, action, values, index, **kwargs) -> None:
+        new_selected_item = self.payout_data.get_current_page_data()[index]
+        if new_selected_item != self.edit_selection:
+            self.edit_selection = new_selected_item
+            await self.view.refresh(player=player)
+
+    async def edit_scoremode_select(
+        self, player, action, values, index, **kwargs
+    ) -> None:
+        new_selected_item = self.scoremode_data.get_current_page_data()[index]
+        if new_selected_item != self.edit_selection:
+            self.edit_selection = new_selected_item
+            await self.view.refresh(player=player)
+
+    async def preset_paging(self, player, action, values, **kwargs) -> None:
+        if "next" in action and self.preset_data.next_page():
+            await self.view.refresh(player=player)
+        elif "prev" in action and self.preset_data.prev_page():
+            await self.view.refresh(player=player)
+
+    async def payout_paging(self, player, action, values, **kwargs) -> None:
+        if "next" in action and self.payout_data.next_page():
+            await self.view.refresh(player=player)
+        elif "prev" in action and self.payout_data.prev_page():
+            await self.view.refresh(player=player)
+
+    async def scoremode_paging(self, player, action, values, **kwargs) -> None:
+        if "next" in action and self.scoremode_data.next_page():
+            await self.view.refresh(player=player)
+        elif "prev" in action and self.scoremode_data.prev_page():
+            await self.view.refresh(player=player)
+
     async def get_data(self) -> "dict[str, Any]":
         context_data = await super().get_data()
+        context_data.update({"editing": self.editing, "help": self.help})
+
+        preset_items = self.preset_data.get_current_page_data()
         context_data.update(
             {
-                "editing": self.editing,
-                "help": self.help,
+                "preset_items": list(),
+                "preset_page": self.preset_data.current_page,
+                "preset_num_pages": self.preset_data.num_pages,
             }
         )
+        for item in preset_items:
+            context_data["preset_items"].append(
+                {"name": item, "selected": item == self.edit_selection}
+            )
+
+        payout_items = self.payout_data.get_current_page_data()
+        context_data.update(
+            {
+                "payout_items": list(),
+                "payout_page": self.payout_data.current_page,
+                "payout_num_pages": self.payout_data.num_pages,
+            }
+        )
+        for item in payout_items:
+            context_data["payout_items"].append(
+                {"name": item, "selected": item == self.edit_selection}
+            )
+
+        scoremode_items = self.scoremode_data.get_current_page_data()
+        context_data.update(
+            {
+                "scoremode_items": list(),
+                "scoremode_page": self.scoremode_data.current_page,
+                "scoremode_num_pages": self.scoremode_data.num_pages,
+            }
+        )
+        for item in scoremode_items:
+            context_data["scoremode_items"].append(
+                {"name": item, "selected": item == self.edit_selection}
+            )
         return context_data
 
 
