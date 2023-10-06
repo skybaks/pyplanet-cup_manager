@@ -39,43 +39,49 @@
   {% endif %}
 {% endmacro %}
 
-{% macro switched_entry(pos_y, text, editing, id, name, deletable=True) %}
-  {% if not editing %}
-    <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
-    {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
-    {% if deletable %}
-      {{ button_icon(170, pos_y, 10, 10, icons.trash, id + "__" + name + "_delete") }}
-    {% endif %}
-  {% else %}
+{% macro switched_entry(pos_y, text, editing, id, name, deletable=True, missing=False) %}
+  {% if editing %}
     <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
     {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_edit_accept") }}
     {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_edit_cancel") }}
-  {% endif %}
-{% endmacro %}
-
-{% macro switched_selectable(pos_y, text, editing, list_data, num_pages, page, id, name, deletable=True) %}
-  {% if not editing %}
+  {% elif missing %}
+    {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
+    <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+  {% else %}
     <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
     {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
     {% if deletable %}
-      {{ button_icon(170, pos_y, 10, 10, icons.trash, id + "__" + name + "_delete") }}
+      {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete") }}
     {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{% macro switched_selectable(pos_y, text, editing, list_data, num_pages, page, id, name, deletable=True, missing=False) %}
+  {% if editing %}
+    <frame pos="41 {{ pos_y }}">
+      <quad pos="1 -1" size="115 38" bgcolor="000d" z-index="-45" />
+      {% for list_item in list_data %}
+        <label pos="2 {{ -4.5 - (5 * loop.index0) }}" size="113 5" text=" {{ list_item.name }} " textsize="1.3" halign="left" valign="center2" action="{{ id }}__{{ name }}_selection_list_{{ loop.index0 }}"
+        {% if list_item.selected %}
+          focusareacolor1="aaa5" focusareacolor2="aaa7"
+        {% else %}
+          focusareacolor1="5555" focusareacolor2="5557"
+        {% endif %}
+        />
+      {% endfor %}
+      {{ button_icon(100, -32, 7, 7, icons.check, textsize=1.7, action=id + "__" + name + "_edit_accept") }}
+      {{ button_icon(109, -32, 7, 7, icons.x, textsize=1.7, action=id + "__" + name + "_edit_cancel") }}
+      {{ vertical_paging(1, -32, 25, 7, num_pages=num_pages, page=page, id=id, name=name) }}
+    </frame>
+  {% elif missing %}
+    {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
+    <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
   {% else %}
-  <frame pos="41 {{ pos_y }}">
-    <quad pos="1 -1" size="115 38" bgcolor="000d" z-index="-45" />
-    {% for list_item in list_data %}
-      <label pos="2 {{ -4.5 - (5 * loop.index0) }}" size="113 5" text=" {{ list_item.name }} " textsize="1.3" halign="left" valign="center2" action="{{ id }}__{{ name }}_selection_list_{{ loop.index0 }}"
-      {% if list_item.selected %}
-        focusareacolor1="aaa5" focusareacolor2="aaa7"
-      {% else %}
-        focusareacolor1="5555" focusareacolor2="5557"
-      {% endif %}
-      />
-    {% endfor %}
-    {{ button_icon(100, -32, 7, 7, icons.check, textsize=1.7, action=id + "__" + name + "_edit_accept") }}
-    {{ button_icon(109, -32, 7, 7, icons.x, textsize=1.7, action=id + "__" + name + "_edit_cancel") }}
-    {{ vertical_paging(1, -32, 25, 7, num_pages=num_pages, page=page, id=id, name=name) }}
-  </frame>
+    <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
+    {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
+    {% if deletable %}
+      {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete") }}
+    {% endif %}
   {% endif %}
 {% endmacro %}
 
@@ -105,27 +111,27 @@
   {{ hover_tooltip(0, -22, "names_preset_on", data.help.preset_on) }}
   {{ label_bg(pos="40 -25.5", size="30 7", text="Preset On:") }}
   <quad pos="41 -22" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-22, data.value.preset_on, data.editing.preset_on, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_on") }}
+  {{ switched_selectable(-22, data.value.preset_on, data.editing.preset_on, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_on", missing=data.missing.preset_on) }}
 
   {{ hover_tooltip(0, -33, "names_preset_off", data.help.preset_off) }}
   {{ label_bg(pos="40 -36.5", size="30 7", text="Preset Off:") }}
   <quad pos="41 -33" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-33, data.value.preset_off, data.editing.preset_off, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_off") }}
+  {{ switched_selectable(-33, data.value.preset_off, data.editing.preset_off, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_off", missing=data.missing.preset_off) }}
 
   {{ hover_tooltip(0, -44, "names_map_count", data.help.map_count) }}
   {{ label_bg(pos="40 -47.5", size="30 7", text="Map Count:") }}
   <quad pos="41 -44" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(-44, data.value.map_count, data.editing.map_count, id, "names_map_count") }}
+  {{ switched_entry(-44, data.value.map_count, data.editing.map_count, id, "names_map_count", missing=data.missing.map_count) }}
 
   {{ hover_tooltip(0, -55, "names_payout", data.help.payout) }}
   {{ label_bg(pos="40 -58.5", size="30 7", text="Payout:") }}
   <quad pos="41 -55" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-55, data.value.payout, data.editing.payout, list_data=data.payout_items, num_pages=data.payout_num_pages, page=data.payout_page, id=id, name="names_payout") }}
+  {{ switched_selectable(-55, data.value.payout, data.editing.payout, list_data=data.payout_items, num_pages=data.payout_num_pages, page=data.payout_page, id=id, name="names_payout", missing=data.missing.payout) }}
 
   {{ hover_tooltip(0, -66, "names_scoremode", data.help.scoremode) }}
   {{ label_bg(pos="40 -69.5", size="30 7", text="Score Mode:") }}
   <quad pos="41 -66" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-66, data.value.scoremode, data.editing.scoremode, list_data=data.scoremode_items, num_pages=data.scoremode_num_pages, page=data.scoremode_page, id=id, name="names_scoremode") }}
+  {{ switched_selectable(-66, data.value.scoremode, data.editing.scoremode, list_data=data.scoremode_items, num_pages=data.scoremode_num_pages, page=data.scoremode_page, id=id, name="names_scoremode", missing=data.missing.scoremode) }}
 
 {% endmacro %}
 

@@ -71,6 +71,7 @@ class ConfigContextNames(ConfigContext):
             self.view.subscribe(f"names_{field}_edit", self.enable_edit)
             self.view.subscribe(f"names_{field}_edit_accept", self.accept_edit)
             self.view.subscribe(f"names_{field}_edit_cancel", self.cancel_edit)
+            self.view.subscribe(f"names_{field}_delete", self.delete_field)
         self.view.subscribe("names_preset_on_page_next", self.preset_paging)
         self.view.subscribe("names_preset_on_page_prev", self.preset_paging)
         self.view.subscribe_index(
@@ -117,19 +118,20 @@ class ConfigContextNames(ConfigContext):
             "names_(\w+)_edit_accept", self.get_action(action)
         )
         if match_result and match_result.group(1) in self.editing:
+            edit_key = match_result.group(1)
             for key in self.editing.keys():
                 self.editing[key] = False
-            if match_result.group(1) == "id":
+            if edit_key == "id":
                 old_name = self.get_selected_item()
                 new_name = values.get("switched_entry")
                 # Do we care about possibly overwriting an existing entry?
                 self.data[new_name] = self.data[old_name]
                 del self.data[old_name]
                 self.view.selected_sidebar_item = new_name
-            elif match_result.group(1) in self.value and "switched_entry" in values:
-                self.value[match_result.group(1)] = values.get("switched_entry")
-            elif match_result.group(1) in self.value:
-                self.value[match_result.group(1)] = self.edit_selection
+            elif "switched_entry" in values:
+                self.value[edit_key] = values.get("switched_entry")
+            else:
+                self.value[edit_key] = self.edit_selection
             await self.view.refresh(player=player)
 
     async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
@@ -139,6 +141,16 @@ class ConfigContextNames(ConfigContext):
         if match_result and match_result.group(1) in self.editing:
             for key in self.editing.keys():
                 self.editing[key] = False
+            await self.view.refresh(player=player)
+
+    async def delete_field(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "names_(\w+)_delete", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.value:
+            for key in self.editing.keys():
+                self.editing[key] = False
+            del self.value[match_result.group(1)]
             await self.view.refresh(player=player)
 
     async def edit_preset_select(self, player, action, values, index, **kwargs) -> None:
@@ -181,7 +193,12 @@ class ConfigContextNames(ConfigContext):
 
     async def get_data(self) -> "dict[str, Any]":
         context_data = await super().get_data()
-        context_data.update({"editing": self.editing, "help": self.help})
+        context_data.update(
+            {"editing": self.editing, "help": self.help, "missing": dict()}
+        )
+
+        for field in self.editing:
+            context_data["missing"][field] = field not in self.value
 
         preset_items = self.preset_data.get_current_page_data()
         context_data.update(
