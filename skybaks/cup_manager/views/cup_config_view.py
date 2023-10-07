@@ -46,6 +46,8 @@ class ConfigContext:
     async def delete_item(self) -> None:
         if self.selected_item in self.data:
             del self.data[self.selected_item]
+            self.value = None
+            self.selected_item = ""
 
 
 class ConfigContextNames(ConfigContext):
@@ -138,7 +140,8 @@ Use scoremode to force the type of score behavior for the cup. This is equivalen
         if match_result and match_result.group(1) in self.editing:
             for key in self.editing.keys():
                 self.editing[key] = True if key == match_result.group(1) else False
-            self.edit_selection = self.value.get(match_result.group(1), "")
+            if self.value:
+                self.edit_selection = self.value.get(match_result.group(1), "")
             await self.update_paged_data()
             await self.view.refresh(player=player)
 
@@ -226,13 +229,27 @@ Use scoremode to force the type of score behavior for the cup. This is equivalen
             {"editing": self.editing, "help": self.help, "missing": dict()}
         )
 
-        for field in self.editing:
-            context_data["missing"][field] = field not in self.value
+        if self.value:
+            for field in self.editing:
+                context_data["missing"][field] = field not in self.value
 
         context_data.update(self.preset_data.get_context_data(self.edit_selection))
         context_data.update(self.payout_data.get_context_data(self.edit_selection))
         context_data.update(self.scoremode_data.get_context_data(self.edit_selection))
         return context_data
+
+    async def add_new_item(self) -> None:
+        new_name = "cup"
+        counter = 1
+        while "%s%i" % (new_name, counter) in self.data:
+            counter += 1
+            if counter > 10000:
+                raise Exception(
+                    "New cup name ID reached predefined auto-increment limit"
+                )
+        new_full_name = "%s%i" % (new_name, counter)
+        self.data.update({new_full_name: {"name": "Cup Name"}})
+        self.set_selected_item(new_full_name)
 
 
 class ConfigContextPresets(ConfigContext):
@@ -341,7 +358,9 @@ class CupConfigView(SingleInstanceIndexActionsView):
             await self.refresh(player=player)
 
     async def sidebar_add_item(self, player, action, values, **kwargs) -> None:
-        pass
+        context: "ConfigContext" = self.config_context[self.selected_tab_item]
+        await context.add_new_item()
+        await self.refresh(player=player)
 
     async def sidebar_delete_item(self, player, action, values, **kwargs) -> None:
         context: "ConfigContext" = self.config_context[self.selected_tab_item]
