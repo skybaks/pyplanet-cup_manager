@@ -37,13 +37,15 @@
     {% endfor %}
     <quad pos="35 -7.5" size="1 106" halign="left" valign="top" bgcolor="{{ sel_col }}{{ sel_aph }}" />
 
-    {{ config_data.button_icon(0, 0, 6, 6, "+", action=id + "__sidebar_add_item") }}
-    <quad pos="0 0" size="17.75 6" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
-    <label pos="7 -3" size="10.75 6" halign="left" valign="center2" text="Add" textsize="2" />
+    <frame z-index="10">
+      {{ config_data.button_icon(0, 0, 6, 6, "+", action=id + "__sidebar_add_item", z_index=15) }}
+      <quad pos="0 0" size="17.75 6" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
+      <label pos="7 -3" size="10.75 6" halign="left" valign="center2" text="Add" textsize="2" z-index="15" />
 
-    {{ config_data.button_icon(17.75, 0, 6, 6, "-", action=id + "__sidebar_del_item") }}
-    <quad pos="18.25 0" size="17.75 6" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
-    <label pos="25.25 -3" size="10.75 6" halign="left" valign="center2" text="Del" textsize="2" />
+      {{ config_data.button_icon(17.75, 0, 6, 6, "-", action=id + "__sidebar_del_item", z_index=15) }}
+      <quad pos="18.25 0" size="17.75 6" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
+      <label pos="25.25 -3" size="10.75 6" halign="left" valign="center2" text="Del" textsize="2" z-index="15" />
+    </frame>
 
     {# sidebar paging #}
     {% if sidebar_num_pages > 1 %}
@@ -62,7 +64,7 @@
   </frame>
 
   {# data #}
-  <frame pos="-72 41">
+  <frame pos="-72 41" z-index="10">
     {% if config_context.name == "names" %}
       {{ config_data.names(id, config_context) }}
     {% elif config_context.name == "presets" %}

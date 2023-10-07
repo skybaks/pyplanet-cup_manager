@@ -1,28 +1,32 @@
 {% from "cup_manager/icons.xml" import icons %}
 {# x=181 y=114 #}
 
-{% macro label_bg(pos, size, text) %}
-  <quad pos="{{ pos }}" size="{{ size }}" bgcolor="0007" halign="right" valign="center2" z-index="-41" />
-  <label pos="{{ pos }}" size="{{ size }}" text=" {{ text }} " textsize="1.7" halign="right" valign="center2" z-index="-40" />
+{% macro label_bg(pos, size, text, z_index=-40) %}
+  <frame z-index="{{ z_index }}">
+    <quad pos="{{ pos }}" size="{{ size }}" bgcolor="0007" halign="right" valign="center2" z-index="-50" />
+    <label pos="{{ pos }}" size="{{ size }}" text=" {{ text }} " textsize="1.7" halign="right" valign="center2" z-index="-40" />
+  </frame>
 {% endmacro %}
 
-{% macro button_icon(pos_x, pos_y, size_x, size_y, icon, action="", textsize=-1, scriptevents=False, id="") %}
-  <quad pos="{{ pos_x }} {{ pos_y }}" size="{{ size_x }} {{ size_y }}" style="Icons64x64_1" substyle="ClipPause" z-index="-40" halign="left" valign="top"
-    {% if action %}
-      action="{{ action }}"
-    {% endif %}
-    {% if scriptevents %}
-      scriptevents="1"
-    {% endif %}
-    {% if id %}
-      id="{{ id }}"
-    {% endif %}
-  />
-  <label pos="{{ pos_x + (size_x / 2)}} {{ pos_y - (size_y / 2)}}" size="{{ size_x }} {{ size_y }}" textprefix="$000" text="{{ icon }}" halign="center" valign="center2"
-    {% if textsize > 0 %}
-      textsize="{{ textsize }}"
-    {% endif %}
-  />
+{% macro button_icon(pos_x, pos_y, size_x, size_y, icon, action="", textsize=-1, scriptevents=False, id="", z_index=-30) %}
+  <frame z-index="{{ z_index }}">
+    <quad pos="{{ pos_x }} {{ pos_y }}" size="{{ size_x }} {{ size_y }}" style="Icons64x64_1" substyle="ClipPause" z-index="-50" halign="left" valign="top"
+      {% if action %}
+        action="{{ action }}"
+      {% endif %}
+      {% if scriptevents %}
+        scriptevents="1"
+      {% endif %}
+      {% if id %}
+        id="{{ id }}"
+      {% endif %}
+    />
+    <label pos="{{ pos_x + (size_x / 2)}} {{ pos_y - (size_y / 2)}}" size="{{ size_x }} {{ size_y }}" textprefix="$000" text="{{ icon }}" halign="center" valign="center2" z-index="-40"
+      {% if textsize > 0 %}
+        textsize="{{ textsize }}"
+      {% endif %}
+    />
+  </frame>
 {% endmacro %}
 
 {% macro vertical_paging(pos_x, pos_y, size_x, size_y, num_pages, page, id, name) %}
@@ -41,24 +45,30 @@
 
 {% macro switched_entry(pos_y, text, editing, id, name, deletable=True, missing=False) %}
   {% if editing %}
-    <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
-    {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_edit_accept") }}
-    {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_edit_cancel") }}
+    <frame z-index="10">
+      <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
+      {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_edit_accept") }}
+      {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_edit_cancel") }}
+    </frame>
   {% elif missing %}
-    {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
-    <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+    <frame z-index="10">
+      {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
+      <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+    </frame>
   {% else %}
-    <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
-    {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
-    {% if deletable %}
-      {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete") }}
-    {% endif %}
+    <frame z-index="10">
+      <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
+      {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
+      {% if deletable %}
+        {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete") }}
+      {% endif %}
+    </frame>
   {% endif %}
 {% endmacro %}
 
 {% macro switched_selectable(pos_y, text, editing, list_data, num_pages, page, id, name, deletable=True, missing=False) %}
   {% if editing %}
-    <frame pos="41 {{ pos_y }}">
+    <frame pos="41 {{ pos_y }}" z-index="50">
       <quad pos="1 -1" size="115 38" bgcolor="000d" z-index="-45" />
       {% for list_item in list_data %}
         <label pos="2 {{ -4.5 - (5 * loop.index0) }}" size="113 5" text=" {{ list_item.name }} " textsize="1.3" halign="left" valign="center2" action="{{ id }}__{{ name }}_selection_list_{{ loop.index0 }}"
@@ -74,14 +84,18 @@
       {{ vertical_paging(1, -32, 25, 7, num_pages=num_pages, page=page, id=id, name=name) }}
     </frame>
   {% elif missing %}
-    {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
-    <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+    <frame z-index="10">
+      {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
+      <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+    </frame>
   {% else %}
-    <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
-    {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
-    {% if deletable %}
-      {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete") }}
-    {% endif %}
+    <frame z-index="10">
+      <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
+      {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
+      {% if deletable %}
+        {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete") }}
+      {% endif %}
+    </frame>
   {% endif %}
 {% endmacro %}
 
@@ -93,8 +107,10 @@
 {% endmacro %}
 
 {% macro hover_tooltip(pos_x, pos_y, name, help_text, prevent_overflow=114) %}
-  {{ button_icon(pos_x, pos_y, 7, 7, icons.info_circle, textsize=1.7, scriptevents=True, id="help_" + name) }}
-  {{ frame_help(pos_x + 10, [pos_y, 50 - prevent_overflow]|max, 150, 50, "help_" + name + "_hover", help_text) }}
+  <frame z-index="70">
+    {{ button_icon(pos_x, pos_y, 7, 7, icons.info_circle, textsize=1.7, scriptevents=True, id="help_" + name) }}
+    {{ frame_help(pos_x + 10, [pos_y, 50 - prevent_overflow]|max, 150, 50, "help_" + name + "_hover", help_text) }}
+  </frame>
 {% endmacro %}
 
 {% macro names(id, data) %}
