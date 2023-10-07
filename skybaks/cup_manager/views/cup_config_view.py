@@ -44,25 +44,35 @@ class ConfigContextNames(ConfigContext):
         "id": """[Required]
 
 The ID is the name which is used with the "//cup on" command to start the cup.""",
+
         "name": """[Required]
 
 The Name is used as the display name for the cup in all ingame messages and interfaces.""",
+
         "preset_on": """[Optional]
 
 Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a settings preset. You can define one or the other or both.
-    - preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
-    - preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends""",
+
+- preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
+
+- preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends""",
+
         "preset_off": """[Optional]
 
 Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a settings preset. You can define one or the other or both.
-    - preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
-    - preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends""",
+
+- preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
+
+- preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends""",
+
         "map_count": """[Optional]
 
 Use map_count to predefine the number of maps the cup will be played on. This is equivalent to running "//cup mapcount <map_count>" right after you start the cup.""",
+
         "payout": """[Optional]
 
 Use payout to predefine the payout config this cup will be using. The value entered in this field should match the ID name of a payout defined in this config file. Predefining the payout here will make it easier to access from the results and will make it appear in the exported results.""",
+
         "scoremode": """[Optional]
 
 Use scoremode to force the type of score behavior for the cup. This is equivalent to running "//cup scoremode <score_mode>" after starting a cup. If included the field should be set to one of the scoremode IDs found when running "//cup scoremode" """,
@@ -112,11 +122,9 @@ Use scoremode to force the type of score behavior for the cup. This is equivalen
         )
 
     async def update_paged_data(self) -> None:
-        self.preset_data.data = list()
-        for key in self.view.config_data.get("presets", dict()).keys():
-            self.preset_data.data.append(key)
-            for alias in self.view.config_data["presets"][key]["aliases"]:
-                self.preset_data.data.append(alias)
+        self.preset_data.data = list(
+            self.view.config_data.get("presets", dict()).keys()
+        )
         self.payout_data.data = list(
             self.view.config_data.get("payouts", dict()).keys()
         )
