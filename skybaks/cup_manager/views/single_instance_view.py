@@ -19,9 +19,10 @@ class PagedData:
     Paging uses a 1-based index, i.e. The first page will be page 1.
     """
 
-    def __init__(self, max_per_page: int) -> None:
+    def __init__(self, max_per_page: int, name: str) -> None:
         self.max_per_page: int = max_per_page
         self.current_page: int = 1
+        self.name = name
         self.data: Iterable = list()
 
     @property
@@ -40,6 +41,20 @@ class PagedData:
         old_page = self.current_page
         self.current_page = max(self.current_page - 1, 1)
         return self.current_page != old_page
+
+    def get_context_data(
+        self, selected_item: str
+    ) -> "dict[str, list[dict[str, str | bool]] | int]":
+        context_data = {
+            f"{self.name}_items": list(),
+            f"{self.name}_page": self.current_page,
+            f"{self.name}_num_pages": self.num_pages,
+        }
+        for item in self.get_current_page_data():
+            context_data[f"{self.name}_items"].append(
+                {"name": item, "selected": item == selected_item}
+            )
+        return context_data
 
 
 class SingleInstanceView(TemplateView):

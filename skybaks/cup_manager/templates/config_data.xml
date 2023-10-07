@@ -84,12 +84,12 @@
       {{ vertical_paging(1, -32, 25, 7, num_pages=num_pages, page=page, id=id, name=name) }}
     </frame>
   {% elif missing %}
-    <frame z-index="10">
+    <frame z-index="-10">
       {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
       <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
     </frame>
   {% else %}
-    <frame z-index="10">
+    <frame z-index="-10">
       <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
       {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit") }}
       {% if deletable %}

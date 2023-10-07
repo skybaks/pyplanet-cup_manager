@@ -75,9 +75,9 @@ Use scoremode to force the type of score behavior for the cup. This is equivalen
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("names", view)
         self.editing: "dict[str, bool]" = dict()
-        self.preset_data: PagedData = PagedData(max_per_page=6)
-        self.payout_data: PagedData = PagedData(max_per_page=6)
-        self.scoremode_data: PagedData = PagedData(max_per_page=6)
+        self.preset_data: PagedData = PagedData(max_per_page=6, name="preset")
+        self.payout_data: PagedData = PagedData(max_per_page=6, name="payout")
+        self.scoremode_data: PagedData = PagedData(max_per_page=6, name="scoremode")
         self.edit_selection: str = ""
         fields = [
             "id",
@@ -220,44 +220,9 @@ Use scoremode to force the type of score behavior for the cup. This is equivalen
         for field in self.editing:
             context_data["missing"][field] = field not in self.value
 
-        preset_items = self.preset_data.get_current_page_data()
-        context_data.update(
-            {
-                "preset_items": list(),
-                "preset_page": self.preset_data.current_page,
-                "preset_num_pages": self.preset_data.num_pages,
-            }
-        )
-        for item in preset_items:
-            context_data["preset_items"].append(
-                {"name": item, "selected": item == self.edit_selection}
-            )
-
-        payout_items = self.payout_data.get_current_page_data()
-        context_data.update(
-            {
-                "payout_items": list(),
-                "payout_page": self.payout_data.current_page,
-                "payout_num_pages": self.payout_data.num_pages,
-            }
-        )
-        for item in payout_items:
-            context_data["payout_items"].append(
-                {"name": item, "selected": item == self.edit_selection}
-            )
-
-        scoremode_items = self.scoremode_data.get_current_page_data()
-        context_data.update(
-            {
-                "scoremode_items": list(),
-                "scoremode_page": self.scoremode_data.current_page,
-                "scoremode_num_pages": self.scoremode_data.num_pages,
-            }
-        )
-        for item in scoremode_items:
-            context_data["scoremode_items"].append(
-                {"name": item, "selected": item == self.edit_selection}
-            )
+        context_data.update(self.preset_data.get_context_data(self.edit_selection))
+        context_data.update(self.payout_data.get_context_data(self.edit_selection))
+        context_data.update(self.scoremode_data.get_context_data(self.edit_selection))
         return context_data
 
 
@@ -276,12 +241,12 @@ class CupConfigView(SingleInstanceIndexActionsView):
     title = "Cup Configuration"
     icon_style = "Icons128x128_1"
     icon_substyle = "ProfileAdvanced"
-    sidebar_data = PagedData(max_per_page=13)
+    sidebar_data = PagedData(max_per_page=13, name="sidebar")
 
     def __init__(self, app, config: dict) -> None:
         super().__init__(app, "cup_manager.views.cup_config_view_displayed")
         self.config_data: "dict[str]" = deepcopy(config)
-        self.config_tabs: "list[str]" = list(self.config_data.keys())
+        self.config_tabs: "list[str]" = ["names", "presets", "payouts"]
         self.selected_tab_item: str = self.config_tabs[0]
 
         self.subscribe("sidebar_page_prev", self.sidebar_paging)
@@ -320,18 +285,7 @@ class CupConfigView(SingleInstanceIndexActionsView):
             )
 
         self.sidebar_data.data = await self.get_sidebar_items()
-        sidebar_items = self.sidebar_data.get_current_page_data()
-        context.update(
-            {
-                "sidebar_items": list(),
-                "sidebar_page": self.sidebar_data.current_page,
-                "sidebar_num_pages": self.sidebar_data.num_pages,
-            }
-        )
-        for item in sidebar_items:
-            context["sidebar_items"].append(
-                {"name": item, "selected": item == self.selected_sidebar_item}
-            )
+        context.update(self.sidebar_data.get_context_data(self.selected_sidebar_item))
         context.update(
             {
                 "config_context": await self.config_context[
