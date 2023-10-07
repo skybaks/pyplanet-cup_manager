@@ -3,6 +3,8 @@ import re
 from copy import deepcopy
 from typing import Any
 
+from pyplanet.views.generics import ask_confirmation
+
 from .single_instance_view import SingleInstanceIndexActionsView, PagedData
 from ..score_mode import SCORE_MODE
 
@@ -25,6 +27,12 @@ class ConfigContext:
             self.value = self.data[item_name]
             self.selected_item = item_name
 
+    def get_action(self, action: str) -> str:
+        action_name = action
+        if action.startswith(self.view.id):
+            action_name = action[len(self.view.id) + 2 :]
+        return action_name
+
     async def get_data(self) -> "dict[str]":
         return {
             "name": self.name,
@@ -32,11 +40,12 @@ class ConfigContext:
             "value": self.value,
         }
 
-    def get_action(self, action: str) -> str:
-        action_name = action
-        if action.startswith(self.view.id):
-            action_name = action[len(self.view.id) + 2 :]
-        return action_name
+    async def add_new_item(self) -> None:
+        raise NotImplementedError
+
+    async def delete_item(self) -> None:
+        if self.selected_item in self.data:
+            del self.data[self.selected_item]
 
 
 class ConfigContextNames(ConfigContext):
@@ -251,6 +260,8 @@ class CupConfigView(SingleInstanceIndexActionsView):
 
         self.subscribe("sidebar_page_prev", self.sidebar_paging)
         self.subscribe("sidebar_page_next", self.sidebar_paging)
+        self.subscribe("sidebar_add_item", self.sidebar_add_item)
+        self.subscribe("sidebar_del_item", self.sidebar_delete_item)
         self.subscribe_index("config_tab", self.select_config_tab)
         self.subscribe_index("config_sidebar", self.select_config_sidebar)
 
@@ -327,4 +338,21 @@ class CupConfigView(SingleInstanceIndexActionsView):
         if "next" in action and self.sidebar_data.next_page():
             await self.refresh(player=player)
         elif "prev" in action and self.sidebar_data.prev_page():
+            await self.refresh(player=player)
+
+    async def sidebar_add_item(self, player, action, values, **kwargs) -> None:
+        pass
+
+    async def sidebar_delete_item(self, player, action, values, **kwargs) -> None:
+        context: "ConfigContext" = self.config_context[self.selected_tab_item]
+        cancel = bool(
+            await ask_confirmation(
+                player=player,
+                message=f'Deleting "{context.get_selected_item()}". Are you sure?',
+                buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                size="sm",
+            )
+        )
+        if not cancel:
+            await self.config_context[self.selected_tab_item].delete_item()
             await self.refresh(player=player)
