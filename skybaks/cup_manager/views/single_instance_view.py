@@ -22,23 +22,27 @@ class PagedData:
     def __init__(self, max_per_page: int, name: str, append_empty: int = 0) -> None:
         self.max_per_page: int = max_per_page
         self.current_page: int = 1
-        self.name = name
+        self.name: str = name
         self.append_empty: int = append_empty
         self._data: Iterable = list()
 
     @property
     def data(self) -> Iterable:
-        return self._data
+        if self.append_empty > 0:
+            return self._data + ([None] * self.append_empty)
+        else:
+            return self._data
 
     @data.setter
     def data(self, value: Iterable) -> None:
         self._data = value
-        if self.append_empty > 0:
-            self._data += [None] * self.append_empty
 
     @property
     def num_pages(self) -> int:
         return int(math.ceil(len(self.data) / self.max_per_page))
+
+    def page_index_to_data_index(self, index: int) -> int:
+        return (self.current_page - 1) * self.max_per_page + index
 
     def get_current_page_data(self) -> Iterable:
         return apply_pagination(self.data, self.current_page, self.max_per_page)

@@ -50,7 +50,7 @@ class ConfigContext:
     def get_selected_item(self) -> str:
         return self.selected_item
 
-    def set_selected_item(self, item_name) -> None:
+    def set_selected_item(self, item_name: str) -> None:
         if item_name in self.data:
             self.value = self.data[item_name]
             self.selected_item = item_name
@@ -164,10 +164,11 @@ class ConfigContextNames(ConfigContext):
             if edit_key == "id":
                 old_name = self.get_selected_item()
                 new_name = values.get("switched_entry")
-                # Do we care about possibly overwriting an existing entry?
-                self.data[new_name] = self.data[old_name]
-                del self.data[old_name]
-                self.view.selected_sidebar_item = new_name
+                if old_name != new_name:
+                    # Do we care about possibly overwriting an existing entry?
+                    self.data[new_name] = self.data[old_name]
+                    del self.data[old_name]
+                    self.view.selected_sidebar_item = new_name
             elif "switched_entry" in values:
                 self.value[edit_key] = values.get("switched_entry")
             else:
@@ -270,19 +271,46 @@ class ConfigContextPayouts(ConfigContext):
             max_per_page=8, name="vals", append_empty=1
         )
         self.help.update({"id": help_payout_id, "vals": help_payout_vals})
-        self.editing.update({"id": False, "vals": list()})
+        self.editing.update(
+            {"id": False, "vals": [False] * self.vals_data.max_per_page}
+        )
         self.view.subscribe("payout_id_edit", self.enable_edit)
         self.view.subscribe("payout_id_edit_accept", self.accept_edit)
         self.view.subscribe("payout_id_edit_cancel", self.cancel_edit)
+        self.view.subscribe("payout_vals_page_next", self.payout_paging)
+        self.view.subscribe("payout_vals_page_prev", self.payout_paging)
+        self.view.subscribe_index("payout_vals_edit", self.enable_edit_index)
+        self.view.subscribe_index("payout_vals_edit_accept", self.accept_edit_index)
+        self.view.subscribe_index("payout_vals_edit_cancel", self.cancel_edit_index)
+        self.view.subscribe_index("payout_vals_delete", self.delete_index)
+
+    def set_selected_item(self, item_name: str) -> None:
+        super().set_selected_item(item_name)
+        self.vals_data.data = self.value
+
+    def update_editing(self, current: "str | int") -> None:
+        for key in self.editing.keys():
+            if key != "vals":
+                self.editing[key] = True if key == current else False
+        for i in range(len(self.editing["vals"])):
+            self.editing["vals"][i] = True if i == current else False
 
     async def enable_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
             "payout_(\w+)_edit", self.get_action(action)
         )
         if match_result and match_result.group(1) in self.editing:
-            for key in self.editing.keys():
-                self.editing[key] = True if key == match_result.group(1) else False
+            self.update_editing(match_result.group(1))
             await self.view.refresh(player=player)
+
+    async def enable_edit_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        self.update_editing(index)
+        data_index = self.vals_data.page_index_to_data_index(index)
+        if data_index >= len(self.value):
+            self.value.append(0)
+        await self.view.refresh(player=player)
 
     async def accept_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
@@ -290,31 +318,61 @@ class ConfigContextPayouts(ConfigContext):
         )
         if match_result and match_result.group(1) in self.editing:
             edit_key = match_result.group(1)
-            for key in self.editing.keys():
-                self.editing[key] = False
+            self.update_editing(None)
             if edit_key == "id":
                 old_name = self.get_selected_item()
                 new_name = values.get("switched_entry")
-                # Do we care about possibly overwriting an existing entry?
-                self.data[new_name] = self.data[old_name]
-                del self.data[old_name]
-                self.view.selected_sidebar_item = new_name
-            elif "switched_entry" in values:
-                self.value[edit_key] = values.get("switched_entry")
+                if old_name != new_name:
+                    # Do we care about possibly overwriting an existing entry?
+                    self.data[new_name] = self.data[old_name]
+                    del self.data[old_name]
+                    self.view.selected_sidebar_item = new_name
             await self.view.refresh(player=player)
+
+    async def accept_edit_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        self.update_editing(None)
+        data_index = self.vals_data.page_index_to_data_index(index)
+        if data_index < len(self.value) and "switched_entry" in values:
+            try:
+                self.value[data_index] = int(values.get("switched_entry"))
+            except ValueError as e:
+                logger.error("Error setting value for payout field: " + str(e))
+        await self.view.refresh(player=player)
 
     async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
             "payout_(\w+)_edit_cancel", self.get_action(action)
         )
         if match_result and match_result.group(1) in self.editing:
-            for key in self.editing.keys():
-                self.editing[key] = False
+            self.update_editing(None)
+            await self.view.refresh(player=player)
+
+    async def cancel_edit_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        self.update_editing(None)
+        await self.view.refresh(player=player)
+
+    async def delete_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        data_index = self.vals_data.page_index_to_data_index(index)
+        if data_index < len(self.value):
+            del self.value[data_index]
+        await self.view.refresh(player=player)
+
+    async def payout_paging(self, player, action, values, **kwargs) -> None:
+        if "next" in action and self.vals_data.next_page():
+            self.update_editing(None)
+            await self.view.refresh(player=player)
+        elif "prev" in action and self.vals_data.prev_page():
+            self.update_editing(None)
             await self.view.refresh(player=player)
 
     async def get_data(self) -> "dict[str, Any]":
         context_data = await super().get_data()
-        self.vals_data.data = deepcopy(self.value)
         context_data.update(self.vals_data.get_context_data(selected_item=None))
         return context_data
 

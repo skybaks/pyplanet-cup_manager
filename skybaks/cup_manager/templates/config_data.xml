@@ -159,7 +159,7 @@
 {% endmacro %}
 
 {% macro payouts(id, data) %}
-  {% if data.value %}
+  {% if data.vals_items %}
     {{ hover_tooltip(0, 0, "payout_id", data.help.id) }}
     {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
     <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
@@ -169,7 +169,7 @@
     {{ label_bg(pos="40 -14.5", size="30 7", text="Values:") }}
     <quad pos="41 -11" size="140 90" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {% for val in data.vals_items %}
-      {{ switched_entry(-11 - (10 * loop.index0), val.name, data.editing.vals[loop.index0], id, "payout_vals", index="_" + (loop.index0|string), missing=not val.name) }}
+      {{ switched_entry(-11 - (10 * loop.index0), val.name, data.editing.vals[loop.index0], id, "payout_vals", index="_" + (loop.index0|string), missing=val.name==None) }}
     {% endfor %}
     {{ vertical_paging(41, -94, 30, 7, data.vals_num_pages, data.vals_page, id, name="payout_vals") }}
   {% endif %}
