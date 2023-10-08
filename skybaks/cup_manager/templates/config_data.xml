@@ -114,41 +114,42 @@
 {% endmacro %}
 
 {% macro names(id, data) %}
-  {{ hover_tooltip(0, 0, "names_id", data.help.id) }}
-  {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
-  <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(0, data.id, data.editing.id, id, "names_id", deletable=False) }}
+  {% if data.value %}
+    {{ hover_tooltip(0, 0, "names_id", data.help.id) }}
+    {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
+    <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_entry(0, data.id, data.editing.id, id, "names_id", deletable=False) }}
 
-  {{ hover_tooltip(0, -11, "names_name", data.help.name) }}
-  {{ label_bg(pos="40 -14.5", size="30 7", text="Name:") }}
-  <quad pos="41 -11" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(-11, data.value.name, data.editing.name, id, "names_name", deletable=False) }}
+    {{ hover_tooltip(0, -11, "names_name", data.help.name) }}
+    {{ label_bg(pos="40 -14.5", size="30 7", text="Name:") }}
+    <quad pos="41 -11" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_entry(-11, data.value.name, data.editing.name, id, "names_name", deletable=False) }}
 
-  {{ hover_tooltip(0, -22, "names_preset_on", data.help.preset_on) }}
-  {{ label_bg(pos="40 -25.5", size="30 7", text="Preset On:") }}
-  <quad pos="41 -22" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-22, data.value.preset_on, data.editing.preset_on, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_on", missing=data.missing.preset_on) }}
+    {{ hover_tooltip(0, -22, "names_preset_on", data.help.preset_on) }}
+    {{ label_bg(pos="40 -25.5", size="30 7", text="Preset On:") }}
+    <quad pos="41 -22" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_selectable(-22, data.value.preset_on, data.editing.preset_on, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_on", missing=data.missing.preset_on) }}
 
-  {{ hover_tooltip(0, -33, "names_preset_off", data.help.preset_off) }}
-  {{ label_bg(pos="40 -36.5", size="30 7", text="Preset Off:") }}
-  <quad pos="41 -33" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-33, data.value.preset_off, data.editing.preset_off, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_off", missing=data.missing.preset_off) }}
+    {{ hover_tooltip(0, -33, "names_preset_off", data.help.preset_off) }}
+    {{ label_bg(pos="40 -36.5", size="30 7", text="Preset Off:") }}
+    <quad pos="41 -33" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_selectable(-33, data.value.preset_off, data.editing.preset_off, list_data=data.preset_items, num_pages=data.preset_num_pages, page=data.preset_page, id=id, name="names_preset_off", missing=data.missing.preset_off) }}
 
-  {{ hover_tooltip(0, -44, "names_map_count", data.help.map_count) }}
-  {{ label_bg(pos="40 -47.5", size="30 7", text="Map Count:") }}
-  <quad pos="41 -44" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_entry(-44, data.value.map_count, data.editing.map_count, id, "names_map_count", missing=data.missing.map_count) }}
+    {{ hover_tooltip(0, -44, "names_map_count", data.help.map_count) }}
+    {{ label_bg(pos="40 -47.5", size="30 7", text="Map Count:") }}
+    <quad pos="41 -44" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_entry(-44, data.value.map_count, data.editing.map_count, id, "names_map_count", missing=data.missing.map_count) }}
 
-  {{ hover_tooltip(0, -55, "names_payout", data.help.payout) }}
-  {{ label_bg(pos="40 -58.5", size="30 7", text="Payout:") }}
-  <quad pos="41 -55" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-55, data.value.payout, data.editing.payout, list_data=data.payout_items, num_pages=data.payout_num_pages, page=data.payout_page, id=id, name="names_payout", missing=data.missing.payout) }}
+    {{ hover_tooltip(0, -55, "names_payout", data.help.payout) }}
+    {{ label_bg(pos="40 -58.5", size="30 7", text="Payout:") }}
+    <quad pos="41 -55" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_selectable(-55, data.value.payout, data.editing.payout, list_data=data.payout_items, num_pages=data.payout_num_pages, page=data.payout_page, id=id, name="names_payout", missing=data.missing.payout) }}
 
-  {{ hover_tooltip(0, -66, "names_scoremode", data.help.scoremode) }}
-  {{ label_bg(pos="40 -69.5", size="30 7", text="Score Mode:") }}
-  <quad pos="41 -66" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-  {{ switched_selectable(-66, data.value.scoremode, data.editing.scoremode, list_data=data.scoremode_items, num_pages=data.scoremode_num_pages, page=data.scoremode_page, id=id, name="names_scoremode", missing=data.missing.scoremode) }}
-
+    {{ hover_tooltip(0, -66, "names_scoremode", data.help.scoremode) }}
+    {{ label_bg(pos="40 -69.5", size="30 7", text="Score Mode:") }}
+    <quad pos="41 -66" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_selectable(-66, data.value.scoremode, data.editing.scoremode, list_data=data.scoremode_items, num_pages=data.scoremode_num_pages, page=data.scoremode_page, id=id, name="names_scoremode", missing=data.missing.scoremode) }}
+  {% endif %}
 {% endmacro %}
 
 {% macro presets(id, data) %}
