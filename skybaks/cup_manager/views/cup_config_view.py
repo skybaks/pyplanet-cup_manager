@@ -376,6 +376,19 @@ class ConfigContextPayouts(ConfigContext):
         context_data.update(self.vals_data.get_context_data(selected_item=None))
         return context_data
 
+    async def add_new_item(self) -> None:
+        new_name = "payout"
+        counter = 1
+        while "%s%i" % (new_name, counter) in self.data:
+            counter += 1
+            if counter > 10000:
+                raise Exception(
+                    "New payout name ID reached predefined auto-increment limit"
+                )
+        new_full_name = "%s%i" % (new_name, counter)
+        self.data.update({new_full_name: list()})
+        self.set_selected_item(new_full_name)
+
 
 class CupConfigView(SingleInstanceIndexActionsView):
     template_name = "cup_manager/config.xml"

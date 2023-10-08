@@ -159,7 +159,8 @@
 {% endmacro %}
 
 {% macro payouts(id, data) %}
-  {% if data.vals_items %}
+  {# Allow data.value to be an empty list but hide UI if it's None #}
+  {% if data.value != None %}
     {{ hover_tooltip(0, 0, "payout_id", data.help.id) }}
     {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
     <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
