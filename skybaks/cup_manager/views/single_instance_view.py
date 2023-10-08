@@ -19,11 +19,22 @@ class PagedData:
     Paging uses a 1-based index, i.e. The first page will be page 1.
     """
 
-    def __init__(self, max_per_page: int, name: str) -> None:
+    def __init__(self, max_per_page: int, name: str, append_empty: int = 0) -> None:
         self.max_per_page: int = max_per_page
         self.current_page: int = 1
         self.name = name
-        self.data: Iterable = list()
+        self.append_empty: int = append_empty
+        self._data: Iterable = list()
+
+    @property
+    def data(self) -> Iterable:
+        return self._data
+
+    @data.setter
+    def data(self, value: Iterable) -> None:
+        self._data = value
+        if self.append_empty > 0:
+            self._data += [None] * self.append_empty
 
     @property
     def num_pages(self) -> int:

@@ -10,6 +10,32 @@ from ..score_mode import SCORE_MODE
 
 logger = logging.getLogger(__name__)
 
+help_names_id: str = """[Required]
+
+The ID is the name which is used with the "//cup on" command to start the cup."""
+help_names_name: str = """[Required]
+
+The Name is used as the display name for the cup in all ingame messages and interfaces."""
+help_names_preset_on_off: str = """[Optional]
+
+Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a settings preset. You can define one or the other or both.
+
+- preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
+
+- preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends"""
+help_names_map_count: str = """[Optional]
+
+Use map_count to predefine the number of maps the cup will be played on. This is equivalent to running "//cup mapcount <map_count>" right after you start the cup."""
+help_names_payout: str = """[Optional]
+
+Use payout to predefine the payout config this cup will be using. The value entered in this field should match the ID name of a payout defined in this config file. Predefining the payout here will make it easier to access from the results and will make it appear in the exported results."""
+help_names_scoremode: str = """[Optional]
+
+Use scoremode to force the type of score behavior for the cup. This is equivalent to running "//cup scoremode <score_mode>" after starting a cup. If included the field should be set to one of the scoremode IDs found when running "//cup scoremode" """
+
+help_payout_id: str = "TODO: ID"
+help_payout_vals: str = "TODO: Values"
+
 
 class ConfigContext:
     def __init__(self, data_name: str, view: "CupConfigView") -> None:
@@ -17,6 +43,8 @@ class ConfigContext:
         self.data: "dict[str, dict | list]" = view.config_data[data_name]
         self.view: "CupConfigView" = view
         self.value: "dict | list | None" = None
+        self.help: "dict[str, str]" = dict()
+        self.editing: "dict[str, bool]" = dict()
         self.selected_item: str = ""
 
     def get_selected_item(self) -> str:
@@ -38,6 +66,8 @@ class ConfigContext:
             "name": self.name,
             "id": self.selected_item,
             "value": self.value,
+            "help": self.help,
+            "editing": self.editing,
         }
 
     async def add_new_item(self) -> None:
@@ -51,41 +81,19 @@ class ConfigContext:
 
 
 class ConfigContextNames(ConfigContext):
-    help: "dict[str, str]" = {
-        "id": """[Required]
-
-The ID is the name which is used with the "//cup on" command to start the cup.""",
-        "name": """[Required]
-
-The Name is used as the display name for the cup in all ingame messages and interfaces.""",
-        "preset_on": """[Optional]
-
-Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a settings preset. You can define one or the other or both.
-
-- preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
-
-- preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends""",
-        "preset_off": """[Optional]
-
-Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a settings preset. You can define one or the other or both.
-
-- preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
-
-- preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends""",
-        "map_count": """[Optional]
-
-Use map_count to predefine the number of maps the cup will be played on. This is equivalent to running "//cup mapcount <map_count>" right after you start the cup.""",
-        "payout": """[Optional]
-
-Use payout to predefine the payout config this cup will be using. The value entered in this field should match the ID name of a payout defined in this config file. Predefining the payout here will make it easier to access from the results and will make it appear in the exported results.""",
-        "scoremode": """[Optional]
-
-Use scoremode to force the type of score behavior for the cup. This is equivalent to running "//cup scoremode <score_mode>" after starting a cup. If included the field should be set to one of the scoremode IDs found when running "//cup scoremode" """,
-    }
-
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("names", view)
-        self.editing: "dict[str, bool]" = dict()
+        self.help.update(
+            {
+                "id": help_names_id,
+                "name": help_names_name,
+                "preset_on": help_names_preset_on_off,
+                "preset_off": help_names_preset_on_off,
+                "map_count": help_names_map_count,
+                "payout": help_names_payout,
+                "scoremode": help_names_scoremode,
+            }
+        )
         self.preset_data: PagedData = PagedData(max_per_page=6, name="preset")
         self.payout_data: PagedData = PagedData(max_per_page=6, name="payout")
         self.scoremode_data: PagedData = PagedData(max_per_page=6, name="scoremode")
@@ -225,9 +233,7 @@ Use scoremode to force the type of score behavior for the cup. This is equivalen
 
     async def get_data(self) -> "dict[str, Any]":
         context_data = await super().get_data()
-        context_data.update(
-            {"editing": self.editing, "help": self.help, "missing": dict()}
-        )
+        context_data.update({"missing": dict()})
 
         if self.value:
             for field in self.editing:
@@ -260,6 +266,57 @@ class ConfigContextPresets(ConfigContext):
 class ConfigContextPayouts(ConfigContext):
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("payouts", view)
+        self.vals_data: PagedData = PagedData(
+            max_per_page=8, name="vals", append_empty=1
+        )
+        self.help.update({"id": help_payout_id, "vals": help_payout_vals})
+        self.editing.update({"id": False, "vals": list()})
+        self.view.subscribe("payout_id_edit", self.enable_edit)
+        self.view.subscribe("payout_id_edit_accept", self.accept_edit)
+        self.view.subscribe("payout_id_edit_cancel", self.cancel_edit)
+
+    async def enable_edit(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "payout_(\w+)_edit", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            for key in self.editing.keys():
+                self.editing[key] = True if key == match_result.group(1) else False
+            await self.view.refresh(player=player)
+
+    async def accept_edit(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "payout_(\w+)_edit_accept", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            edit_key = match_result.group(1)
+            for key in self.editing.keys():
+                self.editing[key] = False
+            if edit_key == "id":
+                old_name = self.get_selected_item()
+                new_name = values.get("switched_entry")
+                # Do we care about possibly overwriting an existing entry?
+                self.data[new_name] = self.data[old_name]
+                del self.data[old_name]
+                self.view.selected_sidebar_item = new_name
+            elif "switched_entry" in values:
+                self.value[edit_key] = values.get("switched_entry")
+            await self.view.refresh(player=player)
+
+    async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "payout_(\w+)_edit_cancel", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            for key in self.editing.keys():
+                self.editing[key] = False
+            await self.view.refresh(player=player)
+
+    async def get_data(self) -> "dict[str, Any]":
+        context_data = await super().get_data()
+        self.vals_data.data = deepcopy(self.value)
+        context_data.update(self.vals_data.get_context_data(selected_item=None))
+        return context_data
 
 
 class CupConfigView(SingleInstanceIndexActionsView):
