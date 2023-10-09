@@ -33,8 +33,12 @@ help_names_scoremode: str = """[Optional]
 
 Use scoremode to force the type of score behavior for the cup. This is equivalent to running "//cup scoremode <score_mode>" after starting a cup. If included the field should be set to one of the scoremode IDs found when running "//cup scoremode" """
 
-help_payout_id: str = "TODO: ID"
-help_payout_vals: str = "TODO: Values"
+help_payout_id: str = """[Required]
+
+This unique ID is used to identify the payout."""
+help_payout_vals: str = """[Required]
+
+The values of planets that will be payed to players from the cup results. The first value will be given to the player in first, the second to the player in second, and so forth."""
 
 
 class ConfigContext:

@@ -36,6 +36,8 @@ class PagedData:
     @data.setter
     def data(self, value: Iterable) -> None:
         self._data = value
+        if self.current_page > self.num_pages:
+            self.current_page = 1
 
     @property
     def num_pages(self) -> int:
