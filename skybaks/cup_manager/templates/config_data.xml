@@ -183,15 +183,19 @@
     {{ hover_tooltip(0, -11, "preset_script", data.help.script) }}
     {{ label_bg(pos="40 -14.5", size="30 7", text="Script:") }}
     <quad pos="41 -11" size="140 30" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-    {{ switched_entry(-11, "data.script_tmnext", data.editing.script_tmnext, id, "presets_script_tmnext", missing=False, prefix_text="Trackmania (2020):", prefix_size=35) }}
-    {{ switched_entry(-21, "data.script_tm", data.editing.script_tm, id, "presets_script_tm", missing=False, prefix_text="Maniaplanet:", prefix_size=35) }}
-    {{ switched_entry(-31, "data.script_sm", data.editing.script_sm, id, "presets_script_sm", missing=False, prefix_text="Shootmania:", prefix_size=35) }}
+    {{ switched_entry(-11, data.value.script.tmnext, data.editing.script_tmnext, id, "preset_script_tmnext", missing=not data.value.script.tmnext, prefix_text="Trackmania (2020):", prefix_size=35) }}
+    {{ switched_entry(-21, data.value.script.tm, data.editing.script_tm, id, "preset_script_tm", missing=not data.value.script.tm, prefix_text="Maniaplanet:", prefix_size=35) }}
+    {{ switched_entry(-31, data.value.script.sm, data.editing.script_sm, id, "preset_script_sm", missing=not data.value.script.sm, prefix_text="Shootmania:", prefix_size=35) }}
 
     {{ hover_tooltip(0, -42, "preset_settings", data.help.settings) }}
     {{ label_bg(pos="40 -45.5", size="30 7", text="Settings:") }}
     <quad pos="41 -42" size="140 70" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {{ switched_entry(-42, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
-    {{ switched_entry(-52, "S_SettingName", True, id, "presets_settings", missing=False, text2="True") }}
+    {{ switched_entry(-52, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
+    {{ switched_entry(-62, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
+    {{ switched_entry(-72, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
+    {{ switched_entry(-82, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
+    {{ switched_entry(-92, "S_SettingName", data.editing.settings, id, "presets_settings", missing=True, text2="True") }}
   {% endif %}
 {% endmacro %}
 

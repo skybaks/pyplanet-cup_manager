@@ -268,14 +268,94 @@ class ConfigContextNames(ConfigContext):
 class ConfigContextPresets(ConfigContext):
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("presets", view)
+        self.vals_data: PagedData = PagedData(6, "vals", append_empty=1)
+        self.editing.update({"vals": [False] * self.vals_data.max_per_page})
+        fields = ["id", "script_tmnext", "script_tm", "script_sm"]
+        for field in fields:
+            self.editing.update({field: False})
+            self.view.subscribe(f"preset_{field}_edit", self.enable_edit)
+            self.view.subscribe(f"preset_{field}_edit_accept", self.accept_edit)
+            self.view.subscribe(f"preset_{field}_edit_cancel", self.cancel_edit)
+            self.view.subscribe(f"preset_{field}_delete", self.delete_field)
+        # self.view.subscribe("preset_vals_page_next", self.payout_paging)
+        # self.view.subscribe("preset_vals_page_prev", self.payout_paging)
+        # self.view.subscribe_index("preset_vals_edit", self.enable_edit_index)
+        # self.view.subscribe_index("preset_vals_edit_accept", self.accept_edit_index)
+        # self.view.subscribe_index("preset_vals_edit_cancel", self.cancel_edit_index)
+        # self.view.subscribe_index("preset_vals_delete", self.delete_index)
+
+    def set_selected_item(self, item_name: str) -> None:
+        super().set_selected_item(item_name)
+        self.vals_data.data = [
+            (key, val) for key, val in self.value["settings"].items()
+        ]
+
+    def update_editing(self, current: "str | int") -> None:
+        for key in self.editing.keys():
+            if key != "vals":
+                self.editing[key] = True if key == current else False
+        for i in range(len(self.editing["vals"])):
+            self.editing["vals"][i] = True if i == current else False
+
+    async def enable_edit(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "preset_(\w+)_edit", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            self.update_editing(match_result.group(1))
+            await self.view.refresh(player=player)
+
+    async def accept_edit(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "preset_(\w+)_edit_accept", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            edit_key: str = match_result.group(1)
+            self.update_editing(None)
+            if edit_key == "id":
+                old_name = self.get_selected_item()
+                new_name = values.get("switched_entry")
+                if old_name != new_name:
+                    # Do we care about possibly overwriting an existing entry?
+                    self.data[new_name] = self.data[old_name]
+                    del self.data[old_name]
+                    self.view.selected_sidebar_item = new_name
+            elif "switched_entry" in values and edit_key.startswith("script"):
+                game = edit_key.split("_")[-1]
+                self.value["script"].update({game: values.get("switched_entry")})
+            await self.view.refresh(player=player)
+
+    async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "preset_(\w+)_edit_cancel", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            self.update_editing(None)
+            await self.view.refresh(player=player)
+
+    async def delete_field(self, player, action: str, values: dict, **kwargs) -> None:
+        match_result: "re.Match" = re.match(
+            "preset_(\w+)_delete", self.get_action(action)
+        )
+        if match_result and match_result.group(1) in self.editing:
+            delete_key: str = match_result.group(1)
+            self.update_editing(None)
+            if delete_key.startswith("script"):
+                game = delete_key.split("_")[-1]
+                if game in self.value["script"]:
+                    del self.value["script"][game]
+            await self.view.refresh(player=player)
+
+    async def get_data(self) -> "dict[str, Any]":
+        context_data = await super().get_data()
+        context_data.update(self.vals_data.get_context_data(selected_item=None))
+        return context_data
 
 
 class ConfigContextPayouts(ConfigContext):
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("payouts", view)
-        self.vals_data: PagedData = PagedData(
-            max_per_page=8, name="vals", append_empty=1
-        )
+        self.vals_data: PagedData = PagedData(8, "vals", append_empty=1)
         self.help.update({"id": help_payout_id, "vals": help_payout_vals})
         self.editing.update(
             {"id": False, "vals": [False] * self.vals_data.max_per_page}
