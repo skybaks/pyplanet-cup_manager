@@ -66,6 +66,7 @@ class PagedData:
             f"{self.name}_items": list(),
             f"{self.name}_page": self.current_page,
             f"{self.name}_num_pages": self.num_pages,
+            f"{self.name}_max_per_page": self.max_per_page,
         }
         for item in self.get_current_page_data():
             context_data[f"{self.name}_items"].append(

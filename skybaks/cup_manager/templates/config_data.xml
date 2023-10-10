@@ -43,21 +43,30 @@
   {% endif %}
 {% endmacro %}
 
-{% macro switched_entry(pos_y, text, editing, id, name, deletable=True, missing=False, index="") %}
+{% macro switched_entry(pos_y, text, editing, id, name, deletable=True, missing=False, index="", prefix_text="", prefix_size=0) %}
   {% if editing %}
     <frame z-index="10">
-      <entry pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
+      {% if prefix_size > 0 %}
+        <label pos="42 {{ pos_y - 4.5 }}" size="{{ prefix_size }} 7" textsize="2" text="{{ prefix_text }}" valign="center" halign="left" />
+      {% endif %}
+      <entry pos="{{ prefix_size + 42 }} {{ pos_y - 4.5 }}" size="{{ 115 - prefix_size }} 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
       {{ button_icon(160, pos_y, 10, 10, icons.check, id + "__" + name + "_edit_accept" + index) }}
       {{ button_icon(170, pos_y, 10, 10, icons.x, id + "__" + name + "_edit_cancel" + index) }}
     </frame>
   {% elif missing %}
     <frame z-index="10">
-      {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit" + index) }}
-      <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+      {% if prefix_size > 0 %}
+        <label pos="42 {{ pos_y - 4.5 }}" size="{{ prefix_size }} 7" textsize="2" text="{{ prefix_text }}" valign="center" halign="left" />
+      {% endif %}
+      {{ button_icon(prefix_size + 40, pos_y, 10, 10, "+", action=id + "__" + name + "_edit" + index) }}
+      <label pos="{{ prefix_size + 50}} {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
     </frame>
   {% else %}
     <frame z-index="10">
-      <label pos="42 {{ pos_y - 4.5 }}" size="115 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
+      {% if prefix_size > 0 %}
+        <label pos="42 {{ pos_y - 4.5 }}" size="{{ prefix_size }} 7" textsize="2" text="{{ prefix_text }}" valign="center" halign="left" />
+      {% endif %}
+      <label pos="{{ prefix_size + 42 }} {{ pos_y - 4.5 }}" size="{{ 115 - prefix_size }} 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
       {{ button_icon(160, pos_y, 10, 10, icons.pencil, id + "__" + name + "_edit" + index) }}
       {% if deletable %}
         {{ button_icon(170, pos_y, 10, 10, "-", id + "__" + name + "_delete" + index) }}
@@ -85,8 +94,8 @@
     </frame>
   {% elif missing %}
     <frame z-index="-10">
-      {{ button_icon(45, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
-      <label pos="55 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
+      {{ button_icon(40, pos_y, 10, 10, "+", action=id + "__" + name + "_edit") }}
+      <label pos="50 {{ pos_y - 5 }}" size="30 10" text="Add Field" halign="left" valign="center2" />
     </frame>
   {% else %}
     <frame z-index="-10">
@@ -154,12 +163,27 @@
 
 {% macro presets(id, data) %}
   {% if data.value != None %}
-    <label text="presets" />
+    {{ hover_tooltip(0, 0, "preset_id", data.help.id) }}
+    {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
+    <quad pos="41 0" size="140 10" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_entry(0, data.id, data.editing.id, id, "preset_id", deletable=False) }}
+
+    {# NOTE: Omit aliases on purpose. IMO it is worth it to give the extra space to settings. #}
+
+    {{ hover_tooltip(0, -11, "preset_script", data.help.script) }}
+    {{ label_bg(pos="40 -14.5", size="30 7", text="Script:") }}
+    <quad pos="41 -11" size="140 30" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ switched_entry(-11, "data.script_tmnext", data.editing.script_tmnext, id, "presets_script_tmnext", missing=False, prefix_text="Trackmania (2020):", prefix_size=35) }}
+    {{ switched_entry(-21, "data.script_tm", data.editing.script_tm, id, "presets_script_tm", missing=False, prefix_text="Maniaplanet:", prefix_size=35) }}
+    {{ switched_entry(-31, "data.script_sm", data.editing.script_sm, id, "presets_script_sm", missing=False, prefix_text="Shootmania:", prefix_size=35) }}
+
+    {{ hover_tooltip(0, -42, "preset_settings", data.help.settings) }}
+    {{ label_bg(pos="40 -45.5", size="30 7", text="Settings:") }}
+    <quad pos="41 -42" size="140 70" bgcolor="0007" halign="left" valign="top" z-index="-50" />
   {% endif %}
 {% endmacro %}
 
 {% macro payouts(id, data) %}
-  {# Allow data.value to be an empty list but hide UI if it's None #}
   {% if data.value != None %}
     {{ hover_tooltip(0, 0, "payout_id", data.help.id) }}
     {{ label_bg(pos="40 -3.5", size="30 7", text="ID:") }}
@@ -170,7 +194,7 @@
     {{ label_bg(pos="40 -14.5", size="30 7", text="Values:") }}
     <quad pos="41 -11" size="140 90" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {% for val in data.vals_items %}
-      {{ switched_entry(-11 - (10 * loop.index0), val.name, data.editing.vals[loop.index0], id, "payout_vals", index="_" + (loop.index0|string), missing=val.name==None) }}
+      {{ switched_entry(-11 - (10 * loop.index0), val.name, data.editing.vals[loop.index0], id, "payout_vals", index="_" + (loop.index0|string), missing=val.name==None, prefix_text=((loop.index0 + 1) + (data.vals_page - 1) * data.vals_max_per_page)|string + ".", prefix_size=10) }}
     {% endfor %}
     {{ vertical_paging(41, -94, 30, 7, data.vals_num_pages, data.vals_page, id, name="payout_vals") }}
   {% endif %}
