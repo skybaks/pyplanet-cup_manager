@@ -55,6 +55,8 @@ class ConfigContext:
         return self.selected_item
 
     def set_selected_item(self, item_name: str) -> None:
+        if self.selected_item != item_name:
+            self.update_editing(None)
         if item_name in self.data:
             self.value = self.data[item_name]
             self.selected_item = item_name
@@ -64,6 +66,10 @@ class ConfigContext:
         if action.startswith(self.view.id):
             action_name = action[len(self.view.id) + 2 :]
         return action_name
+
+    def update_editing(self, current) -> None:
+        for key in self.editing.keys():
+            self.editing[key] = True if key == current else False
 
     async def get_data(self) -> "dict[str]":
         return {
@@ -150,8 +156,7 @@ class ConfigContextNames(ConfigContext):
     async def enable_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match("names_(\w+)_edit", self.get_action(action))
         if match_result and match_result.group(1) in self.editing:
-            for key in self.editing.keys():
-                self.editing[key] = True if key == match_result.group(1) else False
+            self.update_editing(match_result.group(1))
             if self.value:
                 self.edit_selection = self.value.get(match_result.group(1), "")
             await self.update_paged_data()
@@ -163,8 +168,7 @@ class ConfigContextNames(ConfigContext):
         )
         if match_result and match_result.group(1) in self.editing:
             edit_key = match_result.group(1)
-            for key in self.editing.keys():
-                self.editing[key] = False
+            self.update_editing(None)
             if edit_key == "id":
                 old_name = self.get_selected_item()
                 new_name = values.get("switched_entry")
@@ -184,8 +188,7 @@ class ConfigContextNames(ConfigContext):
             "names_(\w+)_edit_cancel", self.get_action(action)
         )
         if match_result and match_result.group(1) in self.editing:
-            for key in self.editing.keys():
-                self.editing[key] = False
+            self.update_editing(None)
             await self.view.refresh(player=player)
 
     async def delete_field(self, player, action: str, values: dict, **kwargs) -> None:
@@ -193,8 +196,7 @@ class ConfigContextNames(ConfigContext):
             "names_(\w+)_delete", self.get_action(action)
         )
         if match_result and match_result.group(1) in self.value:
-            for key in self.editing.keys():
-                self.editing[key] = False
+            self.update_editing(None)
             del self.value[match_result.group(1)]
             await self.view.refresh(player=player)
 
