@@ -59,8 +59,6 @@
       {% endif %}
       <label pos="20.5 -107.5" size="15 5" text="{{ sidebar_page }} / {{ sidebar_num_pages }}" textsize="1.5" halign="center"/>
     {% endif %}
-
-    {# TODO: Icons64x64_1/Add to add a new entry #}
   </frame>
 
   {# data #}

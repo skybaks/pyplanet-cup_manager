@@ -43,13 +43,13 @@
   {% endif %}
 {% endmacro %}
 
-{% macro switched_entry(pos_y, text, editing, id, name, deletable=True, missing=False, index="", prefix_text="", prefix_size=0, text2="") %}
+{% macro switched_entry(pos_y, text, editing, id, name, deletable=True, missing=False, index="", prefix_text="", prefix_size=0, use_text2=False, text2="") %}
   {% if editing %}
     <frame z-index="10">
       {% if prefix_size > 0 %}
         <label pos="42 {{ pos_y - 4.5 }}" size="{{ prefix_size }} 7" textsize="2" text="{{ prefix_text }}" valign="center" halign="left" />
       {% endif %}
-      {% if text2 %}
+      {% if use_text2 %}
         <entry pos="{{ (prefix_size + 42) }} {{ pos_y - 4.5 }}" size="{{ (115 - prefix_size) * 0.4 - 0.5 }} 7" textsize="2" default="{{ text }}" halign="left" valign="center2" name="switched_entry" />
         <entry pos="{{ (prefix_size + 42) + ((115 - prefix_size) * 0.4 + 0.5) }} {{ pos_y - 4.5 }}" size="{{ (115 - prefix_size) * 0.6 - 0.5 }} 7" textsize="2" default="{{ text2 }}" halign="left" valign="center2" name="switched_entry2" />
       {% else %}
@@ -71,7 +71,7 @@
       {% if prefix_size > 0 %}
         <label pos="42 {{ pos_y - 4.5 }}" size="{{ prefix_size }} 7" textsize="2" text="{{ prefix_text }}" valign="center" halign="left" />
       {% endif %}
-      {% if text2 %}
+      {% if use_text2 %}
         <label pos="{{ (prefix_size + 42) }} {{ pos_y - 4.5 }}" size="{{ (115 - prefix_size) * 0.4 - 0.5 }} 7" textsize="2" text="{{ text }}" halign="left" valign="center2" />
         <label pos="{{ (prefix_size + 42) + ((115 - prefix_size) * 0.4 + 0.5) }} {{ pos_y - 4.5 }}" size="{{ (115 - prefix_size) * 0.6 - 0.5 }} 7" textsize="2" text="{{ text2 }}" halign="left" valign="center2" />
       {% else %}
@@ -190,12 +190,9 @@
     {{ hover_tooltip(0, -42, "preset_settings", data.help.settings) }}
     {{ label_bg(pos="40 -45.5", size="30 7", text="Settings:") }}
     <quad pos="41 -42" size="140 70" bgcolor="0007" halign="left" valign="top" z-index="-50" />
-    {{ switched_entry(-42, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
-    {{ switched_entry(-52, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
-    {{ switched_entry(-62, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
-    {{ switched_entry(-72, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
-    {{ switched_entry(-82, "S_SettingName", data.editing.settings, id, "presets_settings", missing=False, text2="True") }}
-    {{ switched_entry(-92, "S_SettingName", data.editing.settings, id, "presets_settings", missing=True, text2="True") }}
+    {% for val in data.vals_items %}
+      {{ switched_entry(-42 - (10 * loop.index0), val.name[0], data.editing.vals[loop.index0], id, "preset_settings", index="_" + (loop.index0|string), missing=val.name==None, use_text2=True, text2=val.name[1]) }}
+    {% endfor %}
   {% endif %}
 {% endmacro %}
 

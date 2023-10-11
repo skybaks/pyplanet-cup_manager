@@ -2,7 +2,7 @@ import re
 import logging
 import math
 from asyncio import iscoroutinefunction
-from typing import Iterable, Callable
+from typing import Callable
 
 from pyplanet.views.template import TemplateView
 from pyplanet.apps.core.maniaplanet.models.player import Player
@@ -10,7 +10,7 @@ from pyplanet.apps.core.maniaplanet.models.player import Player
 logger = logging.getLogger(__name__)
 
 
-def apply_pagination(frame: Iterable, page: int, num_per_page: int) -> Iterable:
+def apply_pagination(frame: list, page: int, num_per_page: int) -> list:
     return frame[(page - 1) * num_per_page : page * num_per_page]
 
 
@@ -24,17 +24,20 @@ class PagedData:
         self.current_page: int = 1
         self.name: str = name
         self.append_empty: int = append_empty
-        self._data: Iterable = list()
+        self._data: "list | dict" = list()
 
     @property
-    def data(self) -> Iterable:
+    def data(self) -> list:
+        items = self._data
+        if isinstance(items, dict):
+            items = [(key, val) for key, val in items.items()]
         if self.append_empty > 0:
-            return self._data + ([None] * self.append_empty)
+            return items + ([None] * self.append_empty)
         else:
-            return self._data
+            return items
 
     @data.setter
-    def data(self, value: Iterable) -> None:
+    def data(self, value: "list | dict") -> None:
         self._data = value
         if self.current_page > self.num_pages:
             self.current_page = 1
@@ -46,7 +49,7 @@ class PagedData:
     def page_index_to_data_index(self, index: int) -> int:
         return (self.current_page - 1) * self.max_per_page + index
 
-    def get_current_page_data(self) -> Iterable:
+    def get_current_page_data(self) -> list:
         return apply_pagination(self.data, self.current_page, self.max_per_page)
 
     def next_page(self, *args, **kwargs) -> bool:

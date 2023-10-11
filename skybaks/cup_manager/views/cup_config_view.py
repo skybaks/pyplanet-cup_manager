@@ -41,6 +41,25 @@ help_payout_vals: str = """[Required]
 The values of planets that will be payed to players from the cup results. The first value will be given to the player in first, the second to the player in second, and so forth."""
 
 
+def cast_setting(in_val: str) -> "bool | int | float | str":
+    try:
+        return int(in_val)
+    except ValueError:
+        pass
+
+    try:
+        return float(in_val)
+    except ValueError:
+        pass
+
+    if in_val.lower() == "true":
+        return True
+    elif in_val.lower() == "false":
+        return False
+
+    return in_val
+
+
 class ConfigContext:
     def __init__(self, data_name: str, view: "CupConfigView") -> None:
         self.name: str = data_name
@@ -277,18 +296,16 @@ class ConfigContextPresets(ConfigContext):
             self.view.subscribe(f"preset_{field}_edit_accept", self.accept_edit)
             self.view.subscribe(f"preset_{field}_edit_cancel", self.cancel_edit)
             self.view.subscribe(f"preset_{field}_delete", self.delete_field)
-        # self.view.subscribe("preset_vals_page_next", self.payout_paging)
-        # self.view.subscribe("preset_vals_page_prev", self.payout_paging)
-        # self.view.subscribe_index("preset_vals_edit", self.enable_edit_index)
-        # self.view.subscribe_index("preset_vals_edit_accept", self.accept_edit_index)
-        # self.view.subscribe_index("preset_vals_edit_cancel", self.cancel_edit_index)
-        # self.view.subscribe_index("preset_vals_delete", self.delete_index)
+        # self.view.subscribe("preset_settings_page_next", self.payout_paging)
+        # self.view.subscribe("preset_settings_page_prev", self.payout_paging)
+        self.view.subscribe_index("preset_settings_edit", self.enable_edit_index)
+        self.view.subscribe_index("preset_settings_edit_accept", self.accept_edit_index)
+        # self.view.subscribe_index("preset_settings_edit_cancel", self.cancel_edit_index)
+        # self.view.subscribe_index("preset_settings_delete", self.delete_index)
 
     def set_selected_item(self, item_name: str) -> None:
         super().set_selected_item(item_name)
-        self.vals_data.data = [
-            (key, val) for key, val in self.value["settings"].items()
-        ]
+        self.vals_data.data = self.value["settings"]
 
     def update_editing(self, current: "str | int") -> None:
         for key in self.editing.keys():
@@ -304,6 +321,12 @@ class ConfigContextPresets(ConfigContext):
         if match_result and match_result.group(1) in self.editing:
             self.update_editing(match_result.group(1))
             await self.view.refresh(player=player)
+
+    async def enable_edit_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        self.update_editing(index)
+        await self.view.refresh(player=player)
 
     async def accept_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
@@ -324,6 +347,17 @@ class ConfigContextPresets(ConfigContext):
                 game = edit_key.split("_")[-1]
                 self.value["script"].update({game: values.get("switched_entry")})
             await self.view.refresh(player=player)
+
+    async def accept_edit_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        self.update_editing(None)
+        if "switched_entry" in values and "switched_entry2" in values:
+            key = values["switched_entry"]
+            if key:
+                val = cast_setting(values["switched_entry2"])
+                self.value["settings"][key] = val
+        await self.view.refresh(player=player)
 
     async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
