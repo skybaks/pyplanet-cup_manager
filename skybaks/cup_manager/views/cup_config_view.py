@@ -32,7 +32,20 @@ Use payout to predefine the payout config this cup will be using. The value ente
 help_names_scoremode: str = """[Optional]
 
 Use scoremode to force the type of score behavior for the cup. This is equivalent to running "//cup scoremode <score_mode>" after starting a cup. If included the field should be set to one of the scoremode IDs found when running "//cup scoremode" """
+help_preset_id: str = """[Required]
 
+The name which is used to identify the preset. This is the name which should be added to a \"names\" config for preset_on or preset_off and the name which should be used with the \"//cup setup <preset>\" command.
+"""
+help_preset_script: str = """[Required]
+
+A script must be defined for at least one game. Multiple scripts can be defined to enable reuse of this preset across all the defined games.
+"""
+help_preset_settings: str = """[Required]
+
+Enter script settings which will be applied with the preset.
+
+The setting name goes in the first text field and the setting value goes in the second text field.
+"""
 help_payout_id: str = """[Required]
 
 This unique ID is used to identify the payout."""
@@ -107,6 +120,12 @@ class ConfigContext:
             del self.data[self.selected_item]
             self.value = None
             self.selected_item = ""
+
+    async def cancel_edit(
+        self, player, action: str, values: dict, *args, **kwargs
+    ) -> None:
+        self.update_editing(None)
+        await self.view.refresh(player=player)
 
 
 class ConfigContextNames(ConfigContext):
@@ -202,14 +221,6 @@ class ConfigContextNames(ConfigContext):
                 self.value[edit_key] = self.edit_selection
             await self.view.refresh(player=player)
 
-    async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
-        match_result: "re.Match" = re.match(
-            "names_(\w+)_edit_cancel", self.get_action(action)
-        )
-        if match_result and match_result.group(1) in self.editing:
-            self.update_editing(None)
-            await self.view.refresh(player=player)
-
     async def delete_field(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
             "names_(\w+)_delete", self.get_action(action)
@@ -288,6 +299,13 @@ class ConfigContextPresets(ConfigContext):
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("presets", view)
         self.vals_data: PagedData = PagedData(6, "vals", append_empty=1)
+        self.help.update(
+            {
+                "id": help_preset_id,
+                "script": help_preset_script,
+                "settings": help_preset_settings,
+            }
+        )
         self.editing.update({"vals": [False] * self.vals_data.max_per_page})
         fields = ["id", "script_tmnext", "script_tm", "script_sm"]
         for field in fields:
@@ -296,12 +314,12 @@ class ConfigContextPresets(ConfigContext):
             self.view.subscribe(f"preset_{field}_edit_accept", self.accept_edit)
             self.view.subscribe(f"preset_{field}_edit_cancel", self.cancel_edit)
             self.view.subscribe(f"preset_{field}_delete", self.delete_field)
-        # self.view.subscribe("preset_settings_page_next", self.payout_paging)
-        # self.view.subscribe("preset_settings_page_prev", self.payout_paging)
+        self.view.subscribe("preset_settings_page_next", self.settings_paging)
+        self.view.subscribe("preset_settings_page_prev", self.settings_paging)
         self.view.subscribe_index("preset_settings_edit", self.enable_edit_index)
         self.view.subscribe_index("preset_settings_edit_accept", self.accept_edit_index)
-        # self.view.subscribe_index("preset_settings_edit_cancel", self.cancel_edit_index)
-        # self.view.subscribe_index("preset_settings_delete", self.delete_index)
+        self.view.subscribe_index("preset_settings_edit_cancel", self.cancel_edit)
+        self.view.subscribe_index("preset_settings_delete", self.delete_index)
 
     def set_selected_item(self, item_name: str) -> None:
         super().set_selected_item(item_name)
@@ -356,16 +374,9 @@ class ConfigContextPresets(ConfigContext):
             key = values["switched_entry"]
             if key:
                 val = cast_setting(values["switched_entry2"])
+                logger.debug(f"Saved setting {key}:{str(val)} as type {str(type(val))}")
                 self.value["settings"][key] = val
         await self.view.refresh(player=player)
-
-    async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
-        match_result: "re.Match" = re.match(
-            "preset_(\w+)_edit_cancel", self.get_action(action)
-        )
-        if match_result and match_result.group(1) in self.editing:
-            self.update_editing(None)
-            await self.view.refresh(player=player)
 
     async def delete_field(self, player, action: str, values: dict, **kwargs) -> None:
         match_result: "re.Match" = re.match(
@@ -380,10 +391,42 @@ class ConfigContextPresets(ConfigContext):
                     del self.value["script"][game]
             await self.view.refresh(player=player)
 
+    async def delete_index(
+        self, player, action: str, values: dict, index: int, **kwargs
+    ) -> None:
+        self.update_editing(None)
+        page_data = self.vals_data.get_current_page_data()
+        if index < len(page_data):
+            key = page_data[index][0]
+            if key in self.value["settings"]:
+                del self.value["settings"][key]
+        await self.view.refresh(player=player)
+
+    async def settings_paging(self, player, action, values, **kwargs) -> None:
+        if "next" in action and self.vals_data.next_page():
+            self.update_editing(None)
+            await self.view.refresh(player=player)
+        elif "prev" in action and self.vals_data.prev_page():
+            self.update_editing(None)
+            await self.view.refresh(player=player)
+
     async def get_data(self) -> "dict[str, Any]":
         context_data = await super().get_data()
         context_data.update(self.vals_data.get_context_data(selected_item=None))
         return context_data
+
+    async def add_new_item(self) -> None:
+        new_name = "preset"
+        counter = 1
+        while "%s%i" % (new_name, counter) in self.data:
+            counter += 1
+            if counter > 10000:
+                raise Exception("New preset ID reached predefined auto-increment limit")
+        new_full_name = "%s%i" % (new_name, counter)
+        self.data.update(
+            {new_full_name: {"aliases": list(), "script": dict(), "settings": dict()}}
+        )
+        self.set_selected_item(new_full_name)
 
 
 class ConfigContextPayouts(ConfigContext):
@@ -401,7 +444,7 @@ class ConfigContextPayouts(ConfigContext):
         self.view.subscribe("payout_vals_page_prev", self.payout_paging)
         self.view.subscribe_index("payout_vals_edit", self.enable_edit_index)
         self.view.subscribe_index("payout_vals_edit_accept", self.accept_edit_index)
-        self.view.subscribe_index("payout_vals_edit_cancel", self.cancel_edit_index)
+        self.view.subscribe_index("payout_vals_edit_cancel", self.cancel_edit)
         self.view.subscribe_index("payout_vals_delete", self.delete_index)
 
     def set_selected_item(self, item_name: str) -> None:
@@ -461,23 +504,10 @@ class ConfigContextPayouts(ConfigContext):
                 logger.error("Error setting value for payout field: " + str(e))
         await self.view.refresh(player=player)
 
-    async def cancel_edit(self, player, action: str, values: dict, **kwargs) -> None:
-        match_result: "re.Match" = re.match(
-            "payout_(\w+)_edit_cancel", self.get_action(action)
-        )
-        if match_result and match_result.group(1) in self.editing:
-            self.update_editing(None)
-            await self.view.refresh(player=player)
-
-    async def cancel_edit_index(
-        self, player, action: str, values: dict, index: int, **kwargs
-    ) -> None:
-        self.update_editing(None)
-        await self.view.refresh(player=player)
-
     async def delete_index(
         self, player, action: str, values: dict, index: int, **kwargs
     ) -> None:
+        self.update_editing(None)
         data_index = self.vals_data.page_index_to_data_index(index)
         if data_index < len(self.value):
             del self.value[data_index]

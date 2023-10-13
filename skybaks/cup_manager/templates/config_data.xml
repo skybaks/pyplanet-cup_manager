@@ -189,10 +189,11 @@
 
     {{ hover_tooltip(0, -42, "preset_settings", data.help.settings) }}
     {{ label_bg(pos="40 -45.5", size="30 7", text="Settings:") }}
-    <quad pos="41 -42" size="140 70" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    <quad pos="41 -42" size="140 67" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {% for val in data.vals_items %}
       {{ switched_entry(-42 - (10 * loop.index0), val.name[0], data.editing.vals[loop.index0], id, "preset_settings", index="_" + (loop.index0|string), missing=val.name==None, use_text2=True, text2=val.name[1]) }}
     {% endfor %}
+    {{ vertical_paging(41, -102, 30, 7, data.vals_num_pages, data.vals_page, id, name="preset_settings") }}
   {% endif %}
 {% endmacro %}
 
