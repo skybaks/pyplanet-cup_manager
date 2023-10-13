@@ -1,5 +1,6 @@
 import unittest
-from ..config import validate_config, get_fallback_config
+from ..config import get_fallback_config
+from ..utils.validation import validate_config
 
 
 class ConfigValidationTest(unittest.TestCase):

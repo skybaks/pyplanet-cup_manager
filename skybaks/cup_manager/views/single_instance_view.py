@@ -149,3 +149,5 @@ class SingleInstanceIndexActionsView(SingleInstanceView):
                 logger.error(
                     f'Got invalid value "{str(match_result.group(2))}" from handle_catch_all for action "{str(action)}"'
                 )
+        else:
+            await super().handle_catch_all(player, action, values, **kwargs)

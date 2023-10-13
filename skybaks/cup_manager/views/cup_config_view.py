@@ -7,6 +7,7 @@ from pyplanet.views.generics import ask_confirmation
 
 from .single_instance_view import SingleInstanceIndexActionsView, PagedData
 from ..score_mode import SCORE_MODE
+from ..utils.validation import validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -557,6 +558,8 @@ class CupConfigView(SingleInstanceIndexActionsView):
         self.subscribe("sidebar_page_next", self.sidebar_paging)
         self.subscribe("sidebar_add_item", self.sidebar_add_item)
         self.subscribe("sidebar_del_item", self.sidebar_delete_item)
+        self.subscribe("toolbar_validate", self.toolbar_validate)
+        self.subscribe("toolbar_save", self.toolbar_save)
         self.subscribe_index("config_tab", self.select_config_tab)
         self.subscribe_index("config_sidebar", self.select_config_sidebar)
 
@@ -653,3 +656,22 @@ class CupConfigView(SingleInstanceIndexActionsView):
         if not cancel:
             await self.config_context[self.selected_tab_item].delete_item()
             await self.refresh(player=player)
+
+    async def toolbar_validate(self, player, action, values, **kwargs) -> None:
+        invalid_reasons = validate_config(self.config_data)
+        if invalid_reasons:
+            logger.error(f"Config validation failed:")
+            for reason in invalid_reasons:
+                logger.error(f"\t{str(reason)}")
+            if player:
+                await self.app.instance.chat(
+                    "$f00Config validation failed:", player.login
+                )
+                for reason in invalid_reasons:
+                    await self.app.instance.chat(f"$f00\t{str(reason)}", player.login)
+        else:
+            logger.debug("Config passed validation")
+            await self.app.instance.chat("$0cfConfig passed validation", player.login)
+
+    async def toolbar_save(self, player, action, values, **kwargs) -> None:
+        pass
