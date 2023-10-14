@@ -10,54 +10,60 @@ def validate_presets(config: dict) -> "list[str]":
         for key, data in config_presets.items():
             if not isinstance(data, dict):
                 invalid_reasons.append(
-                    f"presets/{key} is not the right type. Expected a dict"
+                    f"$<$fffpresets | {key}$> is not the right type. Expected a dict"
                 )
             else:
                 if "aliases" not in data:
-                    invalid_reasons.append(f'"aliases" is missing from presets/{key}')
+                    invalid_reasons.append(
+                        f'"aliases" is missing from $<$fffpresets | {key}$>'
+                    )
                 else:
                     data_aliases = data.get("aliases")
                     if not isinstance(data_aliases, list):
                         invalid_reasons.append(
-                            f"presets/{key}/aliases is not the right type. Expected a list"
+                            f"$<$fffpresets | {key} | aliases$> is not the right type. Expected a list"
                         )
                     else:
                         if any(not isinstance(elem, str) for elem in data_aliases):
                             invalid_reasons.append(
-                                f"presets/{key}/aliases contains elements which are not the right type. Expected string"
+                                f"$<$fffpresets | {key} | aliases$> contains elements which are not the right type. Expected string"
                             )
 
                 if "script" not in data:
-                    invalid_reasons.append(f'"script" is missing from presets/{key}')
+                    invalid_reasons.append(
+                        f'"script" is missing from $<$fffpresets | {key}$>'
+                    )
                 else:
                     script_data = data.get("script")
                     if not isinstance(script_data, dict):
                         invalid_reasons.append(
-                            f"presets/{key}/script is not the right type. Expected a dict"
+                            f"$<$fffpresets | {key} | script$> is not the right type. Expected a dict"
                         )
                     else:
                         if not script_data:
                             invalid_reasons.append(
-                                f"presets/{key}/script contains no elements. Define a script for at least one game"
+                                f"$<$fffpresets | {key} | script$> contains no elements. Define a script for at least one game"
                             )
                         else:
                             for game, script_name in script_data.items():
                                 if game not in ["tm", "tmnext", "sm"]:
                                     invalid_reasons.append(
-                                        f"presets/{key}/script/{game} is not a valid game identifier"
+                                        f"$<$fffpresets | {key} | script | {game}$> is not a valid game identifier"
                                     )
                                 if not isinstance(script_name, str):
                                     invalid_reasons.append(
-                                        f'presets/{key}/script/{game} value of "{str(script_name)}" is not the right type. Expected string'
+                                        f'$<$fffpresets | {key} | script | {game}$> value of "{str(script_name)}" is not the right type. Expected string'
                                     )
 
                 if "settings" not in data:
-                    invalid_reasons.append(f'"settings" is missing from presets/{key}')
+                    invalid_reasons.append(
+                        f'"settings" is missing from $<$fffpresets | {key}$>'
+                    )
                 else:
                     settings_data = data.get("settings")
                     if not isinstance(settings_data, dict):
                         invalid_reasons.append(
-                            f"presets/{key}/settings is not the right type. Expected a dict"
+                            f"$<$fffpresets | {key} | settings$> is not the right type. Expected a dict"
                         )
 
     return invalid_reasons
@@ -72,12 +78,12 @@ def validate_payouts(config: dict) -> "list[str]":
         for key, data in config_payouts.items():
             if not isinstance(data, list):
                 invalid_reasons.append(
-                    f"payouts/{key} is not the right type. Expected a list"
+                    f"$<$fffpayouts | {key}$> is not the right type. Expected a list"
                 )
             else:
                 if any(not isinstance(elem, int) for elem in data):
                     invalid_reasons.append(
-                        f"payouts/{key} contains elements which are not the right type. Expected int"
+                        f"$<$fffpayouts | {key}$> contains elements which are not the right type. Expected int"
                     )
     return invalid_reasons
 
@@ -91,68 +97,78 @@ def validate_names(config: dict) -> "list[str]":
         for key, data in config_names.items():
             if not isinstance(data, dict):
                 invalid_reasons.append(
-                    f"names/{key} is not the right type. Expected a dict"
+                    f"$<$fffnames | {key}$> is not the right type. Expected a dict"
                 )
             else:
                 if "name" not in data:
-                    invalid_reasons.append(f'"name" is missing from names/{key}')
+                    invalid_reasons.append(
+                        f'"name" is missing from $<$fffnames | {key}$>'
+                    )
                 else:
                     if not isinstance(data.get("name"), str):
                         invalid_reasons.append(
-                            f"names/{key}/name is not the right type. Expected a string"
+                            f"$<$fffnames | {key} | name$> is not the right type. Expected a string"
                         )
 
                 if "map_count" in data and not isinstance(data.get("map_count"), int):
                     invalid_reasons.append(
-                        f"names/{key}/map_count is not the right type. Expected an int"
+                        f"$<$fffnames | {key} | map_count$> is not the right type. Expected an int"
                     )
 
                 if "scoremode" in data:
                     data_scoremode = data.get("scoremode")
                     if not isinstance(data_scoremode, str):
                         invalid_reasons.append(
-                            f"names/{key}/scoremode is not the right type. Expected a string"
+                            f"$<$fffnames | {key} | scoremode$> is not the right type. Expected a string"
                         )
                     else:
                         if data_scoremode not in SCORE_MODE:
                             invalid_reasons.append(
-                                f'names/{key}/scoremode value of "{str(data_scoremode)}" does not match an existing score mode'
+                                f'$<$fffnames | {key} | scoremode$> value of "{str(data_scoremode)}" does not match an existing score mode'
                             )
 
                 if "payout" in data:
                     data_payout = data.get("payout")
                     if not isinstance(data_payout, str):
                         invalid_reasons.append(
-                            f"names/{key}/payout is not the right type. Expected a string"
+                            f"$<$fffnames | {key} | payout$> is not the right type. Expected a string"
                         )
                     else:
                         if data_payout not in config.get("payouts", dict()):
                             invalid_reasons.append(
-                                f'names/{key}/payout value of "{str(data_payout)}" does not match an existing payout'
+                                f'$<$fffnames | {key} | payout$> value of "{str(data_payout)}" does not match an existing payout'
                             )
 
                 if "preset_on" in data:
                     data_preset_on = data.get("preset_on")
                     if not isinstance(data_preset_on, str):
                         invalid_reasons.append(
-                            f"names/{key}/preset_on is not the right type. Expected a string"
+                            f"$<$fffnames | {key} | preset_on$> is not the right type. Expected a string"
                         )
                     else:
-                        if data_preset_on not in config.get("presets", dict()):
+                        if data_preset_on not in config.get("presets", dict()) and (
+                            "presets" in config
+                            and "aliases" in config["presets"]
+                            and data_preset_on not in config["presets"]["aliases"]
+                        ):
                             invalid_reasons.append(
-                                f'names/{key}/preset_on value of "{str(data_preset_on)}" does not match an existing preset'
+                                f'$<$fffnames | {key} | preset_on$> value of "{str(data_preset_on)}" does not match an existing preset'
                             )
 
                 if "preset_off" in data:
                     data_preset_off = data.get("preset_off")
                     if not isinstance(data_preset_off, str):
                         invalid_reasons.append(
-                            f"names/{key}/preset_off is not the right type. Expected a string"
+                            f"$<$fffnames | {key} | preset_off$> is not the right type. Expected a string"
                         )
                     else:
-                        if data_preset_off not in config.get("presets", dict()):
+                        if data_preset_off not in config.get("presets", dict()) and (
+                            "presets" in config
+                            and "aliases" in config["presets"]
+                            and data_preset_off not in config["presets"]["aliases"]
+                        ):
                             invalid_reasons.append(
-                                f'names/{key}/preset_off value of "{str(data_preset_off)}" does not match an existing preset'
+                                f'$<$fffnames | {key} | preset_off$> value of "{str(data_preset_off)}" does not match an existing preset'
                             )
 
     return invalid_reasons
