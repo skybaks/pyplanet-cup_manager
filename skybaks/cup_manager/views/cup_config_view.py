@@ -554,6 +554,7 @@ class CupConfigView(SingleInstanceIndexActionsView):
         self.config_tabs: "list[str]" = ["names", "presets", "payouts"]
         self.selected_tab_item: str = self.config_tabs[0]
 
+        self.subscribe("config_button_close", self.close)
         self.subscribe("sidebar_page_prev", self.sidebar_paging)
         self.subscribe("sidebar_page_next", self.sidebar_paging)
         self.subscribe("sidebar_add_item", self.sidebar_add_item)
@@ -674,4 +675,4 @@ class CupConfigView(SingleInstanceIndexActionsView):
             await self.app.instance.chat("$0cfConfig passed validation", player.login)
 
     async def toolbar_save(self, player, action, values, **kwargs) -> None:
-        pass
+        logger.info("TODO: Implement")
