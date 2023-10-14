@@ -88,7 +88,7 @@
 {% macro switched_selectable(pos_y, text, editing, list_data, num_pages, page, id, name, deletable=True, missing=False) %}
   {% if editing %}
     <frame pos="41 {{ pos_y }}" z-index="50">
-      <quad pos="1 -1" size="115 38" bgcolor="000d" z-index="-45" />
+      <quad pos="1 -1" size="115 38" bgcolor="000d" z-index="-45" scriptevents="1" />
       {% for list_item in list_data %}
         <label pos="2 {{ -4.5 - (5 * loop.index0) }}" size="113 5" text=" {{ list_item.name }} " textsize="1.3" halign="left" valign="center2" action="{{ id }}__{{ name }}_selection_list_{{ loop.index0 }}"
         {% if list_item.selected %}
