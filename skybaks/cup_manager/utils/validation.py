@@ -146,14 +146,16 @@ def validate_names(config: dict) -> "list[str]":
                             f"$<$fffnames | {key} | preset_on$> is not the right type. Expected a string"
                         )
                     else:
-                        if data_preset_on not in config.get("presets", dict()) and (
-                            "presets" in config
-                            and "aliases" in config["presets"]
-                            and data_preset_on not in config["presets"]["aliases"]
-                        ):
-                            invalid_reasons.append(
-                                f'$<$fffnames | {key} | preset_on$> value of "{str(data_preset_on)}" does not match an existing preset'
-                            )
+                        if data_preset_on not in config.get("presets", dict()):
+                            aliases = list()
+                            for preset_key, preset_val in config.get(
+                                "presets", dict()
+                            ).items():
+                                aliases += preset_val.get("aliases", list())
+                            if data_preset_on not in aliases:
+                                invalid_reasons.append(
+                                    f'$<$fffnames | {key} | preset_on$> value of "{str(data_preset_on)}" does not match an existing preset'
+                                )
 
                 if "preset_off" in data:
                     data_preset_off = data.get("preset_off")

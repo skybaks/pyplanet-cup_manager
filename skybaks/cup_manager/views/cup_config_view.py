@@ -7,7 +7,6 @@ from pyplanet.views.generics import ask_confirmation
 
 from .single_instance_view import SingleInstanceIndexActionsView, PagedData
 from ..score_mode import SCORE_MODE
-from ..utils.validation import validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +216,7 @@ class ConfigContextNames(ConfigContext):
                     del self.data[old_name]
                     self.view.selected_sidebar_item = new_name
             elif "switched_entry" in values:
-                self.value[edit_key] = values.get("switched_entry")
+                self.value[edit_key] = cast_setting(values.get("switched_entry"))
             else:
                 self.value[edit_key] = self.edit_selection
             await self.view.refresh(player=player)
@@ -659,20 +658,11 @@ class CupConfigView(SingleInstanceIndexActionsView):
             await self.refresh(player=player)
 
     async def toolbar_validate(self, player, action, values, **kwargs) -> None:
-        invalid_reasons = validate_config(self.config_data)
-        if invalid_reasons:
-            logger.error(f"Config validation failed:")
-            for reason in invalid_reasons:
-                logger.error(f"\t{str(reason)}")
-            if player:
-                await self.app.instance.chat(
-                    "$f00Config validation failed:", player.login
-                )
-                for reason in invalid_reasons:
-                    await self.app.instance.chat(f"$f00\t{str(reason)}", player.login)
-        else:
-            logger.debug("Config passed validation")
-            await self.app.instance.chat("$0cfConfig passed validation", player.login)
+        if await self.app.config.check_config_valid(self.config_data, player):
+            await self.app.instance.chat("$ff0Config validation successful", player)
 
     async def toolbar_save(self, player, action, values, **kwargs) -> None:
-        logger.info("TODO: Implement")
+        if await self.app.config.check_config_valid(self.config_data, player):
+            filename = await self.app.config.save_config_file(self.config_data)
+            if filename:
+                await self.app.instance.chat(f"$ff0Saved config to {str(filename)}", player)

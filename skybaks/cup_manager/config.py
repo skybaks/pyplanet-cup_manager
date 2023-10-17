@@ -106,25 +106,20 @@ class CupConfiguration:
 
     async def load_config_from_file(self, filename, player=None) -> dict:
         loaded_config = await self.load_json_from_config_dir(filename)
-        invalid_reasons = validate_config(loaded_config)
-        if loaded_config and not invalid_reasons:
+        if await self.check_config_valid(loaded_config):
             logger.info(f"Loaded cup configuration from {filename}")
             if player:
                 await self.instance.chat(
                     f"$ff0Loaded cup configuration from {filename}", player.login
                 )
             return loaded_config
-
-        logger.error(f"Failed to load config from {filename}")
-        for reason in invalid_reasons:
-            logger.error(f"\t{str(reason)}")
-        if player:
-            await self.instance.chat(
-                f"$f00Failed to load config from {filename}", player.login
-            )
-            for reason in invalid_reasons:
-                await self.instance.chat(f"$f00\t{str(reason)}", player.login)
-        return dict()
+        else:
+            logger.error(f"Failed to load config from {filename}")
+            if player:
+                await self.instance.chat(
+                    f"$f00Failed to load config from {filename}", player.login
+                )
+            return dict()
 
     async def load_config_from_settings(self, player=None) -> dict:
         settings_config_presets = await self.get_setting_safe("CUP_MANAGER_PRESETS")
@@ -179,7 +174,7 @@ class CupConfiguration:
     async def write_file_from_config_dir(self, filename: str, contents) -> None:
         file_path = os.path.join(self.config_path, filename)
         try:
-            async with self.instance.storage.driver.open(file_path, "wb") as w_file:
+            async with self.instance.storage.driver.open(file_path, "w") as w_file:
                 await w_file.write(contents)
         except Exception as e:
             logger.exception(e)
@@ -233,6 +228,34 @@ class CupConfiguration:
         if not filename.endswith(".json"):
             filename += ".json"
         return filename
+
+    async def save_config_file(self, config: dict) -> str:
+        config_filename = await self.config_file.get_value()
+        try:
+            await self.write_file_from_config_dir(config_filename, json.dumps(config, indent=4))
+            self.config = config
+            return config_filename
+        except Exception as e:
+            logger.exception(
+                f"Error when saving config to file {config_filename}: " + str(e)
+            )
+
+    async def check_config_valid(self, config: dict, player=None) -> bool:
+        invalid_reasons = validate_config(config)
+        if invalid_reasons:
+            logger.error("Config validation failed:")
+            for reason in invalid_reasons:
+                logger.error(f"\t{str(reason)}")
+            if player:
+                await self.app.instance.chat(
+                    "$f00Config validation failed:", player.login
+                )
+                for reason in invalid_reasons:
+                    await self.app.instance.chat(f"$f00\t{str(reason)}", player.login)
+            return False
+        else:
+            logger.debug("Config validation passed")
+            return True
 
 
 def get_fallback_config() -> "dict[str]":
