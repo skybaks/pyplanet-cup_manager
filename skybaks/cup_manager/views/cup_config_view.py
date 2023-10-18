@@ -665,4 +665,6 @@ class CupConfigView(SingleInstanceIndexActionsView):
         if await self.app.config.check_config_valid(self.config_data, player):
             filename = await self.app.config.save_config_file(self.config_data)
             if filename:
-                await self.app.instance.chat(f"$ff0Saved config to {str(filename)}", player)
+                await self.app.instance.chat(
+                    f"$ff0Saved config to {str(filename)}", player
+                )

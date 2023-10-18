@@ -57,7 +57,7 @@ class CupConfiguration:
                 nargs=1,
                 type=str,
                 required=False,
-                help='"load" to load a config file; "download" to download a config file',
+                help='"load" to load a config file; "download" to download a config file; "new" to create a new config file',
             )
             .add_param(
                 "file_or_url",
@@ -91,6 +91,23 @@ class CupConfiguration:
         elif data.command in ["download", "dl"]:
             if data.file_or_url:
                 config_filename = await self.download_file(data.file_or_url, player)
+        elif data.command in ["new", "n"]:
+            if data.file_or_url:
+                if await self.check_file_exists_from_config_dir(data.file_or_url):
+                    logger.debug(f'File "{data.file_or_url}" already exists')
+                    await self.instance.chat(
+                        f'$f00File already exists. Use "//cup config load {str(data.file_or_url)}"',
+                        player,
+                    )
+                else:
+                    filename = await self.save_config_file(
+                        get_fallback_config(), data.file_or_url
+                    )
+                    if filename:
+                        self.instance.chat(
+                            f'$ff0Created new cup config {filename}. Use "//cup config" to edit',
+                            player,
+                        )
         else:
             await self.instance.chat(
                 f'$f00Unknown config command "{str(data.command)}". Use "load" or "l" to load a file or "download" or "dl" to download a file.',
@@ -161,6 +178,13 @@ class CupConfiguration:
         except KeyError:
             logger.debug("%s not defined in local.py" % name)
 
+    async def check_file_exists_from_config_dir(self, filename: str) -> bool:
+        file_path = os.path.join(self.config_path, filename)
+        try:
+            return await self.instance.storage.driver.exists(file_path)
+        except:
+            return False
+
     async def read_file_from_config_dir(self, filename: str) -> str:
         file_path = os.path.join(self.config_path, filename)
         try:
@@ -229,10 +253,13 @@ class CupConfiguration:
             filename += ".json"
         return filename
 
-    async def save_config_file(self, config: dict) -> str:
-        config_filename = await self.config_file.get_value()
+    async def save_config_file(self, config: dict, config_filename: str = "") -> str:
+        if not config_filename:
+            config_filename = await self.config_file.get_value()
         try:
-            await self.write_file_from_config_dir(config_filename, json.dumps(config, indent=4))
+            await self.write_file_from_config_dir(
+                config_filename, json.dumps(config, indent=4)
+            )
             self.config = config
             return config_filename
         except Exception as e:
@@ -276,7 +303,6 @@ def get_fallback_config() -> "dict[str]":
                         "S_WarmUpNb": 1,
                         "S_WarmUpDuration": 0,
                         "S_PointsRepartition": "50,45,41,38,36,34,32,30,28,26,24,22,20,18,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,1,1",
-                        "S_TurboFinishTime": True,
                     },
                 },
                 "rounds240": {
@@ -360,7 +386,12 @@ def get_fallback_config() -> "dict[str]":
                     "preset_on": "rounds180",
                     "preset_off": "timeattack",
                     "map_count": 1,
-                    "scoremode": "rounds_default",
+                },
+                "endurance": {
+                    "name": "Endurance Cup",
+                    "preset_on": "laps50",
+                    "preset_off": "timeattack",
+                    "map_count": 1,
                 },
             },
         }
