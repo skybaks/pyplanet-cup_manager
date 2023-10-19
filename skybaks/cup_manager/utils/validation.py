@@ -143,21 +143,28 @@ def validate_presets(config: dict) -> "list[ConfigValidationError]":
     return invalid_reasons
 
 
-def validate_payouts(config: dict) -> "list[str]":
-    invalid_reasons: "list[str]" = list()
+def validate_payouts(config: dict) -> "list[ConfigValidationError]":
+    invalid_reasons: "list[ConfigValidationError]" = list()
     config_payouts = config.get("payouts")
+    context_base: "list[str]" = ["payouts"]
     if not isinstance(config_payouts, dict):
-        invalid_reasons.append("payouts config is not the right type. Expected a dict")
+        invalid_reasons.append(
+            ConfigValidationError(ErrorCode.INVALID_TYPE, context_base, "dict")
+        )
     else:
         for key, data in config_payouts.items():
             if not isinstance(data, list):
                 invalid_reasons.append(
-                    f"$<$fffpayouts | {key}$> is not the right type. Expected a list"
+                    ConfigValidationError(
+                        ErrorCode.INVALID_TYPE, context_base + [key], "list"
+                    )
                 )
             else:
                 if any(not isinstance(elem, int) for elem in data):
                     invalid_reasons.append(
-                        f"$<$fffpayouts | {key}$> contains elements which are not the right type. Expected int"
+                        ConfigValidationError(
+                            ErrorCode.INVALID_SUBTYPE, context_base + [key], "int"
+                        )
                     )
     return invalid_reasons
 

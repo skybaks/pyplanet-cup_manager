@@ -35,17 +35,21 @@ class ConfigValidationTest(unittest.TestCase):
             "names": dict(),
         }
         reasons = validate_config(config)
-        self.assertFalse(reasons)
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
 
         config["payouts"]["pay-02"] = 1
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("payouts/pay-02 is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("pay-02", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["payouts"]["pay-02"] = [1, 2, "3"]
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("payouts/pay-02 contains elements which are not" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_SUBTYPE, reasons[0].error_code)
+        self.assertIn("pay-02", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
     def test_presets_config(self) -> None:
         config = {
