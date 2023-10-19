@@ -1,6 +1,6 @@
 import unittest
 from ..config import get_fallback_config
-from ..utils.validation import validate_config
+from ..utils.validation import validate_config, ErrorCode, ConfigValidationError
 
 
 class ConfigValidationTest(unittest.TestCase):
@@ -64,15 +64,23 @@ class ConfigValidationTest(unittest.TestCase):
 
         config["presets"]["pre-02"] = 1
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02 is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = dict()
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 3)
-        self.assertTrue("aliases" in reasons[0])
-        self.assertTrue("script" in reasons[1])
-        self.assertTrue("settings" in reasons[2])
+        self.assertEqual(len(reasons), 3, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[0].error_code)
+        self.assertIn("aliases", reasons[0].args)
+        self.assertIsNotNone(str(reasons[0]))
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[1].error_code)
+        self.assertIn("script", reasons[1].args)
+        self.assertIsNotNone(str(reasons[1]))
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[2].error_code)
+        self.assertIn("settings", reasons[2].args)
+        self.assertIsNotNone(str(reasons[2]))
 
         config["presets"]["pre-02"] = {
             "aliases": 0,
@@ -80,8 +88,10 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": dict(),
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02/aliases is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = {
             "aliases": [1, "p2"],
@@ -89,11 +99,11 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": dict(),
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue(
-            "presets/pre-02/aliases contains elements which are not the right type"
-            in reasons[0]
-        )
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_SUBTYPE, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIn("aliases", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = {
             "aliases": ["p2"],
@@ -101,8 +111,11 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": dict(),
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02/script is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIn("script", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = {
             "aliases": ["p2"],
@@ -110,8 +123,11 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": dict(),
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02/script contains no elements" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.EMPTY_CONTAINER, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIn("script", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = {
             "aliases": ["p2"],
@@ -119,8 +135,12 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": dict(),
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02/script/fake is not a valid game" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_GAME_IDENTIFIER, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIn("script", reasons[0].context)
+        self.assertIn("fake", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = {
             "aliases": ["p2"],
@@ -128,8 +148,12 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": dict(),
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02/script/tmnext value of" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIn("script", reasons[0].context)
+        self.assertIn("tmnext", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["presets"]["pre-02"] = {
             "aliases": ["p2"],
@@ -137,8 +161,11 @@ class ConfigValidationTest(unittest.TestCase):
             "settings": 1,
         }
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets/pre-02/settings is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("pre-02", reasons[0].context)
+        self.assertIn("settings", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
     def test_names_config(self) -> None:
         config = {
