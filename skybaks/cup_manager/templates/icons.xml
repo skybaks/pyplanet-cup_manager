@@ -1,0 +1,23 @@
+{% set icons = namespace(
+    check="",
+    exclamation="",
+    exclamation_circle="",
+    exclamation_triangle="",
+    info_circle="",
+    kenny_save="",
+    minus_circle="",
+    pencil="",
+    plus_circle="",
+    question_mark="",
+    question_mark_circle="",
+    save="",
+    times_circle="",
+    translation="",
+    trash="",
+    trash_i="",
+    x="",
+    zoom="",
+    zoom_in="",
+    zoom_out="",
+)
+%}
