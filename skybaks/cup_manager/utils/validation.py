@@ -260,20 +260,28 @@ def validate_names(config: dict) -> "list[str]":
 def validate_config(config: dict) -> "list[ConfigValidationError]":
     invalid_reasons: "list[ConfigValidationError]" = list()
     if not isinstance(config, dict):
-        invalid_reasons.append("Input config is not the right type. Expected a dict")
+        invalid_reasons.append(
+            ConfigValidationError(ErrorCode.INVALID_TYPE, ["config"], "dict")
+        )
     else:
         if "presets" not in config:
-            invalid_reasons.append('"presets" entry is missing from config')
+            invalid_reasons.append(
+                ConfigValidationError(ErrorCode.MISSING_FIELD, ["config"], "presets")
+            )
         else:
             invalid_reasons += validate_presets(config)
 
         if "payouts" not in config:
-            invalid_reasons.append('"payouts" entry is missing from config')
+            invalid_reasons.append(
+                ConfigValidationError(ErrorCode.MISSING_FIELD, ["config"], "payouts")
+            )
         else:
             invalid_reasons += validate_payouts(config)
 
         if "names" not in config:
-            invalid_reasons.append('"names" entry is missing from config')
+            invalid_reasons.append(
+                ConfigValidationError(ErrorCode.MISSING_FIELD, ["config"], "names")
+            )
         else:
             invalid_reasons += validate_names(config)
     return invalid_reasons

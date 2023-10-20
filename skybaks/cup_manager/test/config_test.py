@@ -11,22 +11,25 @@ class ConfigValidationTest(unittest.TestCase):
     def test_basic(self) -> None:
         config = {"presets": dict(), "payouts": dict(), "names": dict()}
         reasons = validate_config(config)
-        self.assertFalse(reasons, msg="\n".join(reasons))
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
 
         del config["presets"]
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("presets" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[0].error_code)
+        self.assertIn("presets", reasons[0].args)
 
         del config["payouts"]
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 2)
-        self.assertTrue("payouts" in reasons[1])
+        self.assertEqual(len(reasons), 2, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[1].error_code)
+        self.assertIn("payouts", reasons[1].args)
 
         del config["names"]
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 3)
-        self.assertTrue("names" in reasons[2])
+        self.assertEqual(len(reasons), 3, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[2].error_code)
+        self.assertIn("names", reasons[2].args)
 
     def test_payout_config(self) -> None:
         config = {
