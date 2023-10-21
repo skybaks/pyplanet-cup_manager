@@ -22,7 +22,7 @@ Use preset_on and preset_off fields to link starting and stopping the cup to aut
 
 - preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
 
-- preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends"""
+- preset_off is equivalent to running "//cup setup <preset>" immediately after the cup ends"""
 help_names_map_count: str = """[Optional]
 
 Use map_count to predefine the number of maps the cup will be played on. This is equivalent to running "//cup mapcount <map_count>" right after you start the cup."""

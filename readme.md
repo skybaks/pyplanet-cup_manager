@@ -121,7 +121,7 @@ the cup. In the example above, the key names "my_cup" and "my_other_cup" are the
             Use preset_on and preset_off fields to link starting and stopping the cup to automatically trigger a
             settings preset. You can define one or the other or both.
             - preset_on is equivalent to running "//cup setup <preset>" immediately after starting the cup
-            - preset_off is equivalent to running "//cup setup <preset>" imemdiately after the cup ends
+            - preset_off is equivalent to running "//cup setup <preset>" immediately after the cup ends
         */
         "preset_on": "my_rounds_preset",
         "preset_off": "my_timeattack_preset",
