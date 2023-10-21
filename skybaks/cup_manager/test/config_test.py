@@ -178,7 +178,7 @@ class ConfigValidationTest(unittest.TestCase):
         config = {
             "presets": {
                 "pre-1": {
-                    "aliases": [],
+                    "aliases": ["al1", "al2"],
                     "script": {"tm": "script.Script.txt"},
                     "settings": {"S_Setting": True},
                 }
@@ -191,71 +191,121 @@ class ConfigValidationTest(unittest.TestCase):
 
         config["names"]["cup-2"] = list()
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("names/cup-2 is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"] = dict()
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue('"name" is missing from names/cup-2' in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.MISSING_FIELD, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"] = {"name": 234.15}
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("names/cup-2/name is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("name", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"] = {"name": "Cup 2", "map_count": "3"}
         reasons = validate_config(config)
-        self.assertTrue(len(reasons) == 1)
-        self.assertTrue("names/cup-2/map_count is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("map_count", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["map_count"] = 3
         config["names"]["cup-2"]["scoremode"] = 6
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/scoremode is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("scoremode", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["scoremode"] = "fake_mode"
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue('names/cup-2/scoremode value of "fake_mode"' in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_VALUE_NOT_FOUND, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("scoremode", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["scoremode"] = "rounds_default"
         config["names"]["cup-2"]["payout"] = 1.25
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/payout is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("payout", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["payout"] = "fake_pay"
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/payout value of" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_VALUE_NOT_FOUND, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("payout", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["payout"] = "pay-1"
         config["names"]["cup-2"]["preset_on"] = 0.0
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/preset_on is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("preset_on", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["preset_on"] = "preset_fake"
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/preset_on value of" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_VALUE_NOT_FOUND, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("preset_on", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
+
+        # Test aliases
+        config["names"]["cup-2"]["preset_on"] = "al1"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
+        config["names"]["cup-2"]["preset_on"] = "al2"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
 
         config["names"]["cup-2"]["preset_on"] = "pre-1"
         config["names"]["cup-2"]["preset_off"] = 0.0
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/preset_off is not the right type" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_TYPE, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("preset_off", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
 
         config["names"]["cup-2"]["preset_off"] = "preset_fake"
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 1)
-        self.assertTrue("names/cup-2/preset_off value of" in reasons[0])
+        self.assertEqual(len(reasons), 1, "Unexpected amount of invalid reason(s)")
+        self.assertEqual(ErrorCode.INVALID_VALUE_NOT_FOUND, reasons[0].error_code)
+        self.assertIn("cup-2", reasons[0].context)
+        self.assertIn("preset_off", reasons[0].context)
+        self.assertIsNotNone(str(reasons[0]))
+
+        # Test aliases
+        config["names"]["cup-2"]["preset_off"] = "al1"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
+        config["names"]["cup-2"]["preset_off"] = "al2"
+        reasons = validate_config(config)
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
 
         config["names"]["cup-2"]["preset_off"] = "pre-1"
         reasons = validate_config(config)
-        self.assertEqual(len(reasons), 0)
+        self.assertEqual(len(reasons), 0, "Unexpected amount of invalid reason(s)")
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ class ErrorCode(Enum):
     INVALID_TYPE = 1000
     INVALID_SUBTYPE = 1100
     INVALID_GAME_IDENTIFIER = 1200
+    INVALID_VALUE_NOT_FOUND = 1300
     MISSING_FIELD = 2000
     EMPTY_CONTAINER = 3000
 
@@ -29,6 +30,10 @@ class ConfigValidationError:
             )
         elif self.error_code == ErrorCode.INVALID_GAME_IDENTIFIER:
             return "$<%s$> is not a valid game identifier" % (
+                (context_str,) + self.args
+            )
+        elif self.error_code == ErrorCode.INVALID_VALUE_NOT_FOUND:
+            return '$<%s$> value of "%s" does not match an existing %s' % (
                 (context_str,) + self.args
             )
         elif self.error_code == ErrorCode.MISSING_FIELD:
@@ -169,90 +174,120 @@ def validate_payouts(config: dict) -> "list[ConfigValidationError]":
     return invalid_reasons
 
 
-def validate_names(config: dict) -> "list[str]":
-    invalid_reasons: "list[str]" = list()
+def validate_names(config: dict) -> "list[ConfigValidationError]":
+    invalid_reasons: "list[ConfigValidationError]" = list()
     config_names = config.get("names")
+    context_base: "list[str]" = ["names"]
     if not isinstance(config_names, dict):
-        invalid_reasons.append("names config is not the right type. Expected a dict")
+        invalid_reasons.append(
+            ConfigValidationError(ErrorCode.INVALID_TYPE, context_base, "dict")
+        )
     else:
         for key, data in config_names.items():
             if not isinstance(data, dict):
                 invalid_reasons.append(
-                    f"$<$fffnames | {key}$> is not the right type. Expected a dict"
+                    ConfigValidationError(
+                        ErrorCode.INVALID_TYPE, context_base + [key], "dict"
+                    )
                 )
             else:
                 if "name" not in data:
                     invalid_reasons.append(
-                        f'"name" is missing from $<$fffnames | {key}$>'
+                        ConfigValidationError(
+                            ErrorCode.MISSING_FIELD, context_base + [key], "name"
+                        )
                     )
                 else:
                     if not isinstance(data.get("name"), str):
                         invalid_reasons.append(
-                            f"$<$fffnames | {key} | name$> is not the right type. Expected a string"
+                            ConfigValidationError(
+                                ErrorCode.INVALID_TYPE,
+                                context_base + [key, "name"],
+                                "str",
+                            )
                         )
 
                 if "map_count" in data and not isinstance(data.get("map_count"), int):
                     invalid_reasons.append(
-                        f"$<$fffnames | {key} | map_count$> is not the right type. Expected an int"
+                        ConfigValidationError(
+                            ErrorCode.INVALID_TYPE,
+                            context_base + [key, "map_count"],
+                            "int",
+                        )
                     )
 
                 if "scoremode" in data:
                     data_scoremode = data.get("scoremode")
                     if not isinstance(data_scoremode, str):
                         invalid_reasons.append(
-                            f"$<$fffnames | {key} | scoremode$> is not the right type. Expected a string"
+                            ConfigValidationError(
+                                ErrorCode.INVALID_TYPE,
+                                context_base + [key, "scoremode"],
+                                "str",
+                            )
                         )
                     else:
                         if data_scoremode not in SCORE_MODE:
                             invalid_reasons.append(
-                                f'$<$fffnames | {key} | scoremode$> value of "{str(data_scoremode)}" does not match an existing score mode'
+                                ConfigValidationError(
+                                    ErrorCode.INVALID_VALUE_NOT_FOUND,
+                                    context_base + [key, "scoremode"],
+                                    data_scoremode,
+                                    "scoremode",
+                                )
                             )
 
                 if "payout" in data:
                     data_payout = data.get("payout")
                     if not isinstance(data_payout, str):
                         invalid_reasons.append(
-                            f"$<$fffnames | {key} | payout$> is not the right type. Expected a string"
+                            ConfigValidationError(
+                                ErrorCode.INVALID_TYPE,
+                                context_base + [key, "payout"],
+                                "str",
+                            )
                         )
                     else:
                         if data_payout not in config.get("payouts", dict()):
                             invalid_reasons.append(
-                                f'$<$fffnames | {key} | payout$> value of "{str(data_payout)}" does not match an existing payout'
-                            )
-
-                if "preset_on" in data:
-                    data_preset_on = data.get("preset_on")
-                    if not isinstance(data_preset_on, str):
-                        invalid_reasons.append(
-                            f"$<$fffnames | {key} | preset_on$> is not the right type. Expected a string"
-                        )
-                    else:
-                        if data_preset_on not in config.get("presets", dict()):
-                            aliases = list()
-                            for preset_key, preset_val in config.get(
-                                "presets", dict()
-                            ).items():
-                                aliases += preset_val.get("aliases", list())
-                            if data_preset_on not in aliases:
-                                invalid_reasons.append(
-                                    f'$<$fffnames | {key} | preset_on$> value of "{str(data_preset_on)}" does not match an existing preset'
+                                ConfigValidationError(
+                                    ErrorCode.INVALID_VALUE_NOT_FOUND,
+                                    context_base + [key, "payout"],
+                                    data_payout,
+                                    "payout",
                                 )
-
-                if "preset_off" in data:
-                    data_preset_off = data.get("preset_off")
-                    if not isinstance(data_preset_off, str):
-                        invalid_reasons.append(
-                            f"$<$fffnames | {key} | preset_off$> is not the right type. Expected a string"
-                        )
-                    else:
-                        if data_preset_off not in config.get("presets", dict()) and (
-                            "presets" in config
-                            and "aliases" in config["presets"]
-                            and data_preset_off not in config["presets"]["aliases"]
-                        ):
-                            invalid_reasons.append(
-                                f'$<$fffnames | {key} | preset_off$> value of "{str(data_preset_off)}" does not match an existing preset'
                             )
+
+                def validate_preset_onoff(name: str) -> None:
+                    if name in data:
+                        data_preset_onoff = data.get(name)
+                        if not isinstance(data_preset_onoff, str):
+                            invalid_reasons.append(
+                                ConfigValidationError(
+                                    ErrorCode.INVALID_TYPE,
+                                    context_base + [key, name],
+                                    "str",
+                                )
+                            )
+                        else:
+                            if data_preset_onoff not in config.get("presets", dict()):
+                                aliases = list()
+                                for preset_key, preset_val in config.get(
+                                    "presets", dict()
+                                ).items():
+                                    aliases += preset_val.get("aliases", list())
+                                if data_preset_onoff not in aliases:
+                                    invalid_reasons.append(
+                                        ConfigValidationError(
+                                            ErrorCode.INVALID_VALUE_NOT_FOUND,
+                                            context_base + [key, name],
+                                            data_preset_onoff,
+                                            "preset",
+                                        )
+                                    )
+
+                validate_preset_onoff("preset_on")
+                validate_preset_onoff("preset_off")
 
     return invalid_reasons
 
