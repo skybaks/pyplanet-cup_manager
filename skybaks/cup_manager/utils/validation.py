@@ -18,28 +18,28 @@ class ConfigValidationError:
         self.args = args
 
     def __str__(self) -> str:
-        context_str = " | ".join(self.context)
+        context_str = " › ".join(self.context)
         if self.error_code == ErrorCode.INVALID_TYPE:
-            return "$<%s$> is not the right type. Expected %s" % (
+            return "$<$fff%s$> is not the right type. Expected %s" % (
                 (context_str,) + self.args
             )
         elif self.error_code == ErrorCode.INVALID_SUBTYPE:
             return (
-                "$<%s$> contains elements which are not the right type. Expected %s"
+                "$<$fff%s$> contains elements which are not the right type. Expected %s"
                 % ((context_str,) + self.args)
             )
         elif self.error_code == ErrorCode.INVALID_GAME_IDENTIFIER:
-            return "$<%s$> is not a valid game identifier" % (
+            return "$<$fff%s$> is not a valid game identifier" % (
                 (context_str,) + self.args
             )
         elif self.error_code == ErrorCode.INVALID_VALUE_NOT_FOUND:
-            return '$<%s$> value of "%s" does not match an existing %s' % (
+            return '$<$fff%s$> value of "%s" does not match an existing %s' % (
                 (context_str,) + self.args
             )
         elif self.error_code == ErrorCode.MISSING_FIELD:
-            return '$<%s$> is missing field "%s"' % ((context_str,) + self.args)
+            return '$<$fff%s$> is missing field "%s"' % ((context_str,) + self.args)
         elif self.error_code == ErrorCode.EMPTY_CONTAINER:
-            return "$<%s$> contains no elements. %s" % ((context_str,) + self.args)
+            return "$<$fff%s$> contains no elements. %s" % ((context_str,) + self.args)
 
 
 def validate_presets(config: dict) -> "list[ConfigValidationError]":
