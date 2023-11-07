@@ -33,6 +33,9 @@
 
   {# toolbar buttons #}
   <frame pos="0 50">
+    {# NOTE: vvv placeholder for possible more buttons later vvv #}
+    <quad pos="1 0" size="46 8" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
+
     {{ config_data.button_icon(47, 1, 10, 10, icons.check, action=id + "__toolbar_validate", textsize=2.5, z_index=15) }}
     <quad pos="48 0" size="30 8" halign="left" valign="top" bgcolor="{{ def_col }}{{ def_aph }}" z-index="-40" />
     <label pos="58 -4" size="20 8" halign="left" valign="center2" text="Validate" textsize="2.5" z-index="15" />

@@ -298,7 +298,7 @@ class ConfigContextNames(ConfigContext):
 class ConfigContextPresets(ConfigContext):
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("presets", view)
-        self.vals_data: PagedData = PagedData(6, "vals", append_empty=1)
+        self.vals_data: PagedData = PagedData(8, "vals", append_empty=1)
         self.help.update(
             {
                 "id": help_preset_id,
@@ -432,7 +432,7 @@ class ConfigContextPresets(ConfigContext):
 class ConfigContextPayouts(ConfigContext):
     def __init__(self, view: "CupConfigView") -> None:
         super().__init__("payouts", view)
-        self.vals_data: PagedData = PagedData(8, "vals", append_empty=1)
+        self.vals_data: PagedData = PagedData(11, "vals", append_empty=1)
         self.help.update({"id": help_payout_id, "vals": help_payout_vals})
         self.editing.update(
             {"id": False, "vals": [False] * self.vals_data.max_per_page}

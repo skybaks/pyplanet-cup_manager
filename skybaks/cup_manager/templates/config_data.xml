@@ -182,16 +182,16 @@
 
     {{ hover_tooltip(0, -11, "preset_script", data.help.script) }}
     {{ label_bg(pos="40 -14.5", size="30 7", text="Script:") }}
-    <quad pos="41 -11" size="140 30" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    <quad pos="41 -11" size="140 26" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {{ switched_entry(-11, data.value.script.tmnext, data.editing.script_tmnext, id, "preset_script_tmnext", missing=not data.value.script.tmnext, prefix_text="Trackmania (2020):", prefix_size=35) }}
-    {{ switched_entry(-21, data.value.script.tm, data.editing.script_tm, id, "preset_script_tm", missing=not data.value.script.tm, prefix_text="Maniaplanet:", prefix_size=35) }}
-    {{ switched_entry(-31, data.value.script.sm, data.editing.script_sm, id, "preset_script_sm", missing=not data.value.script.sm, prefix_text="Shootmania:", prefix_size=35) }}
+    {{ switched_entry(-19, data.value.script.tm, data.editing.script_tm, id, "preset_script_tm", missing=not data.value.script.tm, prefix_text="Maniaplanet:", prefix_size=35) }}
+    {{ switched_entry(-27, data.value.script.sm, data.editing.script_sm, id, "preset_script_sm", missing=not data.value.script.sm, prefix_text="Shootmania:", prefix_size=35) }}
 
-    {{ hover_tooltip(0, -42, "preset_settings", data.help.settings) }}
-    {{ label_bg(pos="40 -45.5", size="30 7", text="Settings:") }}
-    <quad pos="41 -42" size="140 67" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    {{ hover_tooltip(0, -38, "preset_settings", data.help.settings) }}
+    {{ label_bg(pos="40 -41.5", size="30 7", text="Settings:") }}
+    <quad pos="41 -38" size="140 71" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {% for val in data.vals_items %}
-      {{ switched_entry(-42 - (10 * loop.index0), val.name[0], data.editing.vals[loop.index0], id, "preset_settings", index="_" + (loop.index0|string), missing=val.name==None, use_text2=True, text2=val.name[1]) }}
+      {{ switched_entry(-38 - (8 * loop.index0), val.name[0], data.editing.vals[loop.index0], id, "preset_settings", index="_" + (loop.index0|string), missing=val.name==None, use_text2=True, text2=val.name[1]) }}
     {% endfor %}
     {{ vertical_paging(41, -102, 30, 7, data.vals_num_pages, data.vals_page, id, name="preset_settings") }}
   {% endif %}
@@ -206,10 +206,10 @@
 
     {{ hover_tooltip(0, -11, "payout_vals", data.help.vals) }}
     {{ label_bg(pos="40 -14.5", size="30 7", text="Values:") }}
-    <quad pos="41 -11" size="140 90" bgcolor="0007" halign="left" valign="top" z-index="-50" />
+    <quad pos="41 -11" size="140 96" bgcolor="0007" halign="left" valign="top" z-index="-50" />
     {% for val in data.vals_items %}
-      {{ switched_entry(-11 - (10 * loop.index0), val.name, data.editing.vals[loop.index0], id, "payout_vals", index="_" + (loop.index0|string), missing=val.name==None, prefix_text=((loop.index0 + 1) + (data.vals_page - 1) * data.vals_max_per_page)|string + ".", prefix_size=10) }}
+      {{ switched_entry(-11 - (8 * loop.index0), val.name, data.editing.vals[loop.index0], id, "payout_vals", index="_" + (loop.index0|string), missing=val.name==None, prefix_text=((loop.index0 + 1) + (data.vals_page - 1) * data.vals_max_per_page)|string + ".", prefix_size=10) }}
     {% endfor %}
-    {{ vertical_paging(41, -94, 30, 7, data.vals_num_pages, data.vals_page, id, name="payout_vals") }}
+    {{ vertical_paging(41, -99, 30, 7, data.vals_num_pages, data.vals_page, id, name="payout_vals") }}
   {% endif %}
 {% endmacro %}
