@@ -100,9 +100,11 @@ class CupConfiguration:
                 if await self.check_file_exists_from_config_dir(data.file_or_url):
                     logger.debug(f'File "{data.file_or_url}" already exists')
                     await self.instance.chat(
-                        f'$f00File already exists. Use "//cup config load {str(data.file_or_url)}"',
-                        player,
+                        "$f00Can't create file because it already exists", player
                     )
+                    # Help out the user by automatically loading the file
+                    config_filename = data.file_or_url
+                    launch_window = True
                 else:
                     config_filename = await self.save_config_file(
                         get_fallback_config(), data.file_or_url
