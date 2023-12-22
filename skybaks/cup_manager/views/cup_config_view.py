@@ -227,7 +227,16 @@ class ConfigContextNames(ConfigContext):
         )
         if match_result and match_result.group(1) in self.value:
             self.update_editing(None)
-            del self.value[match_result.group(1)]
+            cancel = bool(
+                await ask_confirmation(
+                    player=player,
+                    message=f'Deleting "{self.value[match_result.group(1)]}". Are you sure?',
+                    buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                    size="sm",
+                )
+            )
+            if not cancel:
+                del self.value[match_result.group(1)]
             await self.view.refresh(player=player)
 
     async def edit_preset_select(self, player, action, values, index, **kwargs) -> None:
@@ -388,7 +397,16 @@ class ConfigContextPresets(ConfigContext):
             if delete_key.startswith("script"):
                 game = delete_key.split("_")[-1]
                 if game in self.value["script"]:
-                    del self.value["script"][game]
+                    cancel = bool(
+                        await ask_confirmation(
+                            player=player,
+                            message=f'Deleting "{self.value["script"][game]}". Are you sure?',
+                            buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                            size="sm",
+                        )
+                    )
+                    if not cancel:
+                        del self.value["script"][game]
             await self.view.refresh(player=player)
 
     async def delete_index(
@@ -398,8 +416,17 @@ class ConfigContextPresets(ConfigContext):
         page_data = self.vals_data.get_current_page_data()
         if index < len(page_data):
             key = page_data[index][0]
-            if key in self.value["settings"]:
-                del self.value["settings"][key]
+            cancel = bool(
+                await ask_confirmation(
+                    player=player,
+                    message=f'Deleting "{key}". Are you sure?',
+                    buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                    size="sm",
+                )
+            )
+            if not cancel:
+                if key in self.value["settings"]:
+                    del self.value["settings"][key]
         await self.view.refresh(player=player)
 
     async def settings_paging(self, player, action, values, **kwargs) -> None:
@@ -510,7 +537,16 @@ class ConfigContextPayouts(ConfigContext):
         self.update_editing(None)
         data_index = self.vals_data.page_index_to_data_index(index)
         if data_index < len(self.value):
-            del self.value[data_index]
+            cancel = bool(
+                await ask_confirmation(
+                    player=player,
+                    message=f'Deleting "{self.value[data_index]}". Are you sure?',
+                    buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                    size="sm",
+                )
+            )
+            if not cancel:
+                del self.value[data_index]
         await self.view.refresh(player=player)
 
     async def payout_paging(self, player, action, values, **kwargs) -> None:
