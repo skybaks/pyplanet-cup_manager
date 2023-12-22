@@ -558,7 +558,6 @@ class CupConfigView(SingleInstanceIndexActionsView):
         self.subscribe("sidebar_page_next", self.sidebar_paging)
         self.subscribe("sidebar_add_item", self.sidebar_add_item)
         self.subscribe("sidebar_del_item", self.sidebar_delete_item)
-        self.subscribe("toolbar_validate", self.toolbar_validate)
         self.subscribe("toolbar_save", self.toolbar_save)
         self.subscribe_index("config_tab", self.select_config_tab)
         self.subscribe_index("config_sidebar", self.select_config_sidebar)
@@ -656,10 +655,6 @@ class CupConfigView(SingleInstanceIndexActionsView):
         if not cancel:
             await self.config_context[self.selected_tab_item].delete_item()
             await self.refresh(player=player)
-
-    async def toolbar_validate(self, player, action, values, **kwargs) -> None:
-        if await self.app.config.check_config_valid(self.config_data, player):
-            await self.app.instance.chat("$ff0Config validation successful", player)
 
     async def toolbar_save(self, player, action, values, **kwargs) -> None:
         if await self.app.config.check_config_valid(self.config_data, player):
