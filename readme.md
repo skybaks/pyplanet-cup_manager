@@ -108,6 +108,18 @@ To edit the currently loaded config file, use the following command:
 
 This will launch the config editing UI where you can make changes and the press "Save" to commit those changes.
 
+On the editing window there are 3 tabs at the top, a sidebar on the left, and configuration options in the main body.
+Each tab controls the following:
+
+* Names: Configure cup name, map count, settings presets, and more
+* Presets: Set up mode script + script settings presets which can be executed by name or linked to a cup via the Names
+    tab
+* Payouts: Create planets payout schemes which can be accessed from the cup results scoreboard or linked to a cup via
+    the Names tab
+
+For each tab, a new instance of cup, preset, or payout can be created or deleted using the +/- buttons on the top of
+the left sidebar.
+
 ### Load a Config File
 
 To load a different config file, use the following command:
