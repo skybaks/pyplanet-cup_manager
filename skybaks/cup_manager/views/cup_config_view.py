@@ -227,7 +227,16 @@ class ConfigContextNames(ConfigContext):
         )
         if match_result and match_result.group(1) in self.value:
             self.update_editing(None)
-            del self.value[match_result.group(1)]
+            cancel = bool(
+                await ask_confirmation(
+                    player=player,
+                    message=f'Deleting "{self.value[match_result.group(1)]}". Are you sure?',
+                    buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                    size="sm",
+                )
+            )
+            if not cancel:
+                del self.value[match_result.group(1)]
             await self.view.refresh(player=player)
 
     async def edit_preset_select(self, player, action, values, index, **kwargs) -> None:
@@ -388,7 +397,16 @@ class ConfigContextPresets(ConfigContext):
             if delete_key.startswith("script"):
                 game = delete_key.split("_")[-1]
                 if game in self.value["script"]:
-                    del self.value["script"][game]
+                    cancel = bool(
+                        await ask_confirmation(
+                            player=player,
+                            message=f'Deleting "{self.value["script"][game]}". Are you sure?',
+                            buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                            size="sm",
+                        )
+                    )
+                    if not cancel:
+                        del self.value["script"][game]
             await self.view.refresh(player=player)
 
     async def delete_index(
@@ -398,8 +416,17 @@ class ConfigContextPresets(ConfigContext):
         page_data = self.vals_data.get_current_page_data()
         if index < len(page_data):
             key = page_data[index][0]
-            if key in self.value["settings"]:
-                del self.value["settings"][key]
+            cancel = bool(
+                await ask_confirmation(
+                    player=player,
+                    message=f'Deleting "{key}". Are you sure?',
+                    buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                    size="sm",
+                )
+            )
+            if not cancel:
+                if key in self.value["settings"]:
+                    del self.value["settings"][key]
         await self.view.refresh(player=player)
 
     async def settings_paging(self, player, action, values, **kwargs) -> None:
@@ -510,7 +537,16 @@ class ConfigContextPayouts(ConfigContext):
         self.update_editing(None)
         data_index = self.vals_data.page_index_to_data_index(index)
         if data_index < len(self.value):
-            del self.value[data_index]
+            cancel = bool(
+                await ask_confirmation(
+                    player=player,
+                    message=f'Deleting "{self.value[data_index]}". Are you sure?',
+                    buttons=[{"name": "Delete"}, {"name": "Cancel"}],
+                    size="sm",
+                )
+            )
+            if not cancel:
+                del self.value[data_index]
         await self.view.refresh(player=player)
 
     async def payout_paging(self, player, action, values, **kwargs) -> None:
@@ -558,7 +594,6 @@ class CupConfigView(SingleInstanceIndexActionsView):
         self.subscribe("sidebar_page_next", self.sidebar_paging)
         self.subscribe("sidebar_add_item", self.sidebar_add_item)
         self.subscribe("sidebar_del_item", self.sidebar_delete_item)
-        self.subscribe("toolbar_validate", self.toolbar_validate)
         self.subscribe("toolbar_save", self.toolbar_save)
         self.subscribe_index("config_tab", self.select_config_tab)
         self.subscribe_index("config_sidebar", self.select_config_sidebar)
@@ -656,10 +691,6 @@ class CupConfigView(SingleInstanceIndexActionsView):
         if not cancel:
             await self.config_context[self.selected_tab_item].delete_item()
             await self.refresh(player=player)
-
-    async def toolbar_validate(self, player, action, values, **kwargs) -> None:
-        if await self.app.config.check_config_valid(self.config_data, player):
-            await self.app.instance.chat("$ff0Config validation successful", player)
 
     async def toolbar_save(self, player, action, values, **kwargs) -> None:
         if await self.app.config.check_config_valid(self.config_data, player):

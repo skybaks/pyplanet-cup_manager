@@ -25,8 +25,17 @@ will work with any script mode which supports the scores callback.
 * [Setting up with a dedicated server](./readme.md#setting-up-with-a-dedicated-server)
     * [Set up Pyplanet](./readme.md#set-up-pyplanet)
     * [Install the plugin](./readme.md#install-the-plugin)
-    * [Customizing the cup configuration](./readme.md#customizing-the-cup-configuration)
-    * [DEPRECATED] [Set up a local py file](./readme.md#set-up-a-local-py-file)
+* [Customizing the cup configuration](./readme.md#customizing-the-cup-configuration)
+    * [Create, Load, or Edit a Cup Configuration](./readme.md#create-load-or-edit-a-cup-configuration)
+        * [Edit the Current Config](./readme.md#edit-the-current-config)
+        * [Load a Config File](./readme.md#load-a-config-file)
+        * [Download a Config File](./readme.md#download-a-config-file)
+        * [Create a New Config](./readme.md#create-a-new-config)
+    * [Create a Cup Configuration File Manually](./readme.md#create-a-cup-configuration-file-manually)
+        * [Cup Config File: Names](./readme.md#cup-config-file-names)
+        * [Cup Config File: Presets](./readme.md#cup-config-file-presets)
+        * [Cup Config File: Payouts](./readme.md#cup-config-file-payouts)
+    * [Cup Configuration Location](./readme.md#cup-configuration-location)
 * [Running a cup as server admin](./readme.md#running-a-cup-as-server-admin)
     * [Admin quick reference](./readme.md#admin-quick-reference)
     * [Set up before the cup map starts](./readme.md#set-up-before-the-cup-map-starts)
@@ -69,15 +78,86 @@ Then you will need to add the plugin to your "settings\apps.py". Add the followi
 "skybaks.cup_manager",
 ```
 
-## Customizing the cup configuration
+# Customizing the cup configuration
 
-Setting up your cup specifics in the configuration is meant to reduce workload ingame when running your cup.
+The plugin contains the means to customize to fit your competition's needs through the `//cup config` command. This
+allows customization of the `//cup on <name>` command and enables further automation in cup execution.
 
-The configuration is customized with a json file. Using this file you can enter the name of your specific cup, the
-number of maps the competition will be over, the kind of scoring you want to use, one or more mode script setting
-presets, and even a planets payout scheme.
+The recommended way to customize to meet your cup's needs is through the in-server UI. However, the configuration can
+also be created through a Json formatted text file and loaded from your dedicated server location or downloaded from a
+Url.
 
-### Create a Cup Configuration File
+## Create, Load, or Edit a Cup Configuration
+
+Commands quick reference:
+
+```
+//cup config
+//cup config load <filename>
+//cup config download <url>
+//cup config new <filename>
+```
+
+### Edit the Current Config
+
+To edit the currently loaded config file, use the following command:
+
+```
+//cup config
+```
+
+This will launch the config editing UI where you can make changes and the press "Save" to commit those changes.
+
+On the editing window there are 3 tabs at the top, a sidebar on the left, and configuration options in the main body.
+Each tab controls the following:
+
+* Names: Configure cup name, map count, settings presets, and more
+* Presets: Set up mode script + script settings presets which can be executed by name or linked to a cup via the Names
+    tab
+* Payouts: Create planets payout schemes which can be accessed from the cup results scoreboard or linked to a cup via
+    the Names tab
+
+For each tab, a new instance of cup, preset, or payout can be created or deleted using the +/- buttons on the top of
+the left sidebar.
+
+### Load a Config File
+
+To load a different config file, use the following command:
+
+```
+//cup config load <filename>
+```
+
+This will unload the current config file and load the specified one, if it exists.
+
+### Download a Config File
+
+To download a config file, use the following command:
+
+```
+//cup config download <url>
+```
+
+This will download the all the text at the given Url and create a new config file. For example, if downloading a file
+from Github, make sure to use the raw link so that it only downloads the Json file contents. When it comes to the name
+of the new config file, the last part of the given Url will be used. For example, if the Url was
+`https://raw.githubusercontent.com/skybaks/pyplanet-cup_manager/master/settings/cup_manager_config.json` then the
+filename would be set to "cup_manager_config.json".
+
+### Create a New Config
+
+> When starting the plugin for the first time it is not necessary to use this command. The plugin already creates a new
+> config file for you by default.
+
+To create a new config file, use the following command:
+
+```
+//cup config new <filename>
+```
+
+This will create a new config file with some default settings, and then open the editing UI.
+
+## Create a Cup Configuration File Manually
 
 The cup configuration file is a Json formatted text file with a specific structure. See
 [cup_manager_config](./settings/cup_manager_config.json) for an example.
@@ -92,7 +172,7 @@ The base level of the config file contains three elements like so:
 }
 ```
 
-#### Cup Config File: Names
+### Cup Config File: Names
 
 The "names" config contains the names of the cups which you are going to run from the plugin as well as any additional
 information tying these cups to any presets or payouts which are also defined in the config file.
@@ -153,7 +233,7 @@ the cup. In the example above, the key names "my_cup" and "my_other_cup" are the
 Shown above are the additional optional fields which can be added to further customize a defined cup. Each is
 documented in the attached comment.
 
-#### Cup Config File: Presets
+### Cup Config File: Presets
 
 The presets section of the config file allows you to define a preset mode script and settings. Each preset that you
 define can be invoked using the `//cup setup <preset>` command.
@@ -216,7 +296,7 @@ The identifiers "my_preset" and "my_other_preset" are simply examples and your p
 names that are meaningful to you. These identifiers are also what would be used for the "preset_on" or "preset_off"
 fields in the names config.
 
-#### Cup Config File: Payouts
+### Cup Config File: Payouts
 
 The payouts section of the config file is used to define a award scheme for planets. In games which support planets,
 the defined payouts can be accessed from the cup results to pay the winning players in batch.
@@ -237,51 +317,12 @@ Shown above is an example of payouts annotated with comments. The names of the p
 "my_other_payout" are custom and you can define your payouts with any names that are meaningful to you. These names are
 the identifiers for the payouts and would also be used along with the "payout" field in the names config.
 
-### Cup Configuration Location
+## Cup Configuration Location
 
 The default location for saving and loading cup configuration json files is `UserData/Maps/MatchSettings` under the
 dedicated server.
 This value can be changed by adding `CUP_MANAGER_CONFIG_PATH` to your pyplanet settings file. However, it is
 recommended in most instances to stick with the defaults.
-
-## Set up a local py file
-
-**⚠ Use of the local.py file is DEPRECATED and could be removed in future updates.** Please use instead
-[Customizing the cup configuration](./readme.md#customizing-the-cup-configuration).
-
-> This is optional but you should try to set one up if you want to utilize full functionality of the plugin.
-
-A "local.py" is an optional settings file which Pyplanet can load to provide additional custom information to plugins.
-This plugin opts to use the format of a local.py file rather than your server database to store information about mode
-presets, payout schemas, etc... because it is much easier to copy your customizations between multiple servers you
-host in this format.
-
-If you do not already have a local.py file in your Pyplanet settings folder then you can copy the one from the settings
-folder in cup_manager. [This one is provided as an example](./settings/local.py).
-
-**`CUP_MANAGER_PRESETS` defines the script and setting presets which are available from the command `//cup setup <preset>`.**
-This is a python dictionary of preset entries where the key value is the preset lookup name.
-|Preset Subfield|Value Type|Required|Usage|
-|---------------|----------|--------|-----|
-|aliases|list[str]|Yes|Define an optional list of additional names which can be used to trigger the preset|
-|script|dict[str,str]|Yes|Set the mode script to load with this preset on a per game basis where the key value is the short identifier for the game. valid game identifiers are 'tm' for maniaplanet, 'sm' for shootmania, and 'tmnext' for tm2020|
-|settings|dict[str,Any]|Yes|Define the script settings to be applied when the mode script loads|
-
-**`CUP_MANAGER_PAYOUTS` defines the payment schemes that are available to admins from the "Payout" button on a match results screen.**
-This is a python dictionary where the key value should be a meaningful name and the value should be a list[int]
-of the number of planets to pay each player ordered from first to last.
-
-**`CUP_MANAGER_NAMES` defines the name and associated default settings for a given cup.**
-By defining cup default settings here you can greatly increase the level of automation from the plugin. The key is the
-lookup name for the cup which is what you will pass into the `//cup on <cup_name>` command.
-|Cup Subfield|Value Type|Required|Usage|
-|------------|----------|--------|-----|
-|name|str|Yes|The verbose name for the cup which will be used in ingame chat messages and saved in the cup results|
-|preset_on|str|Optional|Include this subfield if you would like to have `//cup set <preset>` called automatically for you when you start the cup. The value should match a key name or alias name of on of your defined presets|
-|preset_off|str|Optional|Include this subfield if you would like to have `//cup setup <preset>` called automatically for you when you end the cup. The value should match a key name or alias name of on of your defined presets|
-|map_count|int|Optional|This will set the cup mapcount automatically when you start the cup. If a non-zero mapcount is set for a cup it will automatically end itself after the defined number of maps has passed. You can always change an active cup's mapcount using the `//cup mapcount <count>` command|
-|payout|str|Optional|This is used to link a certain payout scheme to your cup. This linkage will be used to default the selection on the payout and export windows.|
-|scoremode|str|Optional|Use this to predefine a score sorting mode for the cup. If left undefined the default sorting mode for your mode script will be used.|
 
 
 # Running a cup as server admin
@@ -376,15 +417,19 @@ defined presets:
 
 ### Choose a specific score sorting mode
 
-> This step is completely optional and only should be used when your cup needs score sorting logic not covered in the default behaviors.
+> This step is completely optional and only should be used when your cup needs score sorting logic not covered in the
+> default behaviors.
 
-The plugin has automatic detection built in for most common mode scripts in Trackmania and Maniaplanet as well as some generic fallback sorting modes which should cover a large variety of cases. However, you may still be interested in using a specific sorting mode for your cup. In that case use the command following command to set it:
+The plugin has automatic detection built in for most common mode scripts in Trackmania and Maniaplanet as well as some
+generic fallback sorting modes which should cover a large variety of cases. However, you may still be interested in
+using a specific sorting mode for your cup. In that case use the command following command to set it:
 
 ```
 //cup scoremode <scoremode_id>
 ```
 
-If you dont know the name of the mode, run the following command instead and it will open a window you can use the pick the sorting mode you want.
+If you dont know the name of the mode, run the following command instead and it will open a window you can use the pick
+the sorting mode you want.
 
 ```
 //cup scoremode
@@ -394,7 +439,8 @@ If you dont know the name of the mode, run the following command instead and it 
 
 ### Add or remove maps from the active cup
 
-If for any reason there was some problem and you need to include or exclude a scored map from the cup results you can using this command:
+If for any reason there was some problem and you need to include or exclude a scored map from the cup results you can
+using this command:
 
 ```
 //cup edit
@@ -407,7 +453,8 @@ can click to add or remove maps.
 
 > This step is not necessary if you told the plugin your map count
 
-If you are not using a defined map count you will manually need to tell the plugin when the cup has reached the final map.
+If you are not using a defined map count you will manually need to tell the plugin when the cup has reached the final
+map.
 
 ```
 //cup off
@@ -430,13 +477,15 @@ With the TimeAttack preset so that the map immediately following the cup will re
 
 ### Export the cup results
 
-After the cup is over you can use the export window to get the cup results in a variety of formats. If you ran the cup using the `//cup on` command then you can get to the results window using the command:
+After the cup is over you can use the export window to get the cup results in a variety of formats. If you ran the cup
+using the `//cup on` command then you can get to the results window using the command:
 
 ```
 /cup results
 ```
 
-From the results window click the "Export" button, then modify the settings as you desire copy the text to your clipboard.
+From the results window click the "Export" button, then modify the settings as you desire copy the text to your
+clipboard.
 
 If you did not use the `//cup on` command to run the cup you can still access cup results. Use the command:
 
@@ -451,7 +500,8 @@ the same steps as above to export the results via your clipboard.
 ### Pay planets to the winners
 
 If you are in a game that supports paying players planets and you have defined some payout schemes in your local.py
-file, you can pay players based on the cup results. Follow the instructions above to get to the cup results either using `/cup results` or `/cup matches`, then click the button "Payout" to open the payout window.
+file, you can pay players based on the cup results. Follow the instructions above to get to the cup results either
+using `/cup results` or `/cup matches`, then click the button "Payout" to open the payout window.
 
 # Plugin operations as a player
 

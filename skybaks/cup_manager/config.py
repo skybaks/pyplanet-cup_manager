@@ -57,7 +57,7 @@ class CupConfiguration:
                 nargs=1,
                 type=str,
                 required=False,
-                help='"load" to load a config file; "download" to download a config file; "new" to create a new config file',
+                help='"load" to load a config file\n"download" to download a config file\n"new" to create a new config file',
             )
             .add_param(
                 "file_or_url",
@@ -80,9 +80,9 @@ class CupConfiguration:
 
     async def command_config(self, player, data, *args, **kwargs) -> None:
         config_filename: str = ""
+        launch_window: bool = False
         if not data.command:
-            view = CupConfigView(self.app, self.config)
-            return await view.display(player=player)
+            launch_window = True
         elif data.command in ["load", "l"]:
             if data.file_or_url:
                 config_filename = data.file_or_url
@@ -91,26 +91,41 @@ class CupConfiguration:
         elif data.command in ["download", "dl"]:
             if data.file_or_url:
                 config_filename = await self.download_file(data.file_or_url, player)
+            else:
+                await self.instance.chat(
+                    f"$f00No Url entered. Must provide a Url to download from", player
+                )
         elif data.command in ["new", "n"]:
             if data.file_or_url:
                 if await self.check_file_exists_from_config_dir(data.file_or_url):
                     logger.debug(f'File "{data.file_or_url}" already exists')
                     await self.instance.chat(
-                        f'$f00File already exists. Use "//cup config load {str(data.file_or_url)}"',
-                        player,
+                        "$f00Can't create file because it already exists", player
                     )
+                    # Help out the user by automatically loading the file
+                    config_filename = data.file_or_url
+                    launch_window = True
                 else:
-                    filename = await self.save_config_file(
+                    config_filename = await self.save_config_file(
                         get_fallback_config(), data.file_or_url
                     )
-                    if filename:
+                    if config_filename:
                         self.instance.chat(
-                            f'$ff0Created new cup config {filename}. Use "//cup config" to edit',
+                            f'$ff0Created new cup config {config_filename}. Use "//cup config" to edit',
                             player,
                         )
+                        # Automatically open the config window to edit the
+                        # new file
+                        launch_window = True
+            else:
+                self.instance.chat(
+                    f"$f00No filename entered. Must provide a filename for new config",
+                    player,
+                )
         else:
             await self.instance.chat(
-                f'$f00Unknown config command "{str(data.command)}". Use "load" or "l" to load a file or "download" or "dl" to download a file.',
+                f'$f00Unknown config command "{str(data.command)}". '
+                'Use "load" or "l" to load a file, "download" or "dl" to download a file, or "new" or "n" to create a new file.',
                 player.login,
             )
             return
@@ -120,6 +135,10 @@ class CupConfiguration:
             if loaded_config:
                 self.config = loaded_config
                 await self.config_file.set_value(config_filename)
+
+        if launch_window:
+            view = CupConfigView(self.app, self.config)
+            return await view.display(player=player)
 
     async def load_config_from_file(self, filename, player=None) -> dict:
         loaded_config = await self.load_json_from_config_dir(filename)
