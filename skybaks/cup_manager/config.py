@@ -251,7 +251,7 @@ class CupConfiguration:
                 logger.error(f"Got invalid response from download url {url}")
                 return
             out_filename = await self.get_filename_from_url(url)
-            await self.write_file_from_config_dir(out_filename, await response.read())
+            await self.write_file_from_config_dir(out_filename, (await response.read()).decode("utf-8"))
         except Exception as e:
             logger.error(f'Exception while trying to download from "{url}": {str(e)}')
             if player:
